@@ -97,10 +97,12 @@ function WeeklySnapshotGrid() {
 
   type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' };
 
+  const hasWakeData  = wakeQuest.checkIns.length > 0;
+  const hasSleepData = wakeQuest.checkIns.length > 0;
   const builtinRows: Row[] = [
-    { id: '__sleep__',     emoji: '🌙', label: 'Sleep',     type: 'sleep' },
-    { id: '__steps__',     emoji: '👟', label: 'Steps',     type: 'steps' },
-    { id: '__wake__',      emoji: '🌅', label: 'Wake Up',   type: 'wake'  },
+    ...(hasSleepData ? [{ id: '__sleep__', emoji: '🌙', label: 'Sleep',   type: 'sleep' as const }] : []),
+    { id: '__steps__', emoji: '👟', label: 'Steps',   type: 'steps' as const },
+    ...(hasWakeData  ? [{ id: '__wake__',  emoji: '🌅', label: 'Wake Up', type: 'wake'  as const }] : []),
   ];
   const optionalRows: Row[] = [
     { id: '__nutrition__', emoji: '🥗', label: 'Nutrition', type: 'nutrition' },

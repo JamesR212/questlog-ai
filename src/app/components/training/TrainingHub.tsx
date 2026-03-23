@@ -2525,7 +2525,11 @@ export default function TrainingHub() {
 
           {performanceStats.length > 0 && (
             <div className="flex flex-col gap-3">
-              {performanceStats.map(stat => {
+              {performanceStats.filter(stat => {
+                if (stat.id === 'builtin-steps')  return stepLog.length > 0;
+                if (stat.id === 'builtin-floors') return gpsActivities.some(a => a.floorsClimbed);
+                return true;
+              }).map(stat => {
                 const entries    = performanceLog.filter(e => e.statId === stat.id);
                 const sorted     = [...entries].sort((a, b) => b.date.localeCompare(a.date));
                 const latest     = sorted[0] ?? null;
