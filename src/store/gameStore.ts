@@ -884,11 +884,14 @@ export const useGameStore = create<GameStore>()(
           ...existingAppearance,
           ...REFERENCE_APPEARANCE,
         };
+        // Set accountCreatedDate for existing users who don't have it yet
+        const accountCreatedDate = p.accountCreatedDate ?? new Date().toISOString().slice(0, 10);
         return {
           ...current,
           ...p,
           performanceStats: merged,
           characterAppearance,
+          accountCreatedDate,
         };
       },
     }
