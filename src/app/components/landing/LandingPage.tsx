@@ -384,7 +384,7 @@ function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number
     if (!el) return;
     const obs = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) { setVis(true); onActive(); }
-    }, { threshold: 0.45 });
+    }, { threshold: 0.25, rootMargin: '0px 0px -10% 0px' });
     obs.observe(el);
     return () => obs.disconnect();
   }, [onActive]);
@@ -408,12 +408,15 @@ function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number
 function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [phoneVisible, setPhoneVisible] = useState(true);
+  const activeIdxRef = useRef(0);
 
+  // Stable callback — never recreated, so FeatureSection observers never disconnect
   const handleActive = useCallback((i: number) => {
-    if (i === activeIdx) return;
+    if (i === activeIdxRef.current) return;
+    activeIdxRef.current = i;
     setPhoneVisible(false);
     setTimeout(() => { setActiveIdx(i); setPhoneVisible(true); }, 220);
-  }, [activeIdx]);
+  }, []);
 
   const glowColor = FEAT_COLORS[activeIdx % FEAT_COLORS.length];
 
