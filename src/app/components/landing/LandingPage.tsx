@@ -1047,131 +1047,95 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4.5 Analytics timelapse ─────────────────────────────────── */}
       <AnalyticsSection onGetStarted={onGetStarted} />
 
-      {/* ── 4.8 Powered by Gemini ───────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '56px 24px' }}>
+      {/* ── 5. AI section — sticky scroll ───────────────────────────── */}
+      <section ref={aiRef} style={{ background: '#050508' }}>
+        {/* Section heading */}
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 14,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 20, padding: '18px 28px',
-          boxShadow: '0 0 40px rgba(66,133,244,0.08)',
-        }}>
-          {/* Gemini star logo */}
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <defs>
-              <linearGradient id="gem1" x1="16" y1="1" x2="16" y2="31" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#4285F4"/>
-                <stop offset="0.5" stopColor="#9B72CB"/>
-                <stop offset="1" stopColor="#D96570"/>
-              </linearGradient>
-              <linearGradient id="gem2" x1="1" y1="16" x2="31" y2="16" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#4285F4"/>
-                <stop offset="0.5" stopColor="#9B72CB"/>
-                <stop offset="1" stopColor="#D96570"/>
-              </linearGradient>
-            </defs>
-            {/* Vertical lobe */}
-            <path d="M16 1 C16 1 18.2 9.5 21.5 16 C18.2 22.5 16 31 16 31 C16 31 13.8 22.5 10.5 16 C13.8 9.5 16 1 16 1Z" fill="url(#gem1)"/>
-            {/* Horizontal lobe */}
-            <path d="M1 16 C1 16 9.5 13.8 16 10.5 C22.5 13.8 31 16 31 16 C31 16 22.5 18.2 16 21.5 C9.5 18.2 1 16 1 16Z" fill="url(#gem2)"/>
-          </svg>
-          <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>AI powered by</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: -0.3 }}>Google Gemini</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 5. AI section ───────────────────────────────────────────── */}
-      <section
-        ref={aiRef}
-        style={{
-          padding: '120px 24px',
-          background: 'radial-gradient(ellipse 100% 80% at 50% 50%, rgba(22,163,74,0.08) 0%, transparent 70%)',
+          textAlign: 'center', paddingTop: 100,
           opacity: aiVisible ? 1 : 0,
           transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
           transition: `all 0.7s ${easing}`,
-        }}
-      >
-        <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 72 }}>
-            <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
-            <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, marginBottom: 20 }}>Powered by AI</h2>
-            <p style={{ fontSize: 18, color: '#a1a1aa' }}>Not just an app — your intelligent life operating system</p>
+        }}>
+          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
+          <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 0 }}>Powered by AI</h2>
+        </div>
+
+        {/* Sticky two-column */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: '0 48px', boxSizing: 'border-box' as const }}>
+
+          {/* Left: sticky image */}
+          <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 48 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/gym-plan.jpg"
+              alt="AI-generated gym plan with muscular load radar chart"
+              style={{ maxHeight: '76vh', width: 'auto', maxWidth: '100%', borderRadius: 20, display: 'block' }}
+            />
           </div>
 
-          {/* Featured: AI Gym Plans — image + text */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 56,
-            alignItems: 'center',
-            marginBottom: 72,
-          }}>
-            {/* Screenshot */}
-            <div
-              style={{
-                opacity: aiVisible ? 1 : 0,
-                transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
-                transition: `all 0.8s ${easing} 0.1s`,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/gym-plan.jpg"
-                alt="AI-generated gym plan with muscular load radar chart"
-                style={{ width: '100%', display: 'block', borderRadius: 20 }}
-              />
-            </div>
-
-            {/* Text */}
-            <div style={{ opacity: aiVisible ? 1 : 0, transform: aiVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.8s ${easing} 0.25s` }}>
+          {/* Right: scrolling panels */}
+          <div>
+            {/* Panel 1 — AI Gym Plans */}
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8 }}>
               <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
-              <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 18 }}>
+              <h3 style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
                 Your plan,<br />built by AI
               </h3>
-              <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 28 }}>
+              <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32, maxWidth: 420 }}>
                 Tell GAINN your equipment, schedule, and goals — and get a fully personalised workout plan in seconds. Every exercise, every set, every rep. Built for you, not copied from a template.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
                   'Exercises matched to your available equipment',
                   'Muscular load radar shows exactly what you\'re training',
                   'Adjusts week by week as you log sessions',
                 ].map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 15, marginTop: 1 }}>✓</span>
+                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 15, marginTop: 2, flexShrink: 0 }}>✓</span>
                     <span style={{ fontSize: 15, color: '#a1a1aa' }}>{t}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Feature cards grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, textAlign: 'left' }}>
-            {aiFeatures.map((f, i) => (
-              <div
-                key={i}
-                style={{
-                  background: 'rgba(22,163,74,0.06)',
-                  border: '1px solid rgba(22,163,74,0.2)',
-                  borderRadius: 16,
-                  padding: '24px 24px',
-                  opacity: aiVisible ? 1 : 0,
-                  transform: aiVisible ? 'translateY(0)' : 'translateY(20px)',
-                  transition: `all 0.6s ${easing} ${0.35 + i * 0.08}s`,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, right: 0, width: 60, height: 60, background: 'radial-gradient(circle, rgba(22,163,74,0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{f.title}</div>
-                <div style={{ fontSize: 14, color: '#a1a1aa', lineHeight: 1.6 }}>{f.desc}</div>
+            {/* Panel 2 — Powered by Gemini + 6 features */}
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8 }}>
+              {/* Gemini badge */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px 16px', marginBottom: 32, alignSelf: 'flex-start' }}>
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                  <defs>
+                    <linearGradient id="gem-v" x1="16" y1="1" x2="16" y2="31" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#4285F4"/><stop offset="0.5" stopColor="#9B72CB"/><stop offset="1" stopColor="#D96570"/>
+                    </linearGradient>
+                    <linearGradient id="gem-h" x1="1" y1="16" x2="31" y2="16" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#4285F4"/><stop offset="0.5" stopColor="#9B72CB"/><stop offset="1" stopColor="#D96570"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M16 1 C16 1 18.2 9.5 21.5 16 C18.2 22.5 16 31 16 31 C16 31 13.8 22.5 10.5 16 C13.8 9.5 16 1 16 1Z" fill="url(#gem-v)"/>
+                  <path d="M1 16 C1 16 9.5 13.8 16 10.5 C22.5 13.8 31 16 31 16 C31 16 22.5 18.2 16 21.5 C9.5 18.2 1 16 1 16Z" fill="url(#gem-h)"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' as const }}>Powered by</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>Google Gemini</div>
+                </div>
               </div>
-            ))}
+
+              <h3 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 32 }}>
+                6 AI features,<br />one subscription
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {aiFeatures.map((f, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>{f.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{f.title}</div>
+                      <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>{f.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
