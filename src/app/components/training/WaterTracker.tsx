@@ -69,9 +69,9 @@ export default function WaterTracker() {
             style={{ transition: 'stroke-dashoffset 0.4s ease' }}
           />
           <text x={CX} y={CY - 6} textAnchor="middle" fontSize="16" fontWeight="800"
-            fill="var(--ql-text,#111)">{todayTotal >= 1000 ? `${(todayTotal/1000).toFixed(1)}L` : `${todayTotal}`}</text>
+            fill="var(--ql-tx,#111)">{todayTotal >= 1000 ? `${(todayTotal/1000).toFixed(1)}L` : `${todayTotal}`}</text>
           <text x={CX} y={CY + 10} textAnchor="middle" fontSize="9"
-            fill="var(--ql-text-3,#aaa)">of {waterGoal >= 1000 ? `${(waterGoal/1000).toFixed(1)}L` : `${waterGoal}ml`}</text>
+            fill="var(--ql-tx-3,#aaa)">of {waterGoal >= 1000 ? `${(waterGoal/1000).toFixed(1)}L` : `${waterGoal}ml`}</text>
           {goalMet && (
             <text x={CX} y={CY + 24} textAnchor="middle" fontSize="9" fontWeight="700" fill="#22c55e">Goal hit ✓</text>
           )}
