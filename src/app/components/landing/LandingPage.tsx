@@ -718,7 +718,7 @@ const FEATURES = [
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const FEAT_COLORS = ['#16a34a','#a855f7','#3b82f6','#f97316','#06b6d4','#8b5cf6','#f43f5e','#10b981','#eab308'];
 
-// ─── Customise phone (single phone, animated bottom nav) ───────────────────────
+// ─── Customise phone (single phone — settings toggle + nav animate together) ────
 
 const NAV_TABS = [
   { e: '🏠', n: 'Home'     },
@@ -728,25 +728,37 @@ const NAV_TABS = [
   { e: '💪', n: 'Training' },
 ];
 
+const SECTIONS_DEMO = [
+  { e: '🥗', n: 'Food'     },
+  { e: '📅', n: 'Calendar' },
+  { e: '💰', n: 'Finance'  },
+  { e: '✅', n: 'Habits'   },
+  { e: '💪', n: 'Fitness'  },
+];
+
 function CustomisePhone() {
   const [showFinance, setShowFinance] = useState(true);
-  // Phase: 'shown' → pause → 'hiding' → pause → 'shown'
+  const [tapping,    setTapping]    = useState(false);
+
+  // Sequence: wait 1.8s → show tap → 350ms → toggle off → wait 1.8s → show tap → 350ms → toggle on → repeat
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
-    function cycle() {
-      // show for 2s, then hide
+    function cycle(current: boolean) {
       t = setTimeout(() => {
-        setShowFinance(false);
-        // hide for 2s, then show again
+        setTapping(true);
         t = setTimeout(() => {
-          setShowFinance(true);
-          t = setTimeout(cycle, 2000);
-        }, 2000);
-      }, 2000);
+          setTapping(false);
+          const next = !current;
+          setShowFinance(next);
+          cycle(next);
+        }, 350);
+      }, 1800);
     }
-    cycle();
+    cycle(true);
     return () => clearTimeout(t);
   }, []);
+
+  const accent = '#a855f7';
 
   return (
     <div style={{ width: 160, height: 320, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.7)', position: 'relative', overflow: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
@@ -757,39 +769,49 @@ function CustomisePhone() {
         <span style={{ fontSize: 7, color: '#fff', fontWeight: 600 }}>9:41</span>
         <span style={{ fontSize: 7, color: '#fff' }}>●●●</span>
       </div>
-      {/* Screen body */}
-      <div style={{ flex: 1, padding: '6px 10px 0', display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#f0f0f8' }}>Dashboard</div>
-        {/* Mini cards */}
-        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '7px 9px', display: 'flex', alignItems: 'center', gap: 7 }}>
-          <span style={{ fontSize: 16 }}>🔥</span>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#f0f0f8' }}>12</div>
-            <div style={{ fontSize: 6, color: '#6b6b8a' }}>day streak</div>
-          </div>
-          <div style={{ marginLeft: 'auto', fontSize: 7, color: '#a855f7', fontWeight: 600 }}>Keep it up!</div>
-        </div>
-        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '7px 9px' }}>
-          <div style={{ fontSize: 6, color: '#6b6b8a', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' as const, marginBottom: 5 }}>Weekly Habits</div>
-          <div style={{ display: 'flex', gap: 3 }}>
-            {['M','T','W','T','F','S','S'].map((d, i) => (
-              <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: 5, color: '#6b6b8a', marginBottom: 3 }}>{d}</div>
-                <div style={{ height: 18, borderRadius: 3, background: i < 5 ? '#7c3aed' : '#252535' }} />
+
+      {/* Settings screen */}
+      <div style={{ flex: 1, padding: '4px 10px 0', display: 'flex', flexDirection: 'column', gap: 4, overflow: 'hidden' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#f0f0f8' }}>Settings</div>
+        <div style={{ fontSize: 6, color: '#6b6b8a', marginBottom: 1 }}>Customise your GAINN experience</div>
+
+        {/* Visible Sections card */}
+        <div style={{ fontSize: 7, fontWeight: 700, color: '#f0f0f8', marginBottom: 1 }}>Visible Sections</div>
+        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
+          {SECTIONS_DEMO.map((s, i) => {
+            const isFinance = s.n === 'Finance';
+            const on = !isFinance || showFinance;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 9px', borderBottom: i < SECTIONS_DEMO.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', position: 'relative' }}>
+                <span style={{ fontSize: 10 }}>{s.e}</span>
+                <span style={{ flex: 1, fontSize: 7, color: on ? '#f0f0f8' : '#6b6b8a', fontWeight: 500, transition: 'color 0.4s ease' }}>{s.n}</span>
+                {/* Toggle */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  {/* Tap ripple on Finance row */}
+                  {isFinance && tapping && (
+                    <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', background: 'rgba(168,85,247,0.25)', animation: 'none', zIndex: 5 }} />
+                  )}
+                  <div style={{ width: 26, height: 14, borderRadius: 7, background: on ? accent : '#252535', position: 'relative', transition: 'background 0.4s ease' }}>
+                    <div style={{ position: 'absolute', top: 2, left: on ? 12 : 2, width: 10, height: 10, borderRadius: '50%', background: '#fff', transition: 'left 0.4s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+                  </div>
+                </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* Theme row */}
+        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '7px 9px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 7, fontWeight: 700, color: '#f0f0f8', flex: 1 }}>Colour Scheme</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {['#13131f','#f5f5f7','#fce4f0','#dbeafe','#dcfce7'].map((bg, ti) => (
+              <div key={ti} style={{ width: 12, height: 12, borderRadius: '50%', background: bg, border: ti === 0 ? `2px solid ${accent}` : '1.5px solid rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
-          {[{l:'STR',v:48,c:'#ef4444'},{l:'CON',v:62,c:'#f59e0b'},{l:'DEX',v:35,c:'#3b82f6'}].map((s,i) => (
-            <div key={i} style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 4px', textAlign: 'center' }}>
-              <div style={{ fontSize: 6, color: s.c, fontWeight: 700 }}>{s.l}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#f0f0f8' }}>{s.v}</div>
-            </div>
-          ))}
-        </div>
       </div>
-      {/* Bottom nav — animates Finance tab in/out */}
+
+      {/* Bottom nav — Finance tab slides in/out in sync with toggle */}
       <div style={{ height: 44, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', background: '#0d0d14', overflow: 'hidden', flexShrink: 0 }}>
         {NAV_TABS.map((tab) => {
           const isFinance = tab.n === 'Finance';
@@ -802,7 +824,7 @@ function CustomisePhone() {
                 maxWidth: visible ? '100px' : '0px',
                 opacity: visible ? 1 : 0,
                 overflow: 'hidden',
-                transition: 'flex 0.5s ease, max-width 0.5s ease, opacity 0.4s ease',
+                transition: 'flex 0.45s ease, max-width 0.45s ease, opacity 0.35s ease',
                 display: 'flex',
                 flexDirection: 'column' as const,
                 alignItems: 'center',
