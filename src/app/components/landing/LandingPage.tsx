@@ -2092,6 +2092,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <span style={{ color: '#16a34a' }}>AI</span>
           <span style={{ color: '#fff' }}>NN</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 20 }}>🍎</span>
+          <span style={{ fontSize: 13, color: '#a1a1aa', fontWeight: 500 }}>Coming to App Store &amp; Google Play soon</span>
+          <span style={{ fontSize: 20 }}>🤖</span>
+        </div>
         <p style={{ fontSize: 13, color: '#52525b' }}>© 2026 GAINN. All rights reserved.</p>
       </footer>
     </div>
