@@ -138,6 +138,8 @@ interface GameStore {
   snapshotAddedOptional: string[];   // habit IDs + '__nutrition__' that are opted in
   setSnapshotHiddenBuiltins: (ids: string[]) => void;
   setSnapshotAddedOptional: (ids: string[]) => void;
+  detailCellOverrides: Record<string, 'done' | 'late' | 'missed' | 'unscheduled'>;  // key: `${rowId}_${date}`
+  setDetailCellOverride: (key: string, value: 'done' | 'late' | 'missed' | 'unscheduled' | null) => void;
   googleFitTokens: GoogleFitTokens | null;
   logSteps: (date: string, steps: number, source: 'manual' | 'google_fit') => void;
   setStepGoal: (goal: number) => void;
@@ -352,6 +354,7 @@ export const useGameStore = create<GameStore>()(
       lastOpenedDate: null,
       snapshotHiddenBuiltins: [],
       snapshotAddedOptional: [],
+      detailCellOverrides: {},
       googleFitTokens: null,
       subscriptions: [],
       paycheckIncome: 0,
@@ -793,6 +796,11 @@ export const useGameStore = create<GameStore>()(
       }),
       setSnapshotHiddenBuiltins: (ids) => set({ snapshotHiddenBuiltins: ids }),
       setSnapshotAddedOptional:  (ids) => set({ snapshotAddedOptional: ids }),
+      setDetailCellOverride: (key, value) => set(s => {
+        const next = { ...s.detailCellOverrides };
+        if (value === null) delete next[key]; else next[key] = value;
+        return { detailCellOverrides: next };
+      }),
 
       setGoogleFitTokens: (tokens) => set({ googleFitTokens: tokens }),
 

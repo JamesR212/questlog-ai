@@ -74,6 +74,7 @@ function WeeklySnapshotGrid() {
     setSnapshotHiddenBuiltins, setSnapshotAddedOptional,
     logHabit, unlogHabit, logSteps, deleteMeal, logMeal, addWaterEntry, deleteWaterEntry,
     checkInWake, deleteWakeCheckIn,
+    detailCellOverrides, setDetailCellOverride,
   } = useGameStore();
 
   const weekDates = getWeekDates();
@@ -125,7 +126,6 @@ function WeeklySnapshotGrid() {
 
   function cellState(row: Row, ds: string): CellState {
     const isFuture = ds > today;
-    if (accountCreatedDate && ds < accountCreatedDate) return 'future';
 
     if (row.type === 'steps') {
       if (isFuture) return 'future';
@@ -155,18 +155,20 @@ function WeeklySnapshotGrid() {
     if (row.type === 'nutrition') {
       if (isFuture) return 'future';
       const dayMeals = mealLog.filter(m => m.date === ds);
-      if (dayMeals.length === 0) return 'missed';
+      if (dayMeals.length === 0) return 'unscheduled';
       const totalCal = dayMeals.reduce((s, m) => s + m.calories, 0);
       if (totalCal >= nutritionGoal.calories * 0.8) return 'done';
-      return 'late';
+      if (totalCal >= nutritionGoal.calories * 0.4) return 'late';
+      return 'missed';
     }
 
     if (row.type === 'hydration') {
       if (isFuture) return 'future';
       const total = waterLog.filter(e => e.date === ds).reduce((s, e) => s + e.amount, 0);
-      if (total === 0) return 'missed';
+      if (total === 0) return 'unscheduled';
       if (total >= waterGoal * 0.8) return 'done';
-      return 'late';
+      if (total >= waterGoal * 0.4) return 'late';
+      return 'missed';
     }
 
     // habit
@@ -179,7 +181,7 @@ function WeeklySnapshotGrid() {
 
   function toggleCell(row: Row, ds: string) {
     const state = cellState(row, ds);
-    if (state === 'future' || (accountCreatedDate && ds < accountCreatedDate)) return;
+    if (state === 'future') return;
     if (row.type === 'wake' || row.type === 'sleep') {
       const checkIn = wakeQuest.checkIns.find(c => c.date === ds);
       if (checkIn) deleteWakeCheckIn(checkIn.id);
@@ -201,6 +203,16 @@ function WeeklySnapshotGrid() {
       if (done) unlogHabit(row.id, ds);
       else logHabit(row.id, ds);
     }
+  }
+
+  function cycleDetailCell(row: Row, ds: string) {
+    const key = `${row.id}_${ds}`;
+    const cur = detailCellOverrides[key];
+    if (cur === undefined) setDetailCellOverride(key, 'done');
+    else if (cur === 'done') setDetailCellOverride(key, 'late');
+    else if (cur === 'late') setDetailCellOverride(key, 'missed');
+    else if (cur === 'missed') setDetailCellOverride(key, 'unscheduled');
+    else setDetailCellOverride(key, null);
   }
 
   const stateStyle: Record<CellState, string> = {
@@ -386,11 +398,10 @@ function WeeklySnapshotGrid() {
             {/* Day cells */}
             {weekDates.map(ds => {
               const state = cellState(row, ds);
-              const clickable = state !== 'future' && !(accountCreatedDate && ds < accountCreatedDate);
               if (row.type === 'steps') {
                 const n = stepLog.find(e => e.date === ds)?.steps;
                 return (
-                  <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
+                  <div key={ds} className="flex-1">
                     <div className={`h-7 w-full rounded-lg flex items-center justify-center ${stateStyle[state]}`}>
                       {n !== undefined && n > 0 && (
                         <span className="text-white text-[8px] font-bold leading-none drop-shadow">
@@ -404,7 +415,7 @@ function WeeklySnapshotGrid() {
               if (row.type === 'nutrition') {
                 const cal = mealLog.filter(m => m.date === ds).reduce((s, m) => s + m.calories, 0);
                 return (
-                  <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
+                  <div key={ds} className="flex-1">
                     <div className={`h-7 w-full rounded-lg flex items-center justify-center ${stateStyle[state]}`}>
                       {cal > 0 && (
                         <span className="text-white text-[8px] font-bold leading-none drop-shadow">
@@ -416,7 +427,7 @@ function WeeklySnapshotGrid() {
                 );
               }
               return (
-                <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
+                <div key={ds} className="flex-1">
                   <div className={`h-7 w-full rounded-lg ${stateStyle[state]}`} />
                 </div>
               );
@@ -467,11 +478,13 @@ function WeeklySnapshotGrid() {
 
         // Stats
         const rows = allRowsForYear;
+        const effState = (row: Row, ds: string): CellState => (detailCellOverrides[`${row.id}_${ds}`] as CellState | undefined) ?? cellState(row, ds);
+
         let totalScheduled = 0, totalDone = 0, totalLate = 0;
         for (const { ds } of monthDays) {
           if (ds > today) continue;
           for (const row of rows) {
-            const s = cellState(row, ds);
+            const s = effState(row, ds);
             if (s !== 'unscheduled' && s !== 'future') {
               totalScheduled++;
               if (s === 'done') totalDone++;
@@ -480,7 +493,6 @@ function WeeklySnapshotGrid() {
           }
         }
         const progressPct = totalScheduled > 0 ? Math.round((totalDone / totalScheduled) * 100) : 0;
-        // Accuracy: green=100, amber=50, red/missed=0
         const monthAcc = totalScheduled > 0 ? Math.round((totalDone * 100 + totalLate * 50) / totalScheduled) : null;
         const mAccColor = monthAcc === null ? '#888' : monthAcc >= 75 ? '#22c55e' : monthAcc >= 40 ? '#fbbf24' : '#ef4444';
 
@@ -489,7 +501,7 @@ function WeeklySnapshotGrid() {
           if (ds > today) return null;
           let sched = 0, done = 0;
           for (const row of rows) {
-            const s = cellState(row, ds);
+            const s = effState(row, ds);
             if (s !== 'unscheduled' && s !== 'future') { sched++; if (s === 'done') done++; }
           }
           return sched > 0 ? done / sched : null;
@@ -500,7 +512,7 @@ function WeeklySnapshotGrid() {
           let sched = 0, done = 0;
           for (const { ds } of monthDays) {
             if (ds > today) continue;
-            const s = cellState(row, ds);
+            const s = effState(row, ds);
             if (s !== 'unscheduled' && s !== 'future') { sched++; if (s === 'done') done++; }
           }
           return { row, sched, done, pct: sched > 0 ? Math.round((done / sched) * 100) : 0 };
@@ -675,11 +687,14 @@ function WeeklySnapshotGrid() {
                         </td>
                         {monthDays.map(({ ds }) => {
                           const s = cellState(row, ds);
+                          const override = detailCellOverrides[`${row.id}_${ds}`];
+                          const effective = override ?? s;
                           const isToday = ds === today;
                           return (
                             <td key={ds} className={`py-1.5 ${isToday ? 'bg-ql-accent/5' : ''}`}
-                              style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-                              <div className={`w-4 h-4 rounded-sm mx-auto ${cellBg[s]}`} />
+                              style={{ borderLeft: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+                              onClick={() => cycleDetailCell(row, ds)}>
+                              <div className={`w-4 h-4 rounded-sm mx-auto ${cellBg[effective]}`} />
                             </td>
                           );
                         })}
@@ -705,12 +720,12 @@ function WeeklySnapshotGrid() {
 
                     {/* Chart row */}
                     <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      <td colSpan={daysInMonth + 1} className="p-0 bg-ql-surface/60">
+                      <td colSpan={daysInMonth + 1} className="p-0" style={{ background: 'var(--ql-surface2)' }}>
                         {(() => {
                           const svgW = LABEL_W + COL_W * daysInMonth;
-                          const svgH = 60;
-                          const chartH = 44;
-                          const chartT = 8;
+                          const svgH = 70;
+                          const chartH = 48;
+                          const chartT = 12;
                           const xOf = (i: number) => LABEL_W + i * COL_W + COL_W / 2;
                           const yOf = (p: number) => chartT + (1 - p) * chartH;
                           const pts = dayPcts.map((p, i) => p !== null ? { x: xOf(i), y: yOf(p) } : null);
@@ -732,15 +747,16 @@ function WeeklySnapshotGrid() {
                               <span className="absolute left-0 top-0 bottom-0 flex items-center px-2 text-ql-3 text-[9px] font-semibold z-10"
                                 style={{ width: `${LABEL_W}px` }}>Chart</span>
                               <svg width={svgW} height={svgH} style={{ display: 'block', position: 'absolute', top: 0, left: 0 }}>
-                                {[0.5, 1.0].map(v => (
+                                {[0.25, 0.5, 0.75, 1.0].map(v => (
                                   <line key={v} x1={LABEL_W} x2={svgW} y1={yOf(v)} y2={yOf(v)}
-                                    stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" strokeDasharray="3 3" />
+                                    stroke="var(--ql-border)" strokeWidth="1" strokeDasharray="3 3" />
                                 ))}
-                                {areaPath && <path d={areaPath} fill="rgba(52,199,89,0.15)" />}
-                                {linePath && <path d={linePath} fill="none" stroke="#34c759" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+                                {areaPath && <path d={areaPath} fill="rgba(52,199,89,0.2)" />}
+                                {linePath && <path d={linePath} fill="none" stroke="#34c759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
                                 {pts.map((p, i) => p && (
-                                  <circle key={i} cx={p.x} cy={p.y} r="2.5"
-                                    fill={dayPcts[i]! >= 0.9 ? '#34c759' : dayPcts[i]! >= 0.5 ? '#fbbf24' : '#ef4444'} />
+                                  <circle key={i} cx={p.x} cy={p.y} r="3"
+                                    fill={dayPcts[i]! >= 0.9 ? '#34c759' : dayPcts[i]! >= 0.5 ? '#fbbf24' : '#ef4444'}
+                                    stroke="var(--ql-surface2)" strokeWidth="1" />
                                 ))}
                               </svg>
                             </div>
@@ -1069,7 +1085,7 @@ export default function HomePage() {
       {/* Greeting */}
       <div className="pt-1">
         <p className="text-ql-3 text-sm">{getGreeting()}{userName ? `, ${userName.split(' ')[0]}` : ''}</p>
-        <h1 className="text-ql text-2xl font-bold mt-0.5">Your QuestLog</h1>
+        <h1 className="text-2xl font-black mt-0.5"><span className="text-ql">LOG</span><span style={{ color: 'var(--ql-accent)' }}>AI</span></h1>
       </div>
 
       {/* Hero row: streak (or chill card) + savings circle */}

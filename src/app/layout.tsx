@@ -5,8 +5,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "QuestLog AI",
-  description: "Your RPG life tracker",
+  title: "LOGAI",
+  description: "Level up your life",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
