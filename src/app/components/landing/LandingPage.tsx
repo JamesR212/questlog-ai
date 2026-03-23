@@ -1063,20 +1063,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         {/* Sticky two-column */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: '0 48px', boxSizing: 'border-box' as const }}>
 
-          {/* Left: sticky image */}
-          <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 48 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/gym-plan.jpg"
-              alt="AI-generated gym plan with muscular load radar chart"
-              style={{ maxHeight: '76vh', width: 'auto', maxWidth: '100%', borderRadius: 20, display: 'block' }}
-            />
-          </div>
-
-          {/* Right: scrolling panels */}
+          {/* Left: scrolling panels */}
           <div>
             {/* Panel 1 — AI Gym Plans */}
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8 }}>
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 48 }}>
               <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
               <h3 style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
                 Your plan,<br />built by AI
@@ -1099,7 +1089,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
 
             {/* Panel 2 — Powered by Gemini + 6 features */}
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 8 }}>
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 48 }}>
               {/* Gemini badge */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px 16px', marginBottom: 32, alignSelf: 'flex-start' }}>
                 <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
@@ -1137,6 +1127,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
             </div>
           </div>
+
+          {/* Right: sticky image */}
+          <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 48 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/gym-plan.jpg"
+              alt="AI-generated gym plan with muscular load radar chart"
+              style={{ maxHeight: '76vh', width: 'auto', maxWidth: '100%', borderRadius: 20, display: 'block' }}
+            />
+          </div>
+
         </div>
       </section>
 
