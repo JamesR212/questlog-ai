@@ -104,7 +104,8 @@ export default function AuthScreen() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full py-3 bg-ql-accent hover:bg-ql-accent-h disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+          className="w-full py-3 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+          style={{ backgroundColor: '#16a34a' }}
         >
           {loading ? '…' : mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send Reset Email'}
         </button>
@@ -113,7 +114,7 @@ export default function AuthScreen() {
         <div className="flex flex-col items-center gap-2 pt-1">
           {mode === 'login' && (
             <>
-              <button onClick={() => { setMode('signup'); clear(); }} className="text-ql-accent text-xs font-medium">
+              <button onClick={() => { setMode('signup'); clear(); }} className="text-xs font-medium" style={{ color: '#16a34a' }}>
                 No account? Sign up free
               </button>
               <button onClick={() => { setMode('forgot'); clear(); }} className="text-ql-3 text-xs">
@@ -122,7 +123,7 @@ export default function AuthScreen() {
             </>
           )}
           {mode !== 'login' && (
-            <button onClick={() => { setMode('login'); clear(); }} className="text-ql-accent text-xs font-medium">
+            <button onClick={() => { setMode('login'); clear(); }} className="text-xs font-medium" style={{ color: '#16a34a' }}>
               Back to log in
             </button>
           )}
