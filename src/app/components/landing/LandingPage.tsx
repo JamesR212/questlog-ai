@@ -841,7 +841,7 @@ const FEATURES = [
     icon: '🥗',
     title: 'AI Nutrition',
     subtitle: 'Photo-log your meals in seconds',
-    desc: 'Snap a photo, get instant calorie and macro analysis. AI-generated meal plans tailored to your goals.',
+    desc: 'Snap a photo, get instant calorie and macro analysis. AI-generated meal plans tailored to your goals. Can also generate tasty low-fat recipes for whatever you\'re hungry for.',
     color: '#16a34a',
   },
   {
