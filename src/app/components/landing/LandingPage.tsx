@@ -119,163 +119,373 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 2 — Gym/Fitness (real fitness tab)
-    <div key="fitness" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Fitness</div>
-      <div style={{ ...card({ background: `${APP.accent}22`, borderColor: `${APP.accent}44` }) }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 8, color: '#c4b5fd' }}>Active session</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: APP.tx }}>Push Day A</div>
-            <div style={{ fontSize: 8, color: APP.tx3 }}>45 min · 9 sets done</div>
-          </div>
-          <div style={{ fontSize: 16 }}>💪</div>
-        </div>
-      </div>
-      {[
-        { n: 'Bench Press', s: '4×8', w: '80kg', done: true },
-        { n: 'OHP', s: '3×10', w: '50kg', done: true },
-        { n: 'Tricep Dips', s: '3×12', w: 'BW', done: false },
-        { n: 'Lat Raises', s: '3×15', w: '10kg', done: false },
-      ].map((ex, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...card({ padding: '6px 9px' }) }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: ex.done ? '#4ade80' : APP.tx3 }} />
-            <span style={{ fontSize: 9, color: ex.done ? APP.tx : APP.tx3 }}>{ex.n}</span>
-          </div>
-          <span style={{ fontSize: 8, color: ex.done ? '#4ade80' : APP.tx3, fontWeight: 600 }}>{ex.s} · {ex.w}</span>
-        </div>
-      ))}
-      <div style={{ height: 32, background: APP.surface2, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', display: 'flex', alignItems: 'flex-end', padding: '0 6px', gap: 3 }}>
-          {[60,80,55,90,70,85,95].map((h, i) => (
-            <div key={i} style={{ flex: 1, background: `${APP.accent}80`, borderRadius: '2px 2px 0 0', height: `${h}%` }} />
-          ))}
-        </div>
-      </div>
-    </div>,
+    // 2 — AI Nutrition (matching real app screenshot)
+    <div key="nutrition" style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
 
-    // 3 — Nutrition (real food tab)
-    <div key="nutrition" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Nutrition</div>
-      {/* Calorie ring */}
-      <div style={{ ...card(), display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
-          <svg viewBox="0 0 64 64" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-            <circle cx="32" cy="32" r="26" fill="none" stroke={APP.surface2} strokeWidth="7" />
-            <circle cx="32" cy="32" r="26" fill="none" stroke={APP.accent} strokeWidth="7" strokeDasharray={`${2*Math.PI*26*0.72} ${2*Math.PI*26*0.28}`} strokeLinecap="round" />
-          </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: APP.tx }}>1,840</span>
-            <span style={{ fontSize: 6, color: APP.tx3 }}>kcal</span>
-          </div>
+      {/* Today's Progress */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '6px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 7, fontWeight: 800, color: APP.tx }}>Today&apos;s Progress</span>
+          <span style={{ fontSize: 5.5, color: APP.tx3 }}>960/2000 kcal</span>
         </div>
-        <div style={{ flex: 1 }}>
-          {[{l:'Protein',v:72,c:'#3b82f6'},{l:'Carbs',v:58,c:'#f59e0b'},{l:'Fat',v:45,c:'#ef4444'}].map((m,i)=>(
-            <div key={i} style={{ marginBottom: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                <span style={{ fontSize: 7, color: APP.tx3 }}>{m.l}</span>
-                <span style={{ fontSize: 7, color: m.c, fontWeight: 600 }}>{m.v}g</span>
-              </div>
-              <div style={{ height: 3, background: APP.surface2, borderRadius: 2 }}>
-                <div style={{ height: '100%', width: `${m.v}%`, background: m.c, borderRadius: 2 }} />
-              </div>
+        {([
+          { l: 'Calories', v: '960/2000kcal', pct: 0.48, c: '#a855f7' },
+          { l: 'Protein',  v: '34/150g',      pct: 0.23, c: '#3b82f6' },
+          { l: 'Carbs',    v: '103/200g',     pct: 0.52, c: '#eab308' },
+          { l: 'Fat',      v: '49/65g',       pct: 0.75, c: '#22c55e' },
+          { l: 'Sugar',    v: '14/50g',       pct: 0.28, c: '#ec4899' },
+        ] as {l:string;v:string;pct:number;c:string}[]).map((m, i) => (
+          <div key={i} style={{ marginBottom: i < 4 ? 3 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+              <span style={{ fontSize: 5.5, color: APP.tx3 }}>{m.l}</span>
+              <span style={{ fontSize: 5.5, color: APP.tx2 }}>{m.v}</span>
             </div>
-          ))}
+            <div style={{ height: 2.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${m.pct*100}%`, background: m.c, borderRadius: 2 }}/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Today's Meals */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '6px 8px' }}>
+        {/* Header + buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 7, fontWeight: 800, color: APP.tx, flexShrink: 0 }}>Today&apos;s Meals</span>
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            {['Library','Manual+'].map((t,i) => (
+              <div key={i} style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '2px 4px', fontSize: 5, color: APP.tx2 }}>{t}</div>
+            ))}
+          </div>
+        </div>
+        {/* AI Smart Log row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 5.5, color: APP.tx2, fontWeight: 700 }}>⚡ AI SMART LOG</span>
+          <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '2px 5px', fontSize: 5, color: APP.tx2 }}>📷 Photo</div>
+        </div>
+        {/* Input + AI */}
+        <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
+          <div style={{ flex: 1, minWidth: 0, background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 7, padding: '4px 6px', fontSize: 5.5, color: APP.tx3, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>e.g. 2 scrambled eggs on toast...</div>
+          <div style={{ flexShrink: 0, background: APP.accent, borderRadius: 7, padding: '4px 7px', fontSize: 6.5, fontWeight: 700, color: '#fff' }}>⚡ AI</div>
+        </div>
+        {/* Meal entry card */}
+        <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 8, padding: '5px 7px' }}>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 6, fontWeight: 700, color: APP.tx, lineHeight: 1.3, marginBottom: 2 }}>3 Scrambled Eggs with Baked Beans, Chips, and Side Salad</div>
+              <div style={{ fontSize: 5, color: APP.tx3, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>960 kcal · P:34g · C:103g · F:49g · S:14g</div>
+            </div>
+            <span style={{ fontSize: 7, color: APP.tx3, flexShrink: 0, marginTop: 1 }}>×</span>
+          </div>
         </div>
       </div>
-      {/* Meals */}
-      {[{e:'🥣',n:'Breakfast',k:420},{e:'🥗',n:'Lunch',k:680},{e:'🍎',n:'Snack',k:140},{e:'🍗',n:'Dinner',k:600}].map((m,i)=>(
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...card({ padding: '5px 9px' }) }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11 }}>{m.e}</span>
-            <span style={{ fontSize: 9, color: APP.tx }}>{m.n}</span>
+
+      {/* Vitamins & Minerals */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '6px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+            <span style={{ fontSize: 10, flexShrink: 0 }}>🧬</span>
+            <span style={{ fontSize: 7, fontWeight: 700, color: APP.tx, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>Vitamins &amp; Minerals</span>
           </div>
-          <span style={{ fontSize: 8, color: APP.tx2, fontWeight: 600 }}>{m.k} kcal</span>
+          <span style={{ fontSize: 6.5, color: APP.tx3, flexShrink: 0, marginLeft: 4 }}>54%</span>
         </div>
-      ))}
+        <div style={{ height: 3, background: APP.surface2, borderRadius: 2, marginBottom: 3, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '54%', background: '#eab308', borderRadius: 2 }}/>
+        </div>
+        <div style={{ fontSize: 5.5, color: APP.tx3 }}>14 of 14 nutrients tracked today</div>
+      </div>
+
     </div>,
 
-    // 4 — Hydration (real water tracker)
-    <div key="hydration" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, alignSelf: 'flex-start' }}>Hydration</div>
-      <div style={{ ...card({ width: '100%', boxSizing: 'border-box' as const }), display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
-          <svg viewBox="0 0 72 72" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-            <circle cx="36" cy="36" r="30" fill="none" stroke={APP.surface2} strokeWidth="8" />
-            <circle cx="36" cy="36" r="30" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray={`${2*Math.PI*30*0.63} ${2*Math.PI*30*0.37}`} strokeLinecap="round" />
-          </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: APP.tx }}>1.5L</span>
-            <span style={{ fontSize: 6, color: APP.tx3 }}>of 2.4L</span>
+    // 3 — Smart Hydration
+    <div key="hydration" style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {/* Food / Drink pill switcher */}
+      <div style={{ display: 'flex', background: APP.surface2, borderRadius: 10, padding: 3 }}>
+        <div style={{ flex: 1, textAlign: 'center' as const, fontSize: 8, color: APP.tx3, padding: '4px 0', borderRadius: 8 }}>🥗 Food</div>
+        <div style={{ flex: 1, textAlign: 'center' as const, fontSize: 8, color: '#fff', fontWeight: 700, padding: '4px 0', borderRadius: 8, background: APP.accent }}>💧 Drink</div>
+      </div>
+
+      {/* Main hydration card */}
+      <div style={{ ...card({ padding: '10px 9px' }) }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+          {/* Ring */}
+          <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
+            <svg viewBox="0 0 52 52" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+              <circle cx="26" cy="26" r="21" fill="none" stroke={APP.surface2} strokeWidth="5.5"/>
+              <circle cx="26" cy="26" r="21" fill="none" stroke="#3b82f6" strokeWidth="5.5"
+                strokeDasharray={`${2*Math.PI*21*0.48} ${2*Math.PI*21}`} strokeLinecap="round"/>
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: APP.tx, lineHeight: 1 }}>963</span>
+              <span style={{ fontSize: 5.5, color: APP.tx3 }}>of 2.0L</span>
+            </div>
+          </div>
+          {/* Right col — minWidth:0 prevents overflow */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 8.5, fontWeight: 800, color: APP.tx, lineHeight: 1.25 }}>48% of daily goal</div>
+            <div style={{ fontSize: 6.5, color: APP.tx3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>3 drinks logged today</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ ...card({ padding: '3px 5px', background: APP.surface2 }), fontSize: 6, color: APP.tx2, textAlign: 'center' as const, lineHeight: 1.3, flexShrink: 0 }}>{'Set\ngoal'}</div>
+              <div style={{ flex: 1, minWidth: 0, ...card({ padding: '3px 4px', borderColor: `${APP.accent}66`, background: `${APP.accent}12` }), fontSize: 5.5, color: APP.accent, fontWeight: 600, textAlign: 'center' as const, overflow: 'hidden' }}>✨ AI rec.</div>
+            </div>
           </div>
         </div>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: APP.tx }}>63% of goal</div>
-          <div style={{ fontSize: 8, color: APP.tx3 }}>4 drinks logged</div>
-          <div style={{ marginTop: 4, fontSize: 8, color: '#3b82f6', fontWeight: 600 }}>✨ AI goal: 2.4L</div>
-        </div>
       </div>
+
       {/* Quick-add buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, width: '100%' }}>
-        {[150,250,330,500].map((ml) => (
-          <div key={ml} style={{ ...card({ padding: '5px 3px', textAlign: 'center' as const }) }}>
-            <div style={{ fontSize: 9, color: APP.tx, fontWeight: 600 }}>+{ml}</div>
-            <div style={{ fontSize: 7, color: APP.tx3 }}>ml</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
+        {['+150ml','+250ml','+330ml','+500ml'].map((label, i) => (
+          <div key={i} style={{ ...card({ padding: '6px 0', textAlign: 'center' as const, background: APP.surface2 }), overflow: 'hidden' }}>
+            <span style={{ fontSize: 6.5, color: APP.tx, fontWeight: 700 }}>{label}</span>
           </div>
         ))}
       </div>
-      {/* Log entries */}
-      <div style={{ width: '100%' }}>
-        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 4, fontWeight: 600 }}>TODAY'S LOG</div>
-        {[{t:'08:30',ml:250},{t:'10:15',ml:500},{t:'12:45',ml:330},{t:'15:00',ml:250}].map((e,i)=>(
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: `1px solid ${APP.border}` }}>
-            <span style={{ fontSize: 8, color: APP.tx3 }}>{e.t}</span>
-            <span style={{ fontSize: 8, color: '#93c5fd', fontWeight: 600 }}>💧 {e.ml}ml</span>
+
+      {/* Custom amount + Add */}
+      <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ flex: 1, minWidth: 0, ...card({ padding: '6px 8px', background: APP.surface2 }), fontSize: 7, color: APP.tx3, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>Custom amount (ml)…</div>
+        <div style={{ flexShrink: 0, background: APP.accent, borderRadius: 9, padding: '6px 10px', fontSize: 7.5, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center' }}>Add</div>
+      </div>
+
+      {/* Today's log */}
+      <div style={{ fontSize: 8.5, fontWeight: 800, color: APP.tx }}>Today&apos;s log</div>
+      <div style={card({ padding: 0, overflow: 'hidden' })}>
+        {[330,133,500].map((ml, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '6px 9px', borderBottom: i < 2 ? `1px solid ${APP.border}` : 'none' }}>
+            <span style={{ fontSize: 10, marginRight: 7, flexShrink: 0 }}>💧</span>
+            <span style={{ flex: 1, fontSize: 8, color: APP.tx }}>{ml} ml</span>
+            <span style={{ fontSize: 8, color: APP.tx3, flexShrink: 0 }}>×</span>
           </div>
         ))}
+      </div>
+      <div style={{ fontSize: 6.5, color: APP.tx3, textAlign: 'right' as const }}>Total: 963 ml</div>
+    </div>,
+
+    // 4 — Sleep & Wake (calendar + quests, matching real app screenshot)
+    <div key="sleep" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {/* Sleep / Wake quest rows */}
+      <div style={card({ padding: '0' })}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 9px', borderBottom: `1px solid ${APP.border}` }}>
+          <span style={{ fontSize: 13 }}>🌙</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: APP.tx }}>Sleep</div>
+            <div style={{ fontSize: 6, color: APP.tx3 }}>11:00pm · <span style={{ color: APP.accent }}>tap to change</span></div>
+          </div>
+          <div style={{ display: 'flex', gap: 3 }}>
+            <div style={{ fontSize: 6, color: '#fff', background: '#16a34a', padding: '2px 5px', borderRadius: 4, fontWeight: 700 }}>Log</div>
+            <div style={{ fontSize: 6, color: '#fff', background: '#dc2626', padding: '2px 5px', borderRadius: 4, fontWeight: 700 }}>Miss</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 9px' }}>
+          <span style={{ fontSize: 13 }}>🌅</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: APP.tx }}>Wake Up</div>
+            <div style={{ fontSize: 6 }}><span style={{ color: APP.tx3 }}>7:00am · </span><span style={{ color: '#16a34a' }}>Done ✓</span></div>
+          </div>
+          <div style={{ fontSize: 6, color: APP.tx3 }}>Clear</div>
+        </div>
+      </div>
+
+      {/* Mini calendar — March 2026 */}
+      <div style={card({ padding: '7px 8px' })}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontSize: 9, color: APP.tx3 }}>‹ ›</span>
+          <span style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>March 2026</span>
+          <span style={{ fontSize: 6, color: APP.accent, fontWeight: 700, background: `${APP.accent}22`, padding: '1px 4px', borderRadius: 4 }}>Today</span>
+        </div>
+        {/* Day headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 2 }}>
+          {['S','M','T','W','T','F','S'].map((d, i) => (
+            <div key={i} style={{ textAlign: 'center', fontSize: 5.5, color: APP.tx3, fontWeight: 600 }}>{d}</div>
+          ))}
+        </div>
+        {/* Weeks — March 2026 starts Sunday */}
+        {([
+          [1,2,3,4,5,6,7],
+          [8,9,10,11,12,13,14],
+          [15,16,17,18,19,20,21],
+          [22,23,24,25,26,27,28],
+          [29,30,31,0,0,0,0],
+        ] as number[][]).map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 1 }}>
+            {week.map((day, di) => {
+              const isToday = day === 23;
+              const hasThree = [2,9,16,23,26,30].includes(day);
+              return (
+                <div key={di} style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: 6.5, fontWeight: 600, width: 13, height: 13, borderRadius: '50%',
+                    margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isToday ? APP.accent : 'transparent',
+                    color: isToday ? '#fff' : day ? APP.tx : 'transparent',
+                  }}>{day || ''}</div>
+                  {day > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 0.8, marginTop: 0.5 }}>
+                      {hasThree ? (
+                        <>
+                          <div style={{ width: 1.8, height: 1.8, borderRadius: '50%', background: '#16a34a' }}/>
+                          <div style={{ width: 1.8, height: 1.8, borderRadius: '50%', background: '#16a34a' }}/>
+                          <div style={{ width: 1.8, height: 1.8, borderRadius: '50%', background: isToday ? APP.accent : '#16a34a' }}/>
+                        </>
+                      ) : (
+                        <div style={{ width: 1.8, height: 1.8, borderRadius: '50%', background: APP.tx3, opacity: 0.4 }}/>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Day accuracy ring */}
+      <div style={{ ...card(), display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', width: 30, height: 30, flexShrink: 0 }}>
+          <svg viewBox="0 0 30 30" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+            <circle cx="15" cy="15" r="11" fill="none" stroke={APP.surface2} strokeWidth="3.5"/>
+            <circle cx="15" cy="15" r="11" fill="none" stroke="#3b82f6" strokeWidth="3.5"
+              strokeDasharray={`${2*Math.PI*11*0.5} ${2*Math.PI*11}`} strokeLinecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#3b82f6' }}>50%</div>
+          <div style={{ fontSize: 6.5, color: APP.tx3 }}>Day accuracy</div>
+        </div>
       </div>
     </div>,
 
-    // 5 — Sleep & Wake (real wake quest)
-    <div key="sleep" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Sleep & Wake</div>
-      {/* Wake quest */}
-      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44` }) }}>
-        <div style={{ fontSize: 7, color: '#c4b5fd', fontWeight: 600, marginBottom: 4 }}>WAKE QUEST</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: APP.tx }}>06:30</div>
-            <div style={{ fontSize: 7, color: APP.tx3 }}>target wake time</div>
-          </div>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>✓</div>
-        </div>
-      </div>
-      {/* Sleep chart */}
-      <div style={card()}>
-        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 5 }}>This week</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-          {['M','T','W','T','F','S','S'].map((d, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 2 }}>{d}</div>
-              <div style={{ height: 28, background: APP.surface2, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: APP.accent, height: `${[80,65,90,75,85,70,88][i]}%`, borderRadius: '3px 3px 0 0' }} />
-              </div>
-              <div style={{ fontSize: 6, color: APP.tx3, marginTop: 2 }}>{['7h','6h','8h','7h','8h','7h','8h'][i]}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Last night */}
-      <div style={{ ...card(), display: 'flex', justifyContent: 'space-between' }}>
+    // 5 — Steps & GPS (Brighton seafront run)
+    <div key="steps" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
+        <span style={{ fontSize: 16 }}>🏃</span>
         <div>
-          <div style={{ fontSize: 7, color: APP.tx3 }}>Last night</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: APP.tx }}>7h 32m</div>
-          <div style={{ fontSize: 7, color: APP.tx3 }}>11pm → 6:32am</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx }}>Run Complete</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>Brighton Seafront · 21:17</div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 7, color: APP.tx3 }}>On time</div>
-          <div style={{ fontSize: 18 }}>🌅</div>
+      </div>
+      {/* Stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
+        {[
+          { v: '5.0 km', l: 'Distance' },
+          { v: '28:32', l: 'Time' },
+          { v: '5:42 /km', l: 'Avg Pace' },
+          { v: '285 kcal', l: 'Calories (est.)' },
+          { v: '8 m', l: 'Elevation Gain' },
+          { v: '1 🏢', l: 'Floors Climbed' },
+        ].map((s, i) => (
+          <div key={i} style={card({ padding: '7px 9px' })}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: APP.tx }}>{s.v}</div>
+            <div style={{ fontSize: 6, color: APP.tx3 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+      {/* Map — Brighton seafront route (Hove → Marina) */}
+      <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${APP.border}` }}>
+        <svg viewBox="0 0 140 92" style={{ width: '100%', display: 'block' }}>
+          {/* Land background (OSM #f2efe9) */}
+          <rect width="140" height="92" fill="#f2efe9"/>
+
+          {/* ── City block grid (north of seafront road) ── */}
+          {/* Background streets grid */}
+          <rect x="0" y="0" width="140" height="42" fill="#f2efe9"/>
+          {/* N-S streets */}
+          {[13,26,38,52,62,70,82,97,110,122,132].map((x,i) => (
+            <rect key={i} x={x} y={0} width={1.5} height={42} fill="#ffffff" opacity="0.9"/>
+          ))}
+          {/* E-W streets within block */}
+          <rect x="0" y="14" width="140" height="1.5" fill="#ffffff" opacity="0.8"/>
+          <rect x="0" y="27" width="140" height="1.5" fill="#ffffff" opacity="0.8"/>
+          {/* Building blocks */}
+          {[
+            [1,1,11,12],[14,1,11,12],[27,1,10,12],[39,1,11,12],[53,1,8,12],[63,1,6,12],[71,1,10,12],[83,1,13,12],[98,1,11,12],[111,1,10,12],[123,1,16,12],
+            [1,16,11,10],[14,16,11,10],[27,16,10,10],[39,16,11,10],[53,16,8,10],[63,16,6,10],[71,16,10,10],[83,16,6,10],[98,16,11,10],[111,16,10,10],[123,16,16,10],
+            [1,29,11,11],[14,29,11,11],[27,29,10,11],[39,29,11,11],[53,29,8,11],[63,29,6,11],[71,29,10,11],[83,29,6,11],[98,29,11,11],[111,29,10,11],[123,29,16,11],
+          ].map(([x,y,w,h],i) => (
+            <rect key={i} x={x} y={y} width={w} height={h} fill={i%3===0?'#d9d0c9':i%3===1?'#d4cbc4':'#ddd4cc'} rx="0.5"/>
+          ))}
+
+          {/* Old Steine gardens (green, north of Palace Pier) */}
+          <rect x="83" y="1" width="13" height="39" fill="#c8dba8" rx="1"/>
+          <rect x="84" y="2" width="11" height="37" fill="#d0e2b0" rx="1"/>
+
+          {/* West St wider road gap at x=52 */}
+          <rect x="51" y="0" width="3" height="42" fill="#ffffff"/>
+
+          {/* ── A259 Kings Road / Marine Parade (seafront road) ── */}
+          {/* Footway behind */}
+          <rect x="0" y="41" width="140" height="9" fill="#ebe6dc"/>
+          {/* Road surface */}
+          <rect x="0" y="43" width="140" height="6" fill="#ffffff"/>
+          {/* Centre dashes */}
+          {[5,17,29,41,53,65,77,89,101,113,125].map((x,i) => (
+            <rect key={i} x={x} y={45.5} width={7} height={0.8} fill="#e0dcd5"/>
+          ))}
+
+          {/* ── Lower promenade ── */}
+          <rect x="0" y="49" width="140" height="6" fill="#f0e8d8"/>
+
+          {/* ── Beach (pebble) ── */}
+          <rect x="0" y="55" width="140" height="9" fill="#ddd0a8"/>
+
+          {/* ── Sea (OSM #aad3df) ── */}
+          <rect x="0" y="64" width="140" height="28" fill="#aad3df"/>
+
+          {/* Wave lines */}
+          <path d="M0 70 Q17 68 35 70 Q52 72 70 70 Q87 68 105 70 Q122 72 140 70" stroke="#88bdd4" strokeWidth="0.8" fill="none"/>
+          <path d="M0 78 Q20 76 40 78 Q60 80 80 78 Q100 76 120 78 Q130 80 140 78" stroke="#88bdd4" strokeWidth="0.7" fill="none" opacity="0.6"/>
+
+          {/* ── West Pier ruins (x≈28, ~1.6km west of Palace Pier) ── */}
+          {/* Pier deck */}
+          <rect x="25.5" y="55" width="4" height="14" fill="#b8a898" opacity="0.85"/>
+          {/* Ruined pavilion */}
+          <rect x="23" y="66" width="9" height="5" fill="#b8a898" opacity="0.8" rx="0.5"/>
+          {/* Ruin breakup */}
+          <rect x="23" y="68" width="3" height="3" fill="#c8b8a8" opacity="0.4"/>
+          <rect x="30" y="67" width="2" height="2" fill="#c8b8a8" opacity="0.3"/>
+          {/* i360 tower (slim vertical, just left of West Pier) */}
+          <rect x="22" y="30" width="1.2" height="13" fill="#707880" opacity="0.75"/>
+          <ellipse cx="22.6" cy="36" rx="3" ry="1.5" fill="#808890" opacity="0.5"/>
+
+          {/* ── Palace Pier (x≈90, opposite Old Steine) ── */}
+          {/* Entrance gates */}
+          <rect x="87.5" y="52" width="7" height="4" fill="#c8a060" rx="0.5"/>
+          {/* Pier walkway */}
+          <rect x="89" y="55" width="4" height="20" fill="#c8a060"/>
+          {/* Pier head pavilion */}
+          <rect x="85.5" y="73" width="11" height="7" fill="#c8a060" rx="1"/>
+          {/* Pier head roof detail */}
+          <rect x="86.5" y="71" width="9" height="3" fill="#d4aa70" rx="0.5"/>
+          {/* Pier supports */}
+          {[57,60,63,66,69,72].map((y,i) => (
+            <line key={i} x1="89" y1={y} x2="87" y2={y+1} stroke="#b09050" strokeWidth="0.6" opacity="0.7"/>
+          ))}
+
+          {/* ── Labels ── */}
+          <text x="28" y="51.5" textAnchor="middle" fontSize="3" fill="#776655" fontFamily="sans-serif" fontWeight="600">West Pier</text>
+          <text x="91" y="51.5" textAnchor="middle" fontSize="3" fill="#554433" fontFamily="sans-serif" fontWeight="600">Palace Pier</text>
+          <text x="70" y="40" textAnchor="middle" fontSize="3.5" fill="#888880" fontFamily="sans-serif">Kings Road · Marine Parade</text>
+          <text x="89" y="12" textAnchor="middle" fontSize="3" fill="#6a8a50" fontFamily="sans-serif">Old Steine</text>
+
+          {/* ── Run route (Hove → Marina, along A259) ── */}
+          <path d="M 7 46 L 133 46" stroke="#16a34a" strokeWidth="2.8" strokeLinecap="round" opacity="0.9"/>
+          {/* Glowing halo */}
+          <path d="M 7 46 L 133 46" stroke="#4ade80" strokeWidth="5" strokeLinecap="round" opacity="0.2"/>
+
+          {/* Start (Hove, west) */}
+          <circle cx="7" cy="46" r="4" fill="#22c55e"/>
+          <circle cx="7" cy="46" r="2" fill="#ffffff"/>
+          {/* End (Marina, east) */}
+          <circle cx="133" cy="46" r="4" fill="#ef4444"/>
+          <circle cx="133" cy="46" r="2" fill="#ffffff"/>
+        </svg>
+      </div>
+      {/* XP reward */}
+      <div style={{ ...card({ background: 'rgba(74,222,128,0.1)', borderColor: 'rgba(74,222,128,0.25)', padding: '5px 9px' }), display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ fontSize: 13 }}>⚡</span>
+        <div>
+          <div style={{ fontSize: 8, color: '#4ade80', fontWeight: 700 }}>+140 XP · +8 DEX</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>5 km run · personal best pace!</div>
         </div>
       </div>
     </div>,
@@ -311,45 +521,92 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 7 — RPG Character (real character page)
-    <div key="rpg" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Character</div>
-      {/* Level card */}
-      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44` }) }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <div>
-            <div style={{ fontSize: 7, color: '#c4b5fd' }}>LEVEL</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: APP.tx, lineHeight: 1 }}>12</div>
+    // 7 — Finance & Vices
+    <div key="finance" style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+
+      {/* Finance card */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+          <span style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>💰 Finance</span>
+          <span style={{ fontSize: 6, color: APP.tx3 }}>March 2026</span>
+        </div>
+        {/* Monthly summary */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, background: APP.surface2, borderRadius: 8, padding: '5px 7px' }}>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#22c55e' }}>£1,240</div>
+            <div style={{ fontSize: 5.5, color: APP.tx3 }}>spent</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 8, color: APP.tx2, fontWeight: 600 }}>3,420 / 5,560 XP</div>
-            <div style={{ fontSize: 7, color: APP.tx3 }}>next level</div>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: APP.tx }}>£2,000</div>
+            <div style={{ fontSize: 5.5, color: APP.tx3 }}>budget</div>
+          </div>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#3b82f6' }}>£760</div>
+            <div style={{ fontSize: 5.5, color: APP.tx3 }}>left</div>
           </div>
         </div>
-        <div style={{ height: 5, background: APP.surface2, borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: '62%', background: APP.accent, borderRadius: 3 }} />
-        </div>
-      </div>
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5 }}>
-        {[{l:'⚔️ STR',v:48,c:'#ef4444',max:150},{l:'🛡️ CON',v:62,c:'#f59e0b',max:150},{l:'🏹 DEX',v:35,c:'#3b82f6',max:150},{l:'💰 GOLD',v:840,c:'#fbbf24',max:1000}].map((s,i)=>(
-          <div key={i} style={card({ padding: '7px 8px' })}>
-            <div style={{ fontSize: 8, color: s.c, fontWeight: 700, marginBottom: 3 }}>{s.l}</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: APP.tx, marginBottom: 4 }}>{s.v}</div>
-            <div style={{ height: 3, background: APP.surface2, borderRadius: 2 }}>
-              <div style={{ height: '100%', width: `${(s.v/s.max)*100}%`, background: s.c, borderRadius: 2 }} />
+        {/* Budget items */}
+        {[
+          { e: '🏠', n: 'Rent',          amt: '£850', pct: 1.00, c: '#ef4444', b: 'needs'   },
+          { e: '🎮', n: 'Entertainment', amt: '£120', pct: 0.60, c: '#a855f7', b: 'wants'   },
+          { e: '💰', n: 'Savings',       amt: '£270', pct: 0.54, c: '#22c55e', b: 'savings' },
+        ].map((item, i) => (
+          <div key={i} style={{ marginBottom: i < 2 ? 4 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 1.5 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                <span style={{ fontSize: 9, flexShrink: 0 }}>{item.e}</span>
+                <span style={{ fontSize: 6, color: APP.tx, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>{item.n}</span>
+                <span style={{ fontSize: 5, color: APP.tx3, background: APP.surface2, padding: '1px 3px', borderRadius: 3, flexShrink: 0 }}>{item.b}</span>
+              </div>
+              <span style={{ fontSize: 6, color: APP.tx2, fontWeight: 600, flexShrink: 0, marginLeft: 4 }}>{item.amt}</span>
+            </div>
+            <div style={{ height: 2.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${item.pct*100}%`, background: item.c, borderRadius: 2 }}/>
             </div>
           </div>
         ))}
       </div>
-      {/* Level up toast */}
-      <div style={{ ...card({ background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.3)', padding: '6px 9px' }), display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 14 }}>🎉</span>
-        <div>
-          <div style={{ fontSize: 8, color: '#4ade80', fontWeight: 700 }}>LEVEL UP!</div>
-          <div style={{ fontSize: 7, color: APP.tx3 }}>+5 STR · 7-day gym streak</div>
+
+      {/* Vices card */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+          <span style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>⚠️ Vices</span>
+          <span style={{ fontSize: 6, color: '#fbbf24', fontWeight: 700 }}>💰 +62 gold saved</span>
         </div>
+        <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 6 }}>Log a vice — lose gold. Avoid it — earn gold.</div>
+        {[
+          { e: '🍺', n: 'Pints',       avoided: 4, rate: '£6',  gold: 24 },
+          { e: '🍔', n: 'Takeaway',    avoided: 3, rate: '£4',  gold: 12 },
+          { e: '🚬', n: 'Cigarettes',  avoided: 12, rate: '50p', gold: 6  },
+        ].map((v, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderTop: i > 0 ? `1px solid ${APP.border}` : 'none' }}>
+            <span style={{ fontSize: 13, flexShrink: 0 }}>{v.e}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 7, fontWeight: 700, color: APP.tx }}>{v.n}</div>
+              <div style={{ fontSize: 5.5, color: APP.tx3 }}>{v.avoided}× avoided · {v.rate}/each</div>
+            </div>
+            <div style={{ flexShrink: 0, background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, padding: '2px 5px', fontSize: 6, color: '#fbbf24', fontWeight: 700 }}>+{v.gold}g</div>
+          </div>
+        ))}
       </div>
+
+      {/* Spending log */}
+      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
+        <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx, marginBottom: 5 }}>Recent Spending</div>
+        {[
+          { e: '☕', n: 'Coffee',      amt: '-£3.50', d: 'Today' },
+          { e: '🛒', n: 'Groceries',  amt: '-£42.10', d: 'Yesterday' },
+          { e: '⛽', n: 'Petrol',      amt: '-£55.00', d: 'Mon' },
+        ].map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderTop: i > 0 ? `1px solid ${APP.border}` : 'none' }}>
+            <span style={{ fontSize: 10, flexShrink: 0 }}>{s.e}</span>
+            <span style={{ flex: 1, fontSize: 6.5, color: APP.tx, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>{s.n}</span>
+            <span style={{ fontSize: 6, color: APP.tx3, flexShrink: 0 }}>{s.d}</span>
+            <span style={{ fontSize: 6.5, color: '#ef4444', fontWeight: 700, flexShrink: 0 }}>{s.amt}</span>
+          </div>
+        ))}
+      </div>
+
     </div>,
   ];
 
@@ -440,10 +697,10 @@ const FEATURES = [
     color: '#16a34a',
   },
   {
-    icon: '⚔️',
-    title: 'RPG Progression',
-    subtitle: 'Your life, gamified',
-    desc: 'Earn XP, gain levels, and build STR / CON / DEX stats from your real-world actions. Every good habit is a power-up.',
+    icon: '💰',
+    title: 'Finance & Vices',
+    subtitle: 'Money and habits, tracked',
+    desc: 'Budget by needs, wants and savings. Log vices like takeaways and drinks — every one avoided earns you gold.',
     color: '#16a34a',
   },
 ];
@@ -1049,9 +1306,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </h1>
 
         {/* Subtext */}
-        <p style={{ fontSize: 20, color: '#a1a1aa', textAlign: 'center', marginBottom: 40, animation: 'fade-up 0.9s 0.3s ease both' }}>
+        <p style={{ fontSize: 20, color: '#a1a1aa', textAlign: 'center', marginBottom: 20, animation: 'fade-up 0.9s 0.3s ease both' }}>
           The all-in-one AI life tracker
         </p>
+
+        {/* Personalisation pill */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 100, padding: '7px 16px', marginBottom: 40, animation: 'fade-up 0.9s 0.42s ease both' }}>
+          <span style={{ fontSize: 14 }}>🎯</span>
+          <span style={{ fontSize: 13, color: '#a1a1aa' }}>AI advice personalised to your <strong style={{ color: '#fff', fontWeight: 600 }}>height, weight, age &amp; goals</strong></span>
+        </div>
 
         {/* CTAs */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', animation: 'fade-up 0.9s 0.45s ease both' }}>
@@ -1213,6 +1476,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
                   'Exercises matched to your available equipment',
+                  'Personalised using your height, weight, age, and goals',
                   'Muscular load radar shows exactly what you\'re training',
                   'Adjusts week by week as you log sessions',
                 ].map((t, i) => (
@@ -1246,9 +1510,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
               </div>
 
-              <h3 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 32 }}>
+              <h3 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
                 6 AI features,<br />one subscription
               </h3>
+
+              <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
+                Every recommendation is tailored to <span style={{ color: '#a1a1aa', fontWeight: 600 }}>your height, weight, age, and goals</span> — not generic advice copied from the internet.
+              </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {aiFeatures.map((f, i) => (

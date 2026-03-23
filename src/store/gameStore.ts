@@ -142,6 +142,7 @@ interface GameStore {
   setDetailCellOverride: (key: string, value: 'done' | 'late' | 'missed' | 'unscheduled' | null) => void;
   googleFitTokens: GoogleFitTokens | null;
   logSteps: (date: string, steps: number, source: 'manual' | 'google_fit') => void;
+  deleteStep: (id: string) => void;
   setStepGoal: (goal: number) => void;
   floorsGoal: number;
   setFloorsGoal: (goal: number) => void;
@@ -753,6 +754,8 @@ export const useGameStore = create<GameStore>()(
             ...(newStats.level > state.stats.level ? { showLevelUp: true, levelUpMessage: `Level ${newStats.level} Reached!` } : {}),
           };
         }),
+
+      deleteStep: (id) => set(state => ({ stepLog: state.stepLog.filter(e => e.id !== id) })),
 
       setStepGoal: (goal) => set({ stepGoal: goal }),
       setFloorsGoal: (goal) => set({ floorsGoal: goal }),

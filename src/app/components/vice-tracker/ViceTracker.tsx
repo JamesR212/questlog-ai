@@ -1337,7 +1337,7 @@ export default function ViceTracker() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-ql text-xl font-bold">{financialMode ? 'Vices & Finances' : 'Vice Tracker'}</h2>
+        <h2 className="text-ql text-xl font-bold">Finance</h2>
         <p className="text-ql-3 text-xs mt-0.5">
           {financialMode ? 'Track what you skip and manage your money' : 'Log what you skipped — earn gold and tokens'}
         </p>

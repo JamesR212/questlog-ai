@@ -177,7 +177,7 @@ export function StepBars({ dates, stepsByDate, goal }: { dates: string[]; stepsB
 export default function StepTracker({ belowStats }: { belowStats?: React.ReactNode } = {}) {
   const {
     stepLog, stepGoal, googleFitTokens,
-    logSteps, setStepGoal, setGoogleFitTokens,
+    logSteps, setStepGoal, setGoogleFitTokens, deleteStep,
   } = useGameStore();
 
   const today   = toDateStr(new Date());
@@ -194,6 +194,8 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
   const [syncing,    setSyncing]    = useState(false);
   const [syncError,  setSyncError]  = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [editingId,  setEditingId]  = useState<string | null>(null);
+  const [editVal,    setEditVal]    = useState('');
 
   const googleFitConfigured = !!process.env.NEXT_PUBLIC_GOOGLE_FIT_AVAILABLE;
 
@@ -455,17 +457,58 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
               .sort((a, b) => b.date.localeCompare(a.date))
               .slice(0, 10)
               .map(e => (
-                <div key={e.id} className="flex items-center justify-between py-1 border-b border-ql last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-ql-3 text-xs w-20">{e.date}</span>
-                    <span className="text-[10px] text-ql-3">{e.source === 'google_fit' ? '🤖' : '✏️'}</span>
+                <div key={e.id} className="flex flex-col py-1 border-b border-ql last:border-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-ql-3 text-xs w-20">{e.date}</span>
+                      <span className="text-[10px] text-ql-3">{e.source === 'google_fit' ? '🤖' : '✏️'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {e.rewarded && <span className="text-[10px] text-ql-accent">+stats</span>}
+                      <span className={`text-sm font-bold tabular-nums ${e.steps >= stepGoal ? 'text-green-400' : 'text-ql'}`}>
+                        {e.steps.toLocaleString()}
+                      </span>
+                      <button
+                        onClick={() => { setEditingId(e.id); setEditVal(String(e.steps)); }}
+                        className="text-ql-3 text-[11px] hover:text-ql-accent transition-colors px-1"
+                      >✎</button>
+                      <button
+                        onClick={() => deleteStep(e.id)}
+                        className="text-ql-3 text-[11px] hover:text-red-400 transition-colors px-1"
+                      >✕</button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-bold tabular-nums ${e.steps >= stepGoal ? 'text-green-400' : 'text-ql'}`}>
-                      {e.steps.toLocaleString()}
-                    </span>
-                    {e.rewarded && <span className="text-[10px] text-ql-accent">+stats</span>}
-                  </div>
+                  {editingId === e.id && (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input
+                        type="number"
+                        value={editVal}
+                        onChange={ev => setEditVal(ev.target.value)}
+                        onKeyDown={ev => {
+                          if (ev.key === 'Enter') {
+                            const n = parseInt(editVal, 10);
+                            if (!isNaN(n) && n >= 0) { logSteps(e.date, n, 'manual'); }
+                            setEditingId(null);
+                          }
+                          if (ev.key === 'Escape') setEditingId(null);
+                        }}
+                        autoFocus
+                        className="flex-1 bg-ql-input border border-ql-accent rounded-lg px-3 py-1.5 text-sm text-ql outline-none tabular-nums"
+                      />
+                      <button
+                        onClick={() => {
+                          const n = parseInt(editVal, 10);
+                          if (!isNaN(n) && n >= 0) { logSteps(e.date, n, 'manual'); }
+                          setEditingId(null);
+                        }}
+                        className="text-xs font-semibold text-white bg-ql-accent rounded-lg px-3 py-1.5"
+                      >Save</button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="text-xs text-ql-3 px-2 py-1.5"
+                      >Cancel</button>
+                    </div>
+                  )}
                 </div>
               ))}
           </div>
