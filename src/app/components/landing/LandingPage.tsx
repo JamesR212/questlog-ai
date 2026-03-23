@@ -391,8 +391,8 @@ function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const featureProgress = progress * FEATURES.length;
-  const currentFeature = Math.round(featureProgress);
+  // Map 0→1 onto 0→(N-1) so first and last feature are fully visible at scroll ends
+  const featureProgress = progress * (FEATURES.length - 1);
 
   return (
     <div ref={outerRef} style={{ height: `${700}vh`, position: 'relative' }}>
@@ -434,7 +434,7 @@ function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
           <div style={{ flex: 1, minWidth: 0, position: 'relative', height: 320, overflow: 'hidden' }}>
             {FEATURES.map((f, i) => {
               const dist = i - featureProgress;
-              const opacity = Math.max(0, 1 - Math.abs(dist) * 2);
+              const opacity = Math.max(0, 1 - Math.abs(dist) * 1.4);
               const translateY = dist * 50;
               return (
                 <div
