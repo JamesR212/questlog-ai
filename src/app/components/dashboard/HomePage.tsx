@@ -945,13 +945,13 @@ function ProgressRing({ pct, hit, color, valLine1, valLine2, goalLine }: {
         style={{ transition: 'stroke-dashoffset 0.5s ease' }}
       />
       <text x={CX} y={CY - 6} textAnchor="middle" fontSize="15" fontWeight="800"
-        fill="var(--ql-text,#111)">{valLine1}</text>
+        fill="var(--ql-tx,#111)">{valLine1}</text>
       {valLine2 && (
         <text x={CX} y={CY + 9} textAnchor="middle" fontSize="9" fontWeight="600"
-          fill="var(--ql-text,#111)">{valLine2}</text>
+          fill="var(--ql-tx,#111)">{valLine2}</text>
       )}
       <text x={CX} y={valLine2 ? CY + 22 : CY + 9} textAnchor="middle" fontSize="8"
-        fill="var(--ql-text-3,#aaa)">{goalLine}</text>
+        fill="var(--ql-tx-3,#aaa)">{goalLine}</text>
       {hit && (
         <text x={CX} y={CY + 33} textAnchor="middle" fontSize="9" fontWeight="700" fill="#22c55e">✓</text>
       )}
