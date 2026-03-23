@@ -785,27 +785,6 @@ function WeeklySnapshotGrid() {
                 })}
               </div>
 
-              {/* Nutrition */}
-              <div>
-                <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wider mb-2">Nutrition</p>
-                {(() => {
-                  const added = addedOptional.has('__nutrition__');
-                  return (
-                    <button onClick={() => toggleOptional('__nutrition__')}
-                      className="flex items-center gap-3 py-3 w-full">
-                      <span className="text-lg">🥗</span>
-                      <div className="flex-1 text-left">
-                        <p className="text-ql text-sm">Nutrition</p>
-                        <p className="text-ql-3 text-[10px]">Daily calorie logging vs goal</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${added ? 'border-emerald-500 bg-emerald-500' : 'border-ql bg-transparent'}`}>
-                        {added && <span className="text-white text-[10px] font-bold">✓</span>}
-                      </div>
-                    </button>
-                  );
-                })()}
-              </div>
-
               {/* Habits */}
               <div>
                 <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wider mb-2">
