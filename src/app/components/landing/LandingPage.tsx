@@ -1627,7 +1627,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
           >
-            Get Started Free
+            Get Started
           </button>
           <button
             onClick={onGetStarted}
@@ -2073,9 +2073,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.06)'; (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; }}
         >
-          Get Started Free
+          Get Started
         </button>
-        <p style={{ marginTop: 20, fontSize: 13, color: '#52525b' }}>No credit card required · Cancel any time</p>
+        <p style={{ marginTop: 20, fontSize: 13, color: '#52525b' }}>Cancel any time</p>
       </section>
 
       {/* ── 9. Footer ────────────────────────────────────────────────── */}
