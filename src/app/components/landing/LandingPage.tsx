@@ -718,76 +718,103 @@ const FEATURES = [
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const FEAT_COLORS = ['#16a34a','#a855f7','#3b82f6','#f97316','#06b6d4','#8b5cf6','#f43f5e','#10b981','#eab308'];
 
-// ─── Customise phones pair (two mini phones, toggle animates) ──────────────────
+// ─── Customise phone (single phone, animated bottom nav) ───────────────────────
 
-const SECTIONS_DEMO = [
+const NAV_TABS = [
+  { e: '🏠', n: 'Home'     },
   { e: '🥗', n: 'Food'     },
   { e: '📅', n: 'Calendar' },
   { e: '💰', n: 'Finance'  },
-  { e: '✅', n: 'Habits'   },
-  { e: '💪', n: 'Fitness'  },
+  { e: '💪', n: 'Training' },
 ];
 
-function MiniPhone({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ width: 128, height: 254, background: '#0d0d14', borderRadius: 22, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.6)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 46, height: 13, background: '#0d0d14', borderRadius: '0 0 10px 10px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.1)', borderRight: '2px solid rgba(255,255,255,0.1)', borderBottom: '2px solid rgba(255,255,255,0.1)' }} />
-      <div style={{ height: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 11px', position: 'relative', zIndex: 5 }}>
-        <span style={{ fontSize: 6, color: '#fff', fontWeight: 600 }}>9:41</span>
-        <span style={{ fontSize: 6, color: '#fff' }}>●●●</span>
-      </div>
-      <div style={{ overflowY: 'hidden' as const, height: 222 }}>{children}</div>
-    </div>
-  );
-}
+function CustomisePhone() {
+  const [showFinance, setShowFinance] = useState(true);
+  // Phase: 'shown' → pause → 'hiding' → pause → 'shown'
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout>;
+    function cycle() {
+      // show for 2s, then hide
+      t = setTimeout(() => {
+        setShowFinance(false);
+        // hide for 2s, then show again
+        t = setTimeout(() => {
+          setShowFinance(true);
+          t = setTimeout(cycle, 2000);
+        }, 2000);
+      }, 2000);
+    }
+    cycle();
+    return () => clearTimeout(t);
+  }, []);
 
-function SettingsScreen({ financeOn, accent }: { financeOn: boolean; accent: string }) {
   return (
-    <div style={{ padding: '4px 9px 9px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-      <div style={{ fontSize: 8, fontWeight: 800, color: '#f0f0f8', marginBottom: 1 }}>Settings</div>
-      <div style={{ fontSize: 6, color: '#6b6b8a', marginBottom: 8 }}>Visible Sections</div>
-      <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
-        {SECTIONS_DEMO.map((s, i) => {
-          const isFinance = s.n === 'Finance';
-          const on = isFinance ? financeOn : true;
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 9px', borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-              <span style={{ fontSize: 12 }}>{s.e}</span>
-              <span style={{ flex: 1, fontSize: 8, color: on ? '#f0f0f8' : '#6b6b8a', fontWeight: 500, transition: 'color 0.4s ease' }}>{s.n}</span>
-              <div style={{ width: 28, height: 15, borderRadius: 8, background: on ? accent : '#252535', position: 'relative', transition: 'background 0.4s ease', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: 2, left: on ? 13 : 2, width: 11, height: 11, borderRadius: '50%', background: '#fff', transition: 'left 0.4s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
-              </div>
-            </div>
-          );
-        })}
+    <div style={{ width: 160, height: 320, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.7)', position: 'relative', overflow: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* Notch */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 52, height: 14, background: '#0d0d14', borderRadius: '0 0 12px 12px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.1)', borderRight: '2px solid rgba(255,255,255,0.1)', borderBottom: '2px solid rgba(255,255,255,0.1)' }} />
+      {/* Status bar */}
+      <div style={{ height: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 13px', flexShrink: 0 }}>
+        <span style={{ fontSize: 7, color: '#fff', fontWeight: 600 }}>9:41</span>
+        <span style={{ fontSize: 7, color: '#fff' }}>●●●</span>
       </div>
-      <div style={{ marginTop: 10, background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '8px 9px' }}>
-        <div style={{ fontSize: 7, fontWeight: 700, color: '#f0f0f8', marginBottom: 6 }}>Theme</div>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {['#13131f','#1a1a2e','#1a2a1a','#1a1a3e','#2a1a2a'].map((bg, ti) => (
-            <div key={ti} style={{ width: 18, height: 18, borderRadius: '50%', background: bg, border: ti === 0 ? `2px solid ${accent}` : '2px solid rgba(255,255,255,0.1)' }} />
+      {/* Screen body */}
+      <div style={{ flex: 1, padding: '6px 10px 0', display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#f0f0f8' }}>Dashboard</div>
+        {/* Mini cards */}
+        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '7px 9px', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <span style={{ fontSize: 16 }}>🔥</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#f0f0f8' }}>12</div>
+            <div style={{ fontSize: 6, color: '#6b6b8a' }}>day streak</div>
+          </div>
+          <div style={{ marginLeft: 'auto', fontSize: 7, color: '#a855f7', fontWeight: 600 }}>Keep it up!</div>
+        </div>
+        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '7px 9px' }}>
+          <div style={{ fontSize: 6, color: '#6b6b8a', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' as const, marginBottom: 5 }}>Weekly Habits</div>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {['M','T','W','T','F','S','S'].map((d, i) => (
+              <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 5, color: '#6b6b8a', marginBottom: 3 }}>{d}</div>
+                <div style={{ height: 18, borderRadius: 3, background: i < 5 ? '#7c3aed' : '#252535' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
+          {[{l:'STR',v:48,c:'#ef4444'},{l:'CON',v:62,c:'#f59e0b'},{l:'DEX',v:35,c:'#3b82f6'}].map((s,i) => (
+            <div key={i} style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 4px', textAlign: 'center' }}>
+              <div style={{ fontSize: 6, color: s.c, fontWeight: 700 }}>{s.l}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#f0f0f8' }}>{s.v}</div>
+            </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function CustomisePhonesPair() {
-  const [financeOn, setFinanceOn] = useState(true);
-  useEffect(() => {
-    const id = setInterval(() => setFinanceOn(v => !v), 1800);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-      <div>
-        <MiniPhone><SettingsScreen financeOn={true} accent="#7c3aed" /></MiniPhone>
-        <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>All on</p>
-      </div>
-      <div>
-        <MiniPhone><SettingsScreen financeOn={financeOn} accent="#7c3aed" /></MiniPhone>
-        <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>Your choice</p>
+      {/* Bottom nav — animates Finance tab in/out */}
+      <div style={{ height: 44, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', background: '#0d0d14', overflow: 'hidden', flexShrink: 0 }}>
+        {NAV_TABS.map((tab) => {
+          const isFinance = tab.n === 'Finance';
+          const visible = !isFinance || showFinance;
+          return (
+            <div
+              key={tab.n}
+              style={{
+                flex: visible ? 1 : 0,
+                maxWidth: visible ? '100px' : '0px',
+                opacity: visible ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'flex 0.5s ease, max-width 0.5s ease, opacity 0.4s ease',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+              }}
+            >
+              <span style={{ fontSize: 13 }}>{tab.e}</span>
+              <span style={{ fontSize: 5, color: '#6b6b8a', whiteSpace: 'nowrap' as const }}>{tab.n}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -874,7 +901,7 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
             transform: phoneVisible ? 'scale(1) translateY(0px)' : 'scale(0.92) translateY(12px)',
             transition: `opacity 0.35s ${EASE}, transform 0.45s ${EASE}`,
           }}>
-            {activeIdx === 1 ? <CustomisePhonesPair /> : <Phone feature={activeIdx} />}
+            {activeIdx === 1 ? <CustomisePhone /> : <Phone feature={activeIdx} />}
           </div>
 
           {/* Dot nav */}
