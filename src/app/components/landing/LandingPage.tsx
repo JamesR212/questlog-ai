@@ -800,15 +800,7 @@ function CustomisePhone() {
           })}
         </div>
 
-        {/* Theme row */}
-        <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '7px 9px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 7, fontWeight: 700, color: '#f0f0f8', flex: 1 }}>Colour Scheme</span>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {['#13131f','#f5f5f7','#fce4f0','#dbeafe','#dcfce7'].map((bg, ti) => (
-              <div key={ti} style={{ width: 12, height: 12, borderRadius: '50%', background: bg, border: ti === 0 ? `2px solid ${accent}` : '1.5px solid rgba(255,255,255,0.15)' }} />
-            ))}
-          </div>
-        </div>
+
       </div>
 
       {/* Bottom nav — Finance tab slides in/out in sync with toggle */}
