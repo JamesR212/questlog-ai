@@ -92,32 +92,69 @@ function Phone({ feature }: { feature: number }) {
     // 1 — Customise (placeholder; sticky column shows CustomisePhonesPair instead)
     <div key="customise" style={{ display: 'none' }} />,
 
-    // 2 — Habits (real training tab)
-    <div key="habits" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Training</div>
-      <div style={{ fontSize: 8, color: APP.tx3, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 2 }}>Today's Habits</div>
-      {[
-        { e: '🏃', n: 'Morning Run', c: '#16a34a', done: true },
-        { e: '📚', n: 'Read 30 mins', c: '#2563eb', done: true },
-        { e: '🧘', n: 'Meditate', c: APP.accent, done: false },
-        { e: '💊', n: 'Vitamins', c: '#d97706', done: true },
-        { e: '✍️', n: 'Journal', c: '#db2777', done: false },
-      ].map((h, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, ...card({ padding: '6px 8px', borderColor: h.done ? h.c + '40' : APP.border }) }}>
-          <span style={{ fontSize: 11 }}>{h.e}</span>
-          <span style={{ flex: 1, fontSize: 9, color: h.done ? APP.tx : APP.tx3, fontWeight: 500 }}>{h.n}</span>
-          <div style={{ width: 14, height: 14, borderRadius: 4, background: h.done ? h.c : 'transparent', border: `1.5px solid ${h.done ? h.c : APP.tx3}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {h.done && <span style={{ fontSize: 8, color: '#fff' }}>✓</span>}
+    // 2 — Gym & Fitness (Training Plans tab, AI-generated plan)
+    <div key="gym" style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
+      {/* Header */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx }}>Training</div>
+        <div style={{ fontSize: 6, color: APP.tx3, marginTop: 1 }}>0/0 habits · 0 sessions · +20 XP habits · +75 XP workouts</div>
+      </div>
+      {/* Tab bar */}
+      <div style={{ display: 'flex', background: APP.surface2, borderRadius: 10, padding: 3, gap: 2 }}>
+        {[{e:'✅',n:'Habits'},{e:'🤸',n:'Plans',active:true},{e:'👟',n:'Steps'},{e:'📊',n:'Stats'},{e:'🗺️',n:'Track'}].map((t,i) => (
+          <div key={i} style={{ flex: 1, textAlign: 'center', padding: '3px 1px', borderRadius: 7, background: t.active ? APP.accent : 'transparent' }}>
+            <div style={{ fontSize: 7 }}>{t.e}</div>
+            <div style={{ fontSize: 5, color: t.active ? '#fff' : APP.tx3, fontWeight: t.active ? 700 : 400, lineHeight: 1.2 }}>{t.n}</div>
+          </div>
+        ))}
+      </div>
+      {/* AI-Generated Plan card */}
+      <div style={{ border: `1.5px solid rgba(255,255,255,0.25)`, borderRadius: 11, overflow: 'hidden' }}>
+        {/* Card header */}
+        <div style={{ padding: '5px 8px', borderBottom: `1px solid rgba(255,255,255,0.12)`, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 8 }}>✨</span>
+          <span style={{ fontSize: 7, fontWeight: 700, color: APP.tx }}>AI-Generated Plan — Review before saving</span>
+        </div>
+        {/* Plan body */}
+        <div style={{ padding: '5px 8px', background: APP.surface }}>
+          {/* Plan title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+            <span style={{ fontSize: 12 }}>👟</span>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>First Steps Run</div>
+              <div style={{ fontSize: 6, color: APP.tx3 }}>Mon · 7:00am – 8:00am</div>
+            </div>
+          </div>
+          {/* Exercises */}
+          {[
+            { n: 'Rest / Walk — 10 min (Warm-up)',              s: '1×1 BW' },
+            { n: 'Easy Run — 5 min',                            s: '1×1 BW' },
+            { n: 'Run/Walk Intervals — 18 min',                 s: '1×1 BW' },
+            { n: 'Rest / Walk — 7 min (Cool-down)',             s: '1×1 BW' },
+          ].map((ex, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 3, marginBottom: 3, borderBottom: i < 3 ? `1px solid ${APP.border}` : 'none' }}>
+              <span style={{ fontSize: 6, color: APP.tx2, flex: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>{ex.n}</span>
+              <span style={{ fontSize: 6, color: APP.tx3, flexShrink: 0, marginLeft: 4 }}>{ex.s}</span>
+            </div>
+          ))}
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
+            <div style={{ flex: 1, background: APP.accent, borderRadius: 7, padding: '4px 0', textAlign: 'center', fontSize: 7, fontWeight: 700, color: '#fff' }}>Save to My Plans</div>
+            <div style={{ background: APP.surface2, borderRadius: 7, padding: '4px 8px', fontSize: 7, color: APP.tx2 }}>Discard</div>
           </div>
         </div>
-      ))}
-      {/* Habit grid */}
-      <div style={card()}>
-        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 4 }}>This week</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-          {[1,1,1,1,0,1,0, 1,0,1,1,1,0,0, 1,1,0,1,1,1,0].map((v, i) => (
-            <div key={i} style={{ aspectRatio: '1', borderRadius: 2, background: v ? APP.accent : APP.surface2 }} />
-          ))}
+      </div>
+      {/* Bottom cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+        <div style={{ ...card({ padding: '7px 8px' }) }}>
+          <div style={{ fontSize: 12, marginBottom: 3 }}>✨</div>
+          <div style={{ fontSize: 7, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>AI Plan</div>
+          <div style={{ fontSize: 6, color: APP.tx3, lineHeight: 1.3 }}>Answer a few questions, we&apos;ll build a tailored plan</div>
+        </div>
+        <div style={{ ...card({ padding: '7px 8px', background: APP.surface2 }) }}>
+          <div style={{ fontSize: 12, marginBottom: 3 }}>🔧</div>
+          <div style={{ fontSize: 7, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Custom Plan</div>
+          <div style={{ fontSize: 6, color: APP.tx3, lineHeight: 1.3 }}>Build your own plan from scratch</div>
         </div>
       </div>
     </div>,
