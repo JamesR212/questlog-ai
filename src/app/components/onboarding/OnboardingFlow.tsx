@@ -277,7 +277,7 @@ export default function OnboardingFlow() {
                     type="time"
                     value={wakeInput}
                     onChange={(e) => setWakeInput(e.target.value)}
-                    className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-4 text-white text-lg outline-none focus:border-white/30 transition-colors"
+                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-white/30 transition-colors"
                     style={{ colorScheme: 'dark' }}
                   />
                   <p className="text-white/30 text-xs mt-1.5">Check in each morning</p>
@@ -288,7 +288,7 @@ export default function OnboardingFlow() {
                     type="time"
                     value={bedInput}
                     onChange={(e) => setBedInput(e.target.value)}
-                    className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-4 text-white text-lg outline-none focus:border-white/30 transition-colors"
+                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-white/30 transition-colors"
                     style={{ colorScheme: 'dark' }}
                   />
                   <p className="text-white/30 text-xs mt-1.5">Target sleep time</p>
