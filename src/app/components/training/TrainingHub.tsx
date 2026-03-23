@@ -1567,10 +1567,10 @@ function MuscleRadarChart({ sessions, color, mode }: { sessions: { exercises: Gy
         return (
           <g key={k}>
             <text x={pos.x} y={pos.y - 4} textAnchor="middle" fontSize="8.5" fontWeight="700"
-              fill={v > 0 ? 'var(--ql-text,#111)' : 'var(--ql-text-3,#aaa)'}>
+              fill={v > 0 ? 'var(--ql-text,#fff)' : 'var(--ql-text-3,#aaa)'}>
               {topLabel}
             </text>
-            <text x={pos.x} y={pos.y + 7} textAnchor="middle" fontSize="7.5" fill="var(--ql-text-3,#aaa)">
+            <text x={pos.x} y={pos.y + 7} textAnchor="middle" fontSize="7.5" fill="var(--ql-text-2,#bbb)">
               {k}
             </text>
           </g>
