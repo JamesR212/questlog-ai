@@ -15,7 +15,7 @@ const THEMES: { id: Theme; label: string; bg: string; accent: string; surface: s
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
-      onClick={onToggle}
+      onClick={e => { e.stopPropagation(); onToggle(); }}
       className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${on ? 'bg-ql-accent' : 'bg-ql-surface3'}`}
     >
       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${on ? 'translate-x-6' : 'translate-x-0.5'}`} />
