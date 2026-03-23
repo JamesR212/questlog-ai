@@ -1535,7 +1535,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     { name: 'MyFitnessPal', category: 'Nutrition Tracking', price: '£19.99/mo' },
     { name: 'Habitify', category: 'Habit Tracking', price: '£2.99/mo' },
     { name: 'Sleep Cycle', category: 'Sleep Tracking', price: '£2.99/mo' },
-    { name: 'WaterMinder', category: 'Hydration', price: '£1.99/mo' },
+    { name: 'WaterMinder', category: 'Hydration', price: '£0.49/mo' },
     { name: 'YNAB', category: 'Budget Tracking', price: '£5.99/mo' },
   ];
 
@@ -1893,7 +1893,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: `all 0.5s ${easing} ${competitors.length * 0.07}s`,
             }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fca5a5' }}>TOTAL per month</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£42.94/mo</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£41.44/mo</div>
             </div>
           </div>
 
