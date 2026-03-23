@@ -8,6 +8,7 @@ import { updatePublicProfile } from '@/lib/friends';
 import { useGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
 import AuthScreen from './components/auth/AuthScreen';
+import LandingPage from './components/landing/LandingPage';
 import NavBar from './components/shared/NavBar';
 import LevelUpModal from './components/shared/LevelUpModal';
 import ThemeApplier from './components/shared/ThemeApplier';
@@ -39,6 +40,7 @@ export default function Home() {
   const [user, setUser]             = useState<User | null | undefined>(undefined); // undefined = loading
   const [syncing, setSyncing]       = useState(false);
   const [cloudReady, setCloudReady] = useState(false);
+  const [showAuth, setShowAuth]     = useState(false);
   const hasHydrated                 = useRef(false);
 
   // ── Auth listener ────────────────────────────────────────────────────────
@@ -116,7 +118,10 @@ export default function Home() {
     return (
       <>
         <ThemeApplier />
-        <AuthScreen />
+        {showAuth
+          ? <AuthScreen />
+          : <LandingPage onGetStarted={() => setShowAuth(true)} />
+        }
       </>
     );
   }
