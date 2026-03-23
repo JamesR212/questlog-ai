@@ -30,248 +30,324 @@ function useFadeIn(threshold = 0.15) {
 
 // ─── Phone Mockup ─────────────────────────────────────────────────────────────
 
+// Real app colours
+const APP = {
+  bg: '#13131f', surface: '#1e1e2e', surface2: '#252535',
+  border: 'rgba(255,255,255,0.08)', accent: '#7c3aed',
+  tx: '#f0f0f8', tx2: '#a1a1bb', tx3: '#6b6b8a',
+};
+const card = (extra?: React.CSSProperties): React.CSSProperties => ({
+  background: APP.surface, border: `1px solid ${APP.border}`,
+  borderRadius: 14, padding: '10px 12px', ...extra,
+});
+
 function Phone({ feature }: { feature: number }) {
   const screens = [
-    // 0 — Habits
-    <div key="habits" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', marginBottom: 4, fontWeight: 600, letterSpacing: 1 }}>TODAY'S HABITS</div>
-      {[
-        { emoji: '🏃', name: 'Morning Run', color: '#16a34a', done: true },
-        { emoji: '📚', name: 'Read 30 mins', color: '#2563eb', done: true },
-        { emoji: '🧘', name: 'Meditate', color: '#7c3aed', done: false },
-        { emoji: '💊', name: 'Vitamins', color: '#d97706', done: true },
-        { emoji: '✍️', name: 'Journal', color: '#db2777', done: false },
-      ].map((h, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '6px 8px', border: `1px solid ${h.done ? h.color + '40' : 'rgba(255,255,255,0.06)'}` }}>
-          <span style={{ fontSize: 13 }}>{h.emoji}</span>
-          <span style={{ flex: 1, fontSize: 9, color: h.done ? '#e4e4e7' : '#71717a' }}>{h.name}</span>
-          <div style={{ width: 14, height: 14, borderRadius: 4, background: h.done ? h.color : 'transparent', border: `1.5px solid ${h.done ? h.color : '#3f3f46'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {h.done && <span style={{ fontSize: 8, color: '#fff' }}>✓</span>}
-          </div>
+    // 0 — Home dashboard (real app layout)
+    <div key="home" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: -0.5 }}><span style={{ color: APP.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: APP.tx }}>NN</span></div>
+        <span style={{ fontSize: 8, color: APP.tx3 }}>Mon 23 Mar</span>
+      </div>
+      <div>
+        <div style={{ fontSize: 8, color: APP.tx2 }}>Good morning, James</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: APP.tx }}>Your Dashboard</div>
+      </div>
+      {/* Streak card */}
+      <div style={{ ...card(), display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 18 }}>🔥</span>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: APP.tx }}>12</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>day streak</div>
         </div>
-      ))}
-      <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {Array.from({ length: 35 }).map((_, i) => (
-          <div key={i} style={{ aspectRatio: '1', borderRadius: 2, background: Math.random() > 0.4 ? '#16a34a' : 'rgba(255,255,255,0.06)' }} />
+        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+          <div style={{ fontSize: 8, color: APP.accent, fontWeight: 600 }}>Keep it up!</div>
+        </div>
+      </div>
+      {/* Weekly snapshot mini */}
+      <div style={card()}>
+        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 5, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' as const }}>Weekly Snapshot</div>
+        <div style={{ display: 'flex', gap: 2, marginBottom: 3 }}>
+          {['M','T','W','T','F','S','S'].map((d,i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 6, color: APP.tx3 }}>{d}</div>)}
+        </div>
+        {[['🔥','✅','✅','✅','✅','✅','⬜'],['👟','✅','⬜','✅','✅','✅','⬜'],['💧','✅','✅','✅','⬜','✅','⬜']].map((row, ri) => (
+          <div key={ri} style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+            <div style={{ fontSize: 7, width: 12 }}>{row[0]}</div>
+            {row.slice(1).map((v, i) => <div key={i} style={{ flex: 1, height: 8, borderRadius: 2, background: v === '✅' ? APP.accent : APP.surface2 }} />)}
+          </div>
+        ))}
+      </div>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+        {[{l:'STR',v:48,c:'#ef4444'},{l:'CON',v:62,c:'#f59e0b'},{l:'DEX',v:35,c:'#3b82f6'}].map((s,i) => (
+          <div key={i} style={{ ...card({ padding: '6px 6px' }), textAlign: 'center' }}>
+            <div style={{ fontSize: 7, color: s.c, fontWeight: 700 }}>{s.l}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: APP.tx }}>{s.v}</div>
+          </div>
         ))}
       </div>
     </div>,
 
-    // 1 — Fitness
-    <div key="fitness" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>WORKOUT LOG</div>
-      <div style={{ background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: 10, padding: '8px 10px' }}>
-        <div style={{ fontSize: 9, color: '#86efac' }}>Push Day A</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginTop: 2 }}>45 min</div>
-        <div style={{ fontSize: 9, color: '#a1a1aa' }}>3 exercises · 9 sets</div>
-      </div>
+    // 1 — Habits (real training tab)
+    <div key="habits" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Training</div>
+      <div style={{ fontSize: 8, color: APP.tx3, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 2 }}>Today's Habits</div>
       {[
-        { name: 'Bench Press', sets: '4×8', weight: '80kg' },
-        { name: 'OHP', sets: '3×10', weight: '50kg' },
-        { name: 'Tricep Dips', sets: '3×12', weight: 'BW' },
-      ].map((ex, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>
-          <span style={{ fontSize: 9, color: '#e4e4e7' }}>{ex.name}</span>
-          <span style={{ fontSize: 9, color: '#86efac', fontWeight: 600 }}>{ex.sets} · {ex.weight}</span>
+        { e: '🏃', n: 'Morning Run', c: '#16a34a', done: true },
+        { e: '📚', n: 'Read 30 mins', c: '#2563eb', done: true },
+        { e: '🧘', n: 'Meditate', c: APP.accent, done: false },
+        { e: '💊', n: 'Vitamins', c: '#d97706', done: true },
+        { e: '✍️', n: 'Journal', c: '#db2777', done: false },
+      ].map((h, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, ...card({ padding: '6px 8px', borderColor: h.done ? h.c + '40' : APP.border }) }}>
+          <span style={{ fontSize: 11 }}>{h.e}</span>
+          <span style={{ flex: 1, fontSize: 9, color: h.done ? APP.tx : APP.tx3, fontWeight: 500 }}>{h.n}</span>
+          <div style={{ width: 14, height: 14, borderRadius: 4, background: h.done ? h.c : 'transparent', border: `1.5px solid ${h.done ? h.c : APP.tx3}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {h.done && <span style={{ fontSize: 8, color: '#fff' }}>✓</span>}
+          </div>
         </div>
       ))}
-      <div style={{ height: 40, background: 'rgba(255,255,255,0.03)', borderRadius: 8, position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', display: 'flex', alignItems: 'flex-end', padding: '0 6px', gap: 3 }}>
-          {[60, 80, 55, 90, 70, 85, 95].map((h, i) => (
-            <div key={i} style={{ flex: 1, background: 'rgba(22,163,74,0.5)', borderRadius: '2px 2px 0 0', height: `${h}%` }} />
+      {/* Habit grid */}
+      <div style={card()}>
+        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 4 }}>This week</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+          {[1,1,1,1,0,1,0, 1,0,1,1,1,0,0, 1,1,0,1,1,1,0].map((v, i) => (
+            <div key={i} style={{ aspectRatio: '1', borderRadius: 2, background: v ? APP.accent : APP.surface2 }} />
           ))}
         </div>
       </div>
     </div>,
 
-    // 2 — Nutrition
-    <div key="nutrition" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>NUTRITION</div>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
-        <div style={{ position: 'relative', width: 70, height: 70 }}>
-          <svg viewBox="0 0 70 70" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-            <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
-            <circle cx="35" cy="35" r="28" fill="none" stroke="#16a34a" strokeWidth="8" strokeDasharray={`${2 * Math.PI * 28 * 0.72} ${2 * Math.PI * 28 * 0.28}`} strokeLinecap="round" />
-          </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>1,840</span>
-            <span style={{ fontSize: 7, color: '#a1a1aa' }}>/ 2,550 kcal</span>
+    // 2 — Gym/Fitness (real fitness tab)
+    <div key="fitness" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Fitness</div>
+      <div style={{ ...card({ background: `${APP.accent}22`, borderColor: `${APP.accent}44` }) }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 8, color: '#c4b5fd' }}>Active session</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: APP.tx }}>Push Day A</div>
+            <div style={{ fontSize: 8, color: APP.tx3 }}>45 min · 9 sets done</div>
           </div>
+          <div style={{ fontSize: 16 }}>💪</div>
         </div>
       </div>
       {[
-        { meal: '🥣 Breakfast', kcal: 420 },
-        { meal: '🥗 Lunch', kcal: 680 },
-        { meal: '🍎 Snack', kcal: 140 },
-        { meal: '🍗 Dinner', kcal: 600 },
-      ].map((m, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 7 }}>
-          <span style={{ fontSize: 9, color: '#e4e4e7' }}>{m.meal}</span>
-          <span style={{ fontSize: 9, color: '#86efac' }}>{m.kcal} kcal</span>
+        { n: 'Bench Press', s: '4×8', w: '80kg', done: true },
+        { n: 'OHP', s: '3×10', w: '50kg', done: true },
+        { n: 'Tricep Dips', s: '3×12', w: 'BW', done: false },
+        { n: 'Lat Raises', s: '3×15', w: '10kg', done: false },
+      ].map((ex, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...card({ padding: '6px 9px' }) }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: ex.done ? '#4ade80' : APP.tx3 }} />
+            <span style={{ fontSize: 9, color: ex.done ? APP.tx : APP.tx3 }}>{ex.n}</span>
+          </div>
+          <span style={{ fontSize: 8, color: ex.done ? '#4ade80' : APP.tx3, fontWeight: 600 }}>{ex.s} · {ex.w}</span>
+        </div>
+      ))}
+      <div style={{ height: 32, background: APP.surface2, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', display: 'flex', alignItems: 'flex-end', padding: '0 6px', gap: 3 }}>
+          {[60,80,55,90,70,85,95].map((h, i) => (
+            <div key={i} style={{ flex: 1, background: `${APP.accent}80`, borderRadius: '2px 2px 0 0', height: `${h}%` }} />
+          ))}
+        </div>
+      </div>
+    </div>,
+
+    // 3 — Nutrition (real food tab)
+    <div key="nutrition" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Nutrition</div>
+      {/* Calorie ring */}
+      <div style={{ ...card(), display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+          <svg viewBox="0 0 64 64" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+            <circle cx="32" cy="32" r="26" fill="none" stroke={APP.surface2} strokeWidth="7" />
+            <circle cx="32" cy="32" r="26" fill="none" stroke={APP.accent} strokeWidth="7" strokeDasharray={`${2*Math.PI*26*0.72} ${2*Math.PI*26*0.28}`} strokeLinecap="round" />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: APP.tx }}>1,840</span>
+            <span style={{ fontSize: 6, color: APP.tx3 }}>kcal</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          {[{l:'Protein',v:72,c:'#3b82f6'},{l:'Carbs',v:58,c:'#f59e0b'},{l:'Fat',v:45,c:'#ef4444'}].map((m,i)=>(
+            <div key={i} style={{ marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                <span style={{ fontSize: 7, color: APP.tx3 }}>{m.l}</span>
+                <span style={{ fontSize: 7, color: m.c, fontWeight: 600 }}>{m.v}g</span>
+              </div>
+              <div style={{ height: 3, background: APP.surface2, borderRadius: 2 }}>
+                <div style={{ height: '100%', width: `${m.v}%`, background: m.c, borderRadius: 2 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Meals */}
+      {[{e:'🥣',n:'Breakfast',k:420},{e:'🥗',n:'Lunch',k:680},{e:'🍎',n:'Snack',k:140},{e:'🍗',n:'Dinner',k:600}].map((m,i)=>(
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...card({ padding: '5px 9px' }) }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 11 }}>{m.e}</span>
+            <span style={{ fontSize: 9, color: APP.tx }}>{m.n}</span>
+          </div>
+          <span style={{ fontSize: 8, color: APP.tx2, fontWeight: 600 }}>{m.k} kcal</span>
         </div>
       ))}
     </div>,
 
-    // 3 — Hydration
-    <div key="hydration" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1, alignSelf: 'flex-start' }}>HYDRATION</div>
-      <div style={{ position: 'relative', width: 90, height: 90 }}>
-        <svg viewBox="0 0 90 90" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-          <circle cx="45" cy="45" r="36" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
-          <circle cx="45" cy="45" r="36" fill="none" stroke="#3b82f6" strokeWidth="10" strokeDasharray={`${2 * Math.PI * 36 * 0.62} ${2 * Math.PI * 36 * 0.38}`} strokeLinecap="round" />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#93c5fd' }}>1.5L</span>
-          <span style={{ fontSize: 7, color: '#a1a1aa' }}>of 2.4L</span>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5, width: '100%' }}>
-        {[250, 250, 500, 250, 250].map((ml, i) => (
-          <div key={i} style={{ background: i < 3 ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', border: `1px solid ${i < 3 ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, padding: '6px 4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, color: '#93c5fd' }}>💧</div>
-            <div style={{ fontSize: 8, color: '#a1a1aa', marginTop: 2 }}>{ml}ml</div>
+    // 4 — Hydration (real water tracker)
+    <div key="hydration" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, alignSelf: 'flex-start' }}>Hydration</div>
+      <div style={{ ...card({ width: '100%', boxSizing: 'border-box' as const }), display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+          <svg viewBox="0 0 72 72" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+            <circle cx="36" cy="36" r="30" fill="none" stroke={APP.surface2} strokeWidth="8" />
+            <circle cx="36" cy="36" r="30" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray={`${2*Math.PI*30*0.63} ${2*Math.PI*30*0.37}`} strokeLinecap="round" />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: APP.tx }}>1.5L</span>
+            <span style={{ fontSize: 6, color: APP.tx3 }}>of 2.4L</span>
           </div>
-        ))}
-      </div>
-      <div style={{ width: '100%', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, padding: '6px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 8, color: '#93c5fd' }}>AI Goal — Based on your stats</span>
-        <span style={{ fontSize: 8, color: '#60a5fa', fontWeight: 600 }}>2.4L</span>
-      </div>
-    </div>,
-
-    // 4 — Sleep
-    <div key="sleep" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>SLEEP TRACKING</div>
-      <div style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+        </div>
         <div>
-          <div style={{ fontSize: 9, color: '#c4b5fd' }}>Last night</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginTop: 2 }}>7h 23m</div>
-          <div style={{ fontSize: 8, color: '#a1a1aa' }}>10:47pm → 6:10am</div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#a78bfa' }}>84</div>
-          <div style={{ fontSize: 8, color: '#a1a1aa' }}>score</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: APP.tx }}>63% of goal</div>
+          <div style={{ fontSize: 8, color: APP.tx3 }}>4 drinks logged</div>
+          <div style={{ marginTop: 4, fontSize: 8, color: '#3b82f6', fontWeight: 600 }}>✨ AI goal: 2.4L</div>
         </div>
       </div>
-      <div style={{ height: 40, position: 'relative', overflow: 'hidden' }}>
-        <svg viewBox="0 0 160 40" style={{ width: '100%', height: '100%' }}>
-          <defs>
-            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M0 35 C20 35 25 10 40 10 C55 10 60 25 80 20 C100 15 105 5 120 8 C135 11 140 28 160 30 L160 40 L0 40 Z" fill="url(#sg)" />
-          <path d="M0 35 C20 35 25 10 40 10 C55 10 60 25 80 20 C100 15 105 5 120 8 C135 11 140 28 160 30" fill="none" stroke="#a78bfa" strokeWidth="1.5" />
-        </svg>
+      {/* Quick-add buttons */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, width: '100%' }}>
+        {[150,250,330,500].map((ml) => (
+          <div key={ml} style={{ ...card({ padding: '5px 3px', textAlign: 'center' as const }) }}>
+            <div style={{ fontSize: 9, color: APP.tx, fontWeight: 600 }}>+{ml}</div>
+            <div style={{ fontSize: 7, color: APP.tx3 }}>ml</div>
+          </div>
+        ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-        {['M','T','W','T','F','S','S'].map((d, i) => (
-          <div key={i} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 7, color: '#71717a', marginBottom: 3 }}>{d}</div>
-            <div style={{ height: 24, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#7c3aed', height: `${[80, 65, 90, 75, 85, 70, 88][i]}%`, borderRadius: '4px 4px 0 0' }} />
+      {/* Log entries */}
+      <div style={{ width: '100%' }}>
+        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 4, fontWeight: 600 }}>TODAY'S LOG</div>
+        {[{t:'08:30',ml:250},{t:'10:15',ml:500},{t:'12:45',ml:330},{t:'15:00',ml:250}].map((e,i)=>(
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: `1px solid ${APP.border}` }}>
+            <span style={{ fontSize: 8, color: APP.tx3 }}>{e.t}</span>
+            <span style={{ fontSize: 8, color: '#93c5fd', fontWeight: 600 }}>💧 {e.ml}ml</span>
+          </div>
+        ))}
+      </div>
+    </div>,
+
+    // 5 — Sleep & Wake (real wake quest)
+    <div key="sleep" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Sleep & Wake</div>
+      {/* Wake quest */}
+      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44` }) }}>
+        <div style={{ fontSize: 7, color: '#c4b5fd', fontWeight: 600, marginBottom: 4 }}>WAKE QUEST</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: APP.tx }}>06:30</div>
+            <div style={{ fontSize: 7, color: APP.tx3 }}>target wake time</div>
+          </div>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>✓</div>
+        </div>
+      </div>
+      {/* Sleep chart */}
+      <div style={card()}>
+        <div style={{ fontSize: 7, color: APP.tx3, marginBottom: 5 }}>This week</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+          {['M','T','W','T','F','S','S'].map((d, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 2 }}>{d}</div>
+              <div style={{ height: 28, background: APP.surface2, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: APP.accent, height: `${[80,65,90,75,85,70,88][i]}%`, borderRadius: '3px 3px 0 0' }} />
+              </div>
+              <div style={{ fontSize: 6, color: APP.tx3, marginTop: 2 }}>{['7h','6h','8h','7h','8h','7h','8h'][i]}</div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>,
-
-    // 5 — Steps
-    <div key="steps" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>STEPS & ACTIVITY</div>
-      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>8,432</div>
-        <div style={{ fontSize: 9, color: '#a1a1aa' }}>steps today · goal 10,000</div>
-        <div style={{ marginTop: 8, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: '84%', background: 'linear-gradient(90deg, #16a34a, #4ade80)', borderRadius: 3 }} />
+          ))}
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-        {[
-          { label: 'Distance', value: '5.8 km', icon: '📍' },
-          { label: 'Calories', value: '312 kcal', icon: '🔥' },
-          { label: 'Floors', value: '14', icon: '🏢' },
-          { label: 'Active min', value: '42', icon: '⚡' },
-        ].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '7px 8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 12 }}>{s.icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#e4e4e7', marginTop: 2 }}>{s.value}</div>
-            <div style={{ fontSize: 8, color: '#71717a' }}>{s.label}</div>
-          </div>
-        ))}
+      {/* Last night */}
+      <div style={{ ...card(), display: 'flex', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>Last night</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: APP.tx }}>7h 32m</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>11pm → 6:32am</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>On time</div>
+          <div style={{ fontSize: 18 }}>🌅</div>
+        </div>
       </div>
     </div>,
 
-    // 6 — AI
-    <div key="ai" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>AI ADVISOR</div>
+    // 6 — AI Advisor (real chat)
+    <div key="ai" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>AI Advisor</div>
+      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44`, padding: '7px 9px' }), display: 'flex', gap: 6, alignItems: 'center' }}>
+        <span style={{ fontSize: 16 }}>🤖</span>
+        <div>
+          <div style={{ fontSize: 8, color: '#c4b5fd', fontWeight: 600 }}>GAINN AI</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>Your personal coach</div>
+        </div>
+      </div>
       {[
         { from: 'user', text: "I skipped leg day again 😬" },
-        { from: 'ai', text: "Let's fix that. I've designed a 30-min leg session based on your equipment. Want to see it?" },
-        { from: 'user', text: "Yes please!" },
-        { from: 'ai', text: "Starting with goblet squats 3×12 at 24kg, then RDLs... 💪" },
+        { from: 'ai', text: "Let's fix that — here's a 30-min leg session for your equipment:" },
+        { from: 'ai', text: "Goblet Squats 3×12 · RDLs 3×10 · Lunges 3×10 💪" },
+        { from: 'user', text: "Perfect, logging it now!" },
       ].map((msg, i) => (
         <div key={i} style={{ display: 'flex', justifyContent: msg.from === 'user' ? 'flex-end' : 'flex-start' }}>
           <div style={{
-            maxWidth: '80%',
-            background: msg.from === 'user' ? 'rgba(22,163,74,0.3)' : 'rgba(255,255,255,0.07)',
-            border: msg.from === 'user' ? '1px solid rgba(22,163,74,0.4)' : '1px solid rgba(255,255,255,0.08)',
+            maxWidth: '82%', fontSize: 8, color: APP.tx, lineHeight: 1.5, padding: '5px 8px',
+            background: msg.from === 'user' ? `${APP.accent}44` : APP.surface2,
+            border: `1px solid ${msg.from === 'user' ? `${APP.accent}66` : APP.border}`,
             borderRadius: msg.from === 'user' ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
-            padding: '6px 9px',
-            fontSize: 9,
-            color: '#e4e4e7',
-            lineHeight: 1.5,
-          }}>
-            {msg.text}
-          </div>
+          }}>{msg.text}</div>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 5, marginTop: 4 }}>
-        <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '6px 8px', fontSize: 8, color: '#52525b', border: '1px solid rgba(255,255,255,0.08)' }}>Ask anything…</div>
-        <div style={{ width: 26, height: 26, borderRadius: 8, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>↑</div>
+      <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
+        <div style={{ flex: 1, ...card({ padding: '5px 8px' }), fontSize: 8, color: APP.tx3 }}>Ask anything…</div>
+        <div style={{ width: 26, height: 26, borderRadius: 8, background: APP.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>↑</div>
       </div>
     </div>,
 
-    // 7 — RPG
-    <div key="rpg" style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600, letterSpacing: 1 }}>RPG PROGRESSION</div>
-      <div style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.2), rgba(22,163,74,0.05))', border: '1px solid rgba(22,163,74,0.3)', borderRadius: 10, padding: '8px 10px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    // 7 — RPG Character (real character page)
+    <div key="rpg" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Character</div>
+      {/* Level card */}
+      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44` }) }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <div>
-            <div style={{ fontSize: 9, color: '#86efac' }}>Level</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>12</div>
+            <div style={{ fontSize: 7, color: '#c4b5fd' }}>LEVEL</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: APP.tx, lineHeight: 1 }}>12</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 9, color: '#a1a1aa' }}>Next level</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#4ade80' }}>2,140 XP</div>
+            <div style={{ fontSize: 8, color: APP.tx2, fontWeight: 600 }}>3,420 / 5,560 XP</div>
+            <div style={{ fontSize: 7, color: APP.tx3 }}>next level</div>
           </div>
         </div>
-        <div style={{ marginTop: 6, height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: '67%', background: 'linear-gradient(90deg, #16a34a, #4ade80)', borderRadius: 3 }} />
+        <div style={{ height: 5, background: APP.surface2, borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '62%', background: APP.accent, borderRadius: 3 }} />
         </div>
-        <div style={{ fontSize: 8, color: '#a1a1aa', marginTop: 3 }}>3,420 / 5,560 XP</div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-        {[
-          { stat: 'STR', value: 48, color: '#ef4444' },
-          { stat: 'CON', value: 62, color: '#f59e0b' },
-          { stat: 'DEX', value: 35, color: '#3b82f6' },
-        ].map((s, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '7px 6px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 9, color: s.color, fontWeight: 700 }}>{s.stat}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginTop: 2 }}>{s.value}</div>
-            <div style={{ marginTop: 4, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${s.value}%`, background: s.color, borderRadius: 2 }} />
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5 }}>
+        {[{l:'⚔️ STR',v:48,c:'#ef4444',max:150},{l:'🛡️ CON',v:62,c:'#f59e0b',max:150},{l:'🏹 DEX',v:35,c:'#3b82f6',max:150},{l:'💰 GOLD',v:840,c:'#fbbf24',max:1000}].map((s,i)=>(
+          <div key={i} style={card({ padding: '7px 8px' })}>
+            <div style={{ fontSize: 8, color: s.c, fontWeight: 700, marginBottom: 3 }}>{s.l}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: APP.tx, marginBottom: 4 }}>{s.v}</div>
+            <div style={{ height: 3, background: APP.surface2, borderRadius: 2 }}>
+              <div style={{ height: '100%', width: `${(s.v/s.max)*100}%`, background: s.c, borderRadius: 2 }} />
             </div>
           </div>
         ))}
       </div>
-      <div style={{ background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: 8, padding: '6px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+      {/* Level up toast */}
+      <div style={{ ...card({ background: 'rgba(74,222,128,0.12)', borderColor: 'rgba(74,222,128,0.3)', padding: '6px 9px' }), display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ fontSize: 14 }}>🎉</span>
         <div>
-          <div style={{ fontSize: 8, color: '#86efac', fontWeight: 600 }}>LEVEL UP!</div>
-          <div style={{ fontSize: 8, color: '#a1a1aa' }}>+5 STR from 7-day gym streak</div>
+          <div style={{ fontSize: 8, color: '#4ade80', fontWeight: 700 }}>LEVEL UP!</div>
+          <div style={{ fontSize: 7, color: APP.tx3 }}>+5 STR · 7-day gym streak</div>
         </div>
       </div>
     </div>,
