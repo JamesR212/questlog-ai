@@ -365,7 +365,17 @@ export default function OnboardingFlow() {
                         className="text-white/40 text-lg w-full text-center leading-none py-1"
                       >▲</button>
                       <div className="text-center">
-                        <span className="text-white text-xl font-bold tabular-nums">{val}</span>
+                        <input
+                          type="number"
+                          value={val}
+                          onChange={e => set(e.target.value)}
+                          onBlur={e => {
+                            const n = parseInt(e.target.value);
+                            set(String(isNaN(n) ? min : Math.min(max, Math.max(min, n))));
+                          }}
+                          className="bg-transparent text-white text-xl font-bold tabular-nums text-center outline-none w-full"
+                          style={{ fontSize: 20, WebkitAppearance: 'none', appearance: 'none' }}
+                        />
                         <span className="text-white/40 text-[10px] block">{unit}</span>
                       </div>
                       <button
