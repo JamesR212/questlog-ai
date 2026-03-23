@@ -849,8 +849,8 @@ function CustomisePhone() {
           const next = !current;
           setShowFinance(next);
           cycle(next);
-        }, 350);
-      }, 1800);
+        }, 300);
+      }, 1530);
     }
     cycle(true);
     return () => clearTimeout(t);
