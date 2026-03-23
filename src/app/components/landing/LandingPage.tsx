@@ -866,7 +866,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const replacesApps = ['Strava', 'MyFitnessPal', 'Habitify', 'Sleep Cycle', 'YNAB', 'WaterMinder'];
 
   return (
-    <div style={{ background: '#050508', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif', overflowX: 'hidden' }}>
+    <div style={{ background: '#050508', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif', overflow: 'clip' }}>
 
       {/* ── 1. Hero ─────────────────────────────────────────────────── */}
       <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '80px 24px' }}>
@@ -1129,7 +1129,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           {/* Right: sticky image */}
-          <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 48 }}>
+          <div style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'start', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 48 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/gym-plan.jpg"
