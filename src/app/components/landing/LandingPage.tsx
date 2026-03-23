@@ -959,7 +959,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           transition: `all 0.7s ${easing}`,
         }}
       >
-        <div style={{ fontSize: 'clamp(48px, 8vw, 96px)', marginBottom: 24 }}>⚔️</div>
+        <div style={{ fontSize: 'clamp(52px, 9vw, 100px)', fontWeight: 900, letterSpacing: '-3px', marginBottom: 24, lineHeight: 1 }}>
+          <span style={{ color: '#ffffff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#ffffff' }}>NN</span>
+        </div>
         <h2 style={{ fontSize: 'clamp(40px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, marginBottom: 24 }}>
           Ready to<br />
           <span style={{ color: '#16a34a' }}>gain?</span>
