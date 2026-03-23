@@ -2025,6 +2025,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
             ))}
           </div>
+          {/* App store notice */}
+          <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🍎</span>
+            <span style={{ fontSize: 14, color: '#52525b', fontWeight: 500 }}>Coming to App Store &amp; Google Play soon</span>
+            <span style={{ fontSize: 22 }}>🤖</span>
+          </div>
         </div>
       </section>
 
