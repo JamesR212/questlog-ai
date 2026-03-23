@@ -1047,6 +1047,41 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4.5 Analytics timelapse ─────────────────────────────────── */}
       <AnalyticsSection onGetStarted={onGetStarted} />
 
+      {/* ── 4.8 Powered by Gemini ───────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '56px 24px' }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 14,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 20, padding: '18px 28px',
+          boxShadow: '0 0 40px rgba(66,133,244,0.08)',
+        }}>
+          {/* Gemini star logo */}
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <defs>
+              <linearGradient id="gem1" x1="16" y1="1" x2="16" y2="31" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#4285F4"/>
+                <stop offset="0.5" stopColor="#9B72CB"/>
+                <stop offset="1" stopColor="#D96570"/>
+              </linearGradient>
+              <linearGradient id="gem2" x1="1" y1="16" x2="31" y2="16" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#4285F4"/>
+                <stop offset="0.5" stopColor="#9B72CB"/>
+                <stop offset="1" stopColor="#D96570"/>
+              </linearGradient>
+            </defs>
+            {/* Vertical lobe */}
+            <path d="M16 1 C16 1 18.2 9.5 21.5 16 C18.2 22.5 16 31 16 31 C16 31 13.8 22.5 10.5 16 C13.8 9.5 16 1 16 1Z" fill="url(#gem1)"/>
+            {/* Horizontal lobe */}
+            <path d="M1 16 C1 16 9.5 13.8 16 10.5 C22.5 13.8 31 16 31 16 C31 16 22.5 18.2 16 21.5 C9.5 18.2 1 16 1 16Z" fill="url(#gem2)"/>
+          </svg>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>AI powered by</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: -0.3 }}>Google Gemini</div>
+          </div>
+        </div>
+      </div>
+
       {/* ── 5. AI section ───────────────────────────────────────────── */}
       <section
         ref={aiRef}
