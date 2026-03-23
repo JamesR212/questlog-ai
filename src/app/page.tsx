@@ -38,6 +38,7 @@ export default function Home() {
 
   const [user, setUser]             = useState<User | null | undefined>(undefined); // undefined = loading
   const [syncing, setSyncing]       = useState(false);
+  const [cloudReady, setCloudReady] = useState(false);
   const hasHydrated                 = useRef(false);
 
   // ── Auth listener ────────────────────────────────────────────────────────
@@ -61,17 +62,18 @@ export default function Home() {
       display_name: user.displayName ?? '',
     });
 
-    // Pull and merge cloud data
+    // Pull and merge cloud data, then mark ready
     pullFromCloud(userId).then(cloudData => {
       if (cloudData) {
         useGameStore.setState(cloudData);
       }
+      setCloudReady(true);
     });
   }, [user]);
 
   // ── On logout: reset hydration flag ─────────────────────────────────────
   useEffect(() => {
-    if (!user) hasHydrated.current = false;
+    if (!user) { hasHydrated.current = false; setCloudReady(false); }
   }, [user]);
 
   // ── Debounced auto-sync to cloud on store changes ────────────────────────
@@ -95,7 +97,7 @@ export default function Home() {
   }, [storeSnapshot, user?.uid]);
 
   // ── Loading splash ───────────────────────────────────────────────────────
-  if (user === undefined) {
+  if (user === undefined || (user && !cloudReady)) {
     return (
       <div className="min-h-screen bg-ql-bg flex items-center justify-center">
         <ThemeApplier />
