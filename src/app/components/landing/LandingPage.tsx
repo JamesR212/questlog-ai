@@ -1277,6 +1277,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ── 5.5 Theme showcase ───────────────────────────────────────── */}
+      <ThemeShowcaseSection />
+
       {/* ── 6. Competitor comparison ─────────────────────────────────── */}
       <section
         ref={compRef}
@@ -1464,9 +1467,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </div>
       </section>
-
-      {/* ── 7.5 Theme showcase ───────────────────────────────────────── */}
-      <ThemeShowcaseSection />
 
       {/* ── 8. Final CTA ─────────────────────────────────────────────── */}
       <section
