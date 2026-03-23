@@ -400,11 +400,13 @@ function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
         position: 'sticky',
         top: 0,
         height: '100vh',
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
         background: '#050508',
+        boxSizing: 'border-box',
       }}>
         {/* Section label */}
         <div style={{ position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
@@ -412,29 +414,28 @@ function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
         </div>
 
         {/* Dot nav */}
-        <div style={{ position: 'absolute', right: 40, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
           {FEATURES.map((_, i) => {
             const dist = Math.abs(i - featureProgress);
             return (
               <div key={i} style={{
-                width: dist < 0.5 ? 8 : 5,
-                height: dist < 0.5 ? 8 : 5,
+                width: 6, height: 6,
                 borderRadius: '50%',
                 background: dist < 0.5 ? '#16a34a' : 'rgba(255,255,255,0.2)',
-                transition: 'all 0.3s ease',
+                transition: 'background 0.3s ease',
               }} />
             );
           })}
         </div>
 
         {/* Feature cards */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 80, padding: '0 60px', maxWidth: 1100, width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, padding: '0 5vw', width: '100%', maxWidth: 960, boxSizing: 'border-box' }}>
           {/* Left: text */}
-          <div style={{ flex: 1, position: 'relative', height: 300 }}>
+          <div style={{ flex: 1, minWidth: 0, position: 'relative', height: 320, overflow: 'hidden' }}>
             {FEATURES.map((f, i) => {
               const dist = i - featureProgress;
               const opacity = Math.max(0, 1 - Math.abs(dist) * 2);
-              const translateY = dist * 60;
+              const translateY = dist * 50;
               return (
                 <div
                   key={i}
@@ -446,28 +447,21 @@ function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
                     justifyContent: 'center',
                     opacity,
                     transform: `translateY(${translateY}px)`,
-                    transition: 'opacity 0.1s ease, transform 0.1s ease',
+                    transition: 'opacity 0.15s ease, transform 0.15s ease',
                     pointerEvents: opacity > 0.5 ? 'auto' : 'none',
                   }}
                 >
-                  <div style={{ fontSize: 56, marginBottom: 16 }}>{f.icon}</div>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>{f.icon}</div>
                   <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{f.subtitle}</div>
-                  <h3 style={{ fontSize: 48, fontWeight: 900, color: '#fff', lineHeight: 1, marginBottom: 16 }}>{f.title}</h3>
-                  <p style={{ fontSize: 18, color: '#a1a1aa', lineHeight: 1.7, maxWidth: 420 }}>{f.desc}</p>
+                  <h3 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1, marginBottom: 16 }}>{f.title}</h3>
+                  <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.7 }}>{f.desc}</p>
                 </div>
               );
             })}
           </div>
 
           {/* Right: phone */}
-          <div style={{ flexShrink: 0, position: 'relative' }}>
-            <div style={{
-              position: 'absolute',
-              inset: -30,
-              background: 'radial-gradient(circle, rgba(22,163,74,0.15) 0%, transparent 70%)',
-              borderRadius: '50%',
-              pointerEvents: 'none',
-            }} />
+          <div style={{ flexShrink: 0, width: 200 }}>
             <Phone feature={Math.max(0, Math.min(FEATURES.length - 1, Math.round(featureProgress)))} />
           </div>
         </div>
