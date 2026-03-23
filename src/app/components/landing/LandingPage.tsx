@@ -572,7 +572,7 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
   useEffect(() => {
     if (!visible) { setDays(0); return; }
     let d = 0;
-    const iv = setInterval(() => { d++; setDays(d); if (d >= TOTAL_DAYS) clearInterval(iv); }, 130);
+    const iv = setInterval(() => { d++; setDays(d); if (d >= TOTAL_DAYS) clearInterval(iv); }, 220);
     return () => clearInterval(iv);
   }, [visible]);
 
@@ -658,7 +658,7 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
                       height: 10,
                       borderRadius: 2.5,
                       background: revealed ? CELL_C[c] : APP.surface2,
-                      animation: isNew ? 'cellPop 0.28s cubic-bezier(0.22,1,0.36,1) forwards' : 'none',
+                      animation: isNew ? 'cellPop 0.38s cubic-bezier(0.22,1,0.36,1) forwards' : 'none',
                     }}
                   />
                 );
@@ -676,6 +676,43 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
           })}
         </div>
       </div>
+
+      {/* Chart */}
+      {days >= 2 && (() => {
+        const CW = 200, CH = 42, pad = 6;
+        const aw = CW - pad * 2, ah = CH - pad * 2;
+        const dayPcts = Array.from({ length: days }, (_, di) =>
+          Math.round(ANALYTICS_ROWS.filter(r => r.data[di] === 'g').length / ANALYTICS_ROWS.length * 100)
+        );
+        const pts = dayPcts.map((p, i) => ({
+          x: pad + (i / (TOTAL_DAYS - 1)) * aw,
+          y: pad + (1 - p / 100) * ah,
+          pct: p,
+        }));
+        const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+        const fillPath = `${linePath} L${pts[pts.length - 1].x},${CH} L${pts[0].x},${CH} Z`;
+        return (
+          <div key="chart" style={{ margin: '0 5px 5px', ...card({ padding: '5px 6px' }) }}>
+            <span style={{ fontSize: 5, color: APP.tx3, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Chart</span>
+            <svg width="100%" height={CH} viewBox={`0 0 ${CW} ${CH}`} style={{ display: 'block', marginTop: 2, overflow: 'visible' }}>
+              {/* Subtle grid lines */}
+              {[0, 50, 100].map(v => {
+                const gy = pad + (1 - v / 100) * ah;
+                return <line key={v} x1={pad} y1={gy} x2={CW - pad} y2={gy} stroke={APP.border} strokeWidth="0.6" />;
+              })}
+              {/* Fill */}
+              <path d={fillPath} fill="rgba(22,163,74,0.10)" />
+              {/* Line */}
+              <path d={linePath} fill="none" stroke="#16a34a" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+              {/* Dots */}
+              {pts.map((p, i) => {
+                const col = p.pct >= 80 ? '#16a34a' : p.pct >= 50 ? '#d97706' : '#dc2626';
+                return <circle key={i} cx={p.x} cy={p.y} r="2.8" fill={col} stroke={APP.bg} strokeWidth="1.2" />;
+              })}
+            </svg>
+          </div>
+        );
+      })()}
 
       {/* Analysis table */}
       <div style={{ margin: '0 5px', background: APP.surface, borderRadius: 10, border: `1px solid ${APP.border}`, overflow: 'hidden' }}>
