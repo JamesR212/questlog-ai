@@ -903,9 +903,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 Best Value
               </div>
               <div style={{ fontSize: 14, color: '#86efac', fontWeight: 600, marginBottom: 16 }}>Annual</div>
-              <div style={{ fontSize: 52, fontWeight: 900, color: '#fff' }}>£29.99</div>
+              <div style={{ fontSize: 52, fontWeight: 900, color: '#fff' }}>£24.99</div>
               <div style={{ fontSize: 14, color: '#71717a', marginBottom: 4 }}>per year</div>
-              <div style={{ fontSize: 13, color: '#4ade80', fontWeight: 600, marginBottom: 32 }}>Save 16% vs monthly</div>
+              <div style={{ fontSize: 13, color: '#4ade80', fontWeight: 600, marginBottom: 32 }}>Save 30% vs monthly</div>
               <button
                 onClick={onGetStarted}
                 style={{
