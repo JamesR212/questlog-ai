@@ -372,103 +372,63 @@ const FEATURES = [
   },
 ];
 
-function StickyFeatures({ onGetStarted }: { onGetStarted: () => void }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const el = outerRef.current;
+    const observers: IntersectionObserver[] = [];
+    sectionRefs.current.forEach((el, i) => {
       if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const totalScrollable = rect.height - window.innerHeight;
-      const scrolled = -rect.top;
-      const p = Math.max(0, Math.min(1, scrolled / totalScrollable));
-      setProgress(p);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveIdx(i); },
+        { threshold: 0.5 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+    return () => observers.forEach(o => o.disconnect());
   }, []);
 
-  // Map 0→1 onto 0→(N-1) so first and last feature are fully visible at scroll ends
-  const featureProgress = progress * (FEATURES.length - 1);
-
   return (
-    <div ref={outerRef} style={{ height: `${700}vh`, position: 'relative' }}>
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        background: '#050508',
-        boxSizing: 'border-box',
-      }}>
-        {/* Section label */}
-        <div style={{ position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-          <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase' }}>Everything you need</div>
+    <div style={{ background: '#050508', position: 'relative' }}>
+      {/* Label */}
+      <div style={{ textAlign: 'center', padding: '80px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase' }}>
+        Everything you need
+      </div>
+
+      {/* Two-column: text scrolls left, phone sticks right */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1000, margin: '0 auto', padding: '0 40px', boxSizing: 'border-box' }}>
+
+        {/* Left: each feature is 100vh */}
+        <div>
+          {FEATURES.map((f, i) => (
+            <div
+              key={i}
+              ref={el => { sectionRefs.current[i] = el; }}
+              style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 40 }}
+            >
+              <div style={{ fontSize: 52, marginBottom: 16 }}>{f.icon}</div>
+              <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>{f.subtitle}</div>
+              <h3 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 18 }}>{f.title}</h3>
+              <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.8, maxWidth: 380 }}>{f.desc}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Dot nav */}
-        <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
-          {FEATURES.map((_, i) => {
-            const dist = Math.abs(i - featureProgress);
-            return (
+        {/* Right: sticky phone */}
+        <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Dot nav */}
+          <div style={{ position: 'absolute', right: -16, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {FEATURES.map((_, i) => (
               <div key={i} style={{
-                width: 6, height: 6,
-                borderRadius: '50%',
-                background: dist < 0.5 ? '#16a34a' : 'rgba(255,255,255,0.2)',
+                width: 6, height: 6, borderRadius: '50%',
+                background: i === activeIdx ? '#16a34a' : 'rgba(255,255,255,0.2)',
                 transition: 'background 0.3s ease',
               }} />
-            );
-          })}
-        </div>
-
-        {/* Feature cards */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 60, padding: '0 5vw', width: '100%', maxWidth: 960, boxSizing: 'border-box' }}>
-          {/* Left: text */}
-          <div style={{ flex: 1, minWidth: 0, position: 'relative', height: 320, overflow: 'hidden' }}>
-            {FEATURES.map((f, i) => {
-              const dist = i - featureProgress;
-              const opacity = Math.max(0, 1 - Math.abs(dist) * 1.4);
-              const translateY = dist * 50;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    opacity,
-                    transform: `translateY(${translateY}px)`,
-                    transition: 'opacity 0.15s ease, transform 0.15s ease',
-                    pointerEvents: opacity > 0.5 ? 'auto' : 'none',
-                  }}
-                >
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>{f.icon}</div>
-                  <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{f.subtitle}</div>
-                  <h3 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1, marginBottom: 16 }}>{f.title}</h3>
-                  <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.7 }}>{f.desc}</p>
-                </div>
-              );
-            })}
+            ))}
           </div>
-
-          {/* Right: phone */}
-          <div style={{ flexShrink: 0, width: 200 }}>
-            <Phone feature={Math.max(0, Math.min(FEATURES.length - 1, Math.round(featureProgress)))} />
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', width: 200, height: 2, background: 'rgba(255,255,255,0.08)', borderRadius: 1 }}>
-          <div style={{ height: '100%', width: `${progress * 100}%`, background: '#16a34a', borderRadius: 1, transition: 'width 0.1s ease' }} />
+          <Phone feature={activeIdx} />
         </div>
       </div>
     </div>
