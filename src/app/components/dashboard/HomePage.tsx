@@ -69,7 +69,8 @@ function isDueOn(habit: HabitDef, ds: string): boolean {
 function WeeklySnapshotGrid() {
   const {
     habitDefs, habitLog, wakeQuest, stepLog, stepGoal, mealLog, nutritionGoal,
-    snapshotHiddenBuiltins, snapshotAddedOptional,
+    waterLog, waterGoal,
+    snapshotHiddenBuiltins, snapshotAddedOptional, accountCreatedDate,
     setSnapshotHiddenBuiltins, setSnapshotAddedOptional,
   } = useGameStore();
 
@@ -95,17 +96,16 @@ function WeeklySnapshotGrid() {
     return () => ro.disconnect();
   }, [showYear]);
 
-  type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' };
+  type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' | 'hydration' };
 
-  const hasWakeData  = wakeQuest.checkIns.length > 0;
-  const hasSleepData = wakeQuest.checkIns.length > 0;
   const builtinRows: Row[] = [
-    ...(hasSleepData ? [{ id: '__sleep__', emoji: '🌙', label: 'Sleep',   type: 'sleep' as const }] : []),
-    { id: '__steps__', emoji: '👟', label: 'Steps',   type: 'steps' as const },
-    ...(hasWakeData  ? [{ id: '__wake__',  emoji: '🌅', label: 'Wake Up', type: 'wake'  as const }] : []),
+    { id: '__sleep__',     emoji: '🌙', label: 'Sleep',     type: 'sleep'     },
+    { id: '__steps__',     emoji: '👟', label: 'Steps',     type: 'steps'     },
+    { id: '__wake__',      emoji: '🌅', label: 'Wake Up',   type: 'wake'      },
+    { id: '__nutrition__', emoji: '🥗', label: 'Nutrition', type: 'nutrition' },
+    { id: '__hydration__', emoji: '💧', label: 'Hydration', type: 'hydration' },
   ];
   const optionalRows: Row[] = [
-    { id: '__nutrition__', emoji: '🥗', label: 'Nutrition', type: 'nutrition' },
     ...habitDefs.map(h => ({ id: h.id, emoji: h.emoji, label: h.name, type: 'habit' as const })),
   ];
 
@@ -123,6 +123,7 @@ function WeeklySnapshotGrid() {
 
   function cellState(row: Row, ds: string): CellState {
     const isFuture = ds > today;
+    if (accountCreatedDate && ds < accountCreatedDate) return 'future';
 
     if (row.type === 'steps') {
       if (isFuture) return 'future';
@@ -155,6 +156,14 @@ function WeeklySnapshotGrid() {
       if (dayMeals.length === 0) return 'missed';
       const totalCal = dayMeals.reduce((s, m) => s + m.calories, 0);
       if (totalCal >= nutritionGoal.calories * 0.8) return 'done';
+      return 'late';
+    }
+
+    if (row.type === 'hydration') {
+      if (isFuture) return 'future';
+      const total = waterLog.filter(e => e.date === ds).reduce((s, e) => s + e.amount, 0);
+      if (total === 0) return 'missed';
+      if (total >= waterGoal * 0.8) return 'done';
       return 'late';
     }
 

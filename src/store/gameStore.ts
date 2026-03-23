@@ -53,6 +53,7 @@ interface GameStore {
   userName: string;
   currencySymbol: string;
   hasOnboarded: boolean;
+  accountCreatedDate: string | null;
   competitionMode: boolean;
   financialMode: boolean;
   hiddenSections: string[];
@@ -305,6 +306,7 @@ export const useGameStore = create<GameStore>()(
       userName: '',
       currencySymbol: '£',
       hasOnboarded: false,
+      accountCreatedDate: null,
       competitionMode: true,
       financialMode: true,
       hiddenSections: [],
@@ -366,7 +368,10 @@ export const useGameStore = create<GameStore>()(
       setSavingsGoal: (goal) => set({ savingsGoal: goal }),
       setUserName: (name) => set({ userName: name }),
       setCurrencySymbol: (symbol) => set({ currencySymbol: symbol }),
-      setHasOnboarded: () => set({ hasOnboarded: true }),
+      setHasOnboarded: () => set((state) => ({
+        hasOnboarded: true,
+        accountCreatedDate: state.accountCreatedDate ?? new Date().toISOString().slice(0, 10),
+      })),
       setCompetitionMode: (on) => set({ competitionMode: on }),
       setFinancialMode: (on) => set({ financialMode: on }),
 
