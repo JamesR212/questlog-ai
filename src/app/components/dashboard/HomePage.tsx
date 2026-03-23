@@ -1085,7 +1085,7 @@ export default function HomePage() {
       {/* Greeting */}
       <div className="pt-1">
         <p className="text-ql-3 text-sm">{getGreeting()}{userName ? `, ${userName.split(' ')[0]}` : ''}</p>
-        <h1 className="text-2xl font-black mt-0.5"><span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">N</span></h1>
+        <h1 className="text-2xl font-black mt-0.5"><span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">NN</span></h1>
       </div>
 
       {/* Hero row: streak (or chill card) + savings circle */}

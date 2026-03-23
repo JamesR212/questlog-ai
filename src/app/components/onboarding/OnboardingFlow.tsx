@@ -162,7 +162,7 @@ export default function OnboardingFlow() {
           <>
             <div className="text-5xl mb-6">👋</div>
             <h1 className="text-white text-3xl font-bold mb-2">Welcome, Hero</h1>
-            <p className="text-white/50 text-sm mb-8">GAIN turns your real life into an RPG. Let's get you set up.</p>
+            <p className="text-white/50 text-sm mb-8">GAINN turns your real life into an RPG. Let's get you set up.</p>
 
             <label className="text-white/60 text-xs font-medium mb-2 block">Your name</label>
             <input

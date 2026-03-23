@@ -69,7 +69,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-ql text-xl font-bold">Settings</h2>
-        <p className="text-ql-3 text-xs mt-0.5">Customise your GAIN experience</p>
+        <p className="text-ql-3 text-xs mt-0.5">Customise your GAINN experience</p>
       </div>
 
       {/* ── Colour Scheme ───────────────────────────────────────── */}
