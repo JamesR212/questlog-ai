@@ -43,106 +43,110 @@ const card = (extra?: React.CSSProperties): React.CSSProperties => ({
 
 function Phone({ feature }: { feature: number }) {
   const screens = [
-    // 0 — Habit Tracking / Home (real screenshot)
-    <div key="home" style={{ padding: '0 9px 8px', display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden' }}>
-      {/* App header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: -0.3 }}>
-          <span style={{ color: APP.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: APP.tx }}>NN</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 7, color: APP.tx3 }}>Mon 23 Mar</span>
-          <div style={{ width: 16, height: 16, borderRadius: 5, background: APP.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>👥</div>
-          <div style={{ width: 16, height: 16, borderRadius: 5, background: APP.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>⚙️</div>
-        </div>
-      </div>
-      {/* Greeting */}
-      <div>
-        <div style={{ fontSize: 7, color: APP.tx2 }}>Good evening, James</div>
-        <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: -0.5 }}>
-          <span style={{ color: APP.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: APP.tx }}>NN</span>
-        </div>
-      </div>
-      {/* Two stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
-        {/* Streak */}
-        <div style={card({ padding: '8px 9px' })}>
-          <div style={{ fontSize: 14, marginBottom: 2 }}>🔥</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: APP.tx, lineHeight: 1 }}>1</div>
-          <div style={{ fontSize: 6.5, color: APP.tx3, marginTop: 2 }}>day in a row</div>
-        </div>
-        {/* Savings ring */}
-        <div style={{ ...card({ padding: '8px 9px' }), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          {/* SVG ring */}
-          <svg width="38" height="38" viewBox="0 0 38 38">
-            <circle cx="19" cy="19" r="15" fill="none" stroke={APP.surface2} strokeWidth="4" />
-            <circle cx="19" cy="19" r="15" fill="none" stroke="#16a34a" strokeWidth="4"
-              strokeDasharray={`${2 * Math.PI * 15 * 0.08} ${2 * Math.PI * 15 * 0.92}`}
-              strokeLinecap="round" transform="rotate(-90 19 19)" />
-            <text x="19" y="17" textAnchor="middle" fill={APP.tx3} fontSize="4.5">£</text>
-            <text x="19" y="23" textAnchor="middle" fill={APP.tx} fontSize="7" fontWeight="bold">500</text>
-          </svg>
-          <div style={{ fontSize: 8, fontWeight: 700, color: '#16a34a' }}>8%</div>
-          <div style={{ fontSize: 6, color: APP.tx3 }}>savings goal</div>
-        </div>
-      </div>
-      {/* Weekly Snapshot */}
-      <div style={card({ padding: '8px 9px' })}>
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-          {/* Circle with 75 */}
-          <svg width="28" height="28" viewBox="0 0 28 28" style={{ flexShrink: 0 }}>
-            <circle cx="14" cy="14" r="11" fill="none" stroke={APP.surface2} strokeWidth="3.5" />
-            <circle cx="14" cy="14" r="11" fill="none" stroke="#16a34a" strokeWidth="3.5"
-              strokeDasharray={`${2 * Math.PI * 11 * 0.75} ${2 * Math.PI * 11 * 0.25}`}
-              strokeLinecap="round" transform="rotate(-90 14 14)" />
-            <text x="14" y="18" textAnchor="middle" fill={APP.tx} fontSize="7.5" fontWeight="bold">75</text>
-          </svg>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>Weekly Snapshot</div>
-            <div style={{ fontSize: 6, color: '#16a34a', fontWeight: 600 }}>75% accuracy this week</div>
+    // 0 — Habit Tracking / Home (real screenshot, with bottom nav)
+    <div key="home" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Scrollable body */}
+      <div style={{ flex: 1, padding: '6px 9px 4px', display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
+        {/* Greeting */}
+        <div>
+          <div style={{ fontSize: 7, color: APP.tx2 }}>Good evening, James</div>
+          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: -0.5 }}>
+            <span style={{ color: APP.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: APP.tx }}>NN</span>
           </div>
-          <div style={{ display: 'flex', gap: 3 }}>
-            {['Detailed','Edit'].map(l => (
-              <div key={l} style={{ fontSize: 5.5, color: APP.tx2, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '2px 4px' }}>{l}</div>
+        </div>
+        {/* Two stat cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+          <div style={card({ padding: '7px 8px' })}>
+            <div style={{ fontSize: 13, marginBottom: 2 }}>🔥</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: APP.tx, lineHeight: 1 }}>1</div>
+            <div style={{ fontSize: 6, color: APP.tx3, marginTop: 2 }}>day in a row</div>
+          </div>
+          <div style={{ ...card({ padding: '7px 8px' }), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke={APP.surface2} strokeWidth="4" />
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#16a34a" strokeWidth="4"
+                strokeDasharray={`${2 * Math.PI * 14 * 0.08} ${2 * Math.PI * 14 * 0.92}`}
+                strokeLinecap="round" transform="rotate(-90 18 18)" />
+              <text x="18" y="16" textAnchor="middle" fill={APP.tx3} fontSize="4">£</text>
+              <text x="18" y="22" textAnchor="middle" fill={APP.tx} fontSize="6.5" fontWeight="bold">500</text>
+            </svg>
+            <div style={{ fontSize: 8, fontWeight: 700, color: '#16a34a' }}>8%</div>
+            <div style={{ fontSize: 5.5, color: APP.tx3 }}>savings goal</div>
+          </div>
+        </div>
+        {/* Weekly Snapshot */}
+        <div style={card({ padding: '7px 8px' })}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+            <svg width="26" height="26" viewBox="0 0 26 26" style={{ flexShrink: 0 }}>
+              <circle cx="13" cy="13" r="10" fill="none" stroke={APP.surface2} strokeWidth="3" />
+              <circle cx="13" cy="13" r="10" fill="none" stroke="#16a34a" strokeWidth="3"
+                strokeDasharray={`${2 * Math.PI * 10 * 0.75} ${2 * Math.PI * 10 * 0.25}`}
+                strokeLinecap="round" transform="rotate(-90 13 13)" />
+              <text x="13" y="17" textAnchor="middle" fill={APP.tx} fontSize="7" fontWeight="bold">75</text>
+            </svg>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx }}>Weekly Snapshot</div>
+              <div style={{ fontSize: 5.5, color: '#16a34a', fontWeight: 600 }}>75% accuracy this week</div>
+            </div>
+            <div style={{ display: 'flex', gap: 2 }}>
+              {['Detailed','Edit'].map(l => (
+                <div key={l} style={{ fontSize: 5, color: APP.tx2, border: `1px solid ${APP.border}`, borderRadius: 4, padding: '2px 3px' }}>{l}</div>
+              ))}
+            </div>
+          </div>
+          {/* Day headers */}
+          <div style={{ display: 'flex', marginBottom: 3, paddingLeft: 26 }}>
+            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i) => (
+              <div key={d} style={{ flex: 1, textAlign: 'center', fontSize: 5, color: i === 0 ? '#7c3aed' : APP.tx3, fontWeight: i === 0 ? 700 : 400 }}>{d}</div>
             ))}
           </div>
-        </div>
-        {/* Day headers */}
-        <div style={{ display: 'flex', marginBottom: 4, paddingLeft: 22 }}>
-          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i) => (
-            <div key={d} style={{ flex: 1, textAlign: 'center', fontSize: 5.5, color: i === 0 ? '#7c3aed' : APP.tx3, fontWeight: i === 0 ? 700 : 400 }}>{d}</div>
-          ))}
-        </div>
-        {/* Rows */}
-        {[
-          { e: '🌙', n: 'Sleep',     cells: [null,  null,  null,  null,  null,  null,  null ] },
-          { e: '👟', n: 'Steps',     cells: ['52.0k', null, null,  null,  null,  null,  null], c: '#16a34a' },
-          { e: '🌅', n: 'Wake Up',   cells: [true,  null,  null,  null,  null,  null,  null], c: '#16a34a' },
-          { e: '🥗', n: 'Nutrition', cells: ['960', null,  null,  null,  null,  null,  null], c: '#f59e0b' },
-          { e: '💧', n: 'Hydration', cells: [true,  null,  null,  null,  null,  null,  null], c: '#f59e0b' },
-        ].map((row, ri) => (
-          <div key={ri} style={{ display: 'flex', alignItems: 'center', marginBottom: ri < 4 ? 3 : 0 }}>
-            <div style={{ width: 22, display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-              <span style={{ fontSize: 8 }}>{row.e}</span>
-              <span style={{ fontSize: 5, color: APP.tx3 }}>{row.n}</span>
+          {/* Rows */}
+          {[
+            { e: '🌙', n: 'Sleep',     cells: [null,     null, null, null, null, null, null], c: '#16a34a' },
+            { e: '👟', n: 'Steps',     cells: ['52.0k',  null, null, null, null, null, null], c: '#16a34a' },
+            { e: '🌅', n: 'Wake Up',   cells: [true,     null, null, null, null, null, null], c: '#16a34a' },
+            { e: '🥗', n: 'Nutrition', cells: ['960',    null, null, null, null, null, null], c: '#f59e0b' },
+            { e: '💧', n: 'Hydration', cells: [true,     null, null, null, null, null, null], c: '#f59e0b' },
+          ].map((row, ri) => (
+            <div key={ri} style={{ display: 'flex', alignItems: 'center', marginBottom: ri < 4 ? 2 : 0 }}>
+              <div style={{ width: 26, display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                <span style={{ fontSize: 8 }}>{row.e}</span>
+                <span style={{ fontSize: 5, color: APP.tx3 }}>{row.n}</span>
+              </div>
+              {row.cells.map((c, ci) => (
+                <div key={ci} style={{ flex: 1, height: 13, borderRadius: 3, margin: '0 1px', background: c ? row.c : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {c && typeof c === 'string' && <span style={{ fontSize: 4.5, color: '#fff', fontWeight: 700 }}>{c}</span>}
+                </div>
+              ))}
             </div>
-            {row.cells.map((c, ci) => (
-              <div key={ci} style={{ flex: 1, height: 14, borderRadius: 3, margin: '0 1px', background: c ? (row.c || '#16a34a') : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {c && typeof c === 'string' && <span style={{ fontSize: 5, color: '#fff', fontWeight: 700 }}>{c}</span>}
+          ))}
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 5, marginTop: 4, paddingTop: 3, borderTop: `1px solid ${APP.border}` }}>
+            {[{c:'#16a34a',l:'Done'},{c:'#f59e0b',l:'Late'},{c:'#ef4444',l:'Missed'},{c:'',l:'N/A'}].map(({c,l}) => (
+              <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {c && <div style={{ width: 5, height: 5, borderRadius: '50%', background: c }} />}
+                <span style={{ fontSize: 5, color: APP.tx3 }}>{l}</span>
               </div>
             ))}
           </div>
-        ))}
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: 6, marginTop: 5, paddingTop: 4, borderTop: `1px solid ${APP.border}` }}>
-          {[{c:'#16a34a',l:'Done'},{c:'#f59e0b',l:'Late'},{c:'#ef4444',l:'Missed'},{c:'',l:'N/A'}].map(({c,l}) => (
-            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {c && <div style={{ width: 5, height: 5, borderRadius: '50%', background: c }} />}
-              <span style={{ fontSize: 5, color: APP.tx3 }}>{l}</span>
-            </div>
-          ))}
         </div>
+      </div>
+      {/* Bottom nav bar */}
+      <div style={{ height: 42, borderTop: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', background: APP.bg, flexShrink: 0 }}>
+        {[
+          { e: '🏠', n: 'Home',     active: true },
+          { e: '🥗', n: 'Food',     active: false },
+          { e: '📅', n: 'Calendar', active: false },
+          { e: '💰', n: 'Finance',  active: false },
+          { e: '💪', n: 'Training', active: false },
+        ].map(tab => (
+          <div key={tab.n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <div style={{ width: tab.active ? 28 : undefined, padding: tab.active ? '3px 6px' : undefined, borderRadius: tab.active ? 8 : undefined, background: tab.active ? '#3b1f6b' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13 }}>{tab.e}</span>
+            </div>
+            <span style={{ fontSize: 5, color: tab.active ? '#a855f7' : APP.tx3, fontWeight: tab.active ? 700 : 400 }}>{tab.n}</span>
+          </div>
+        ))}
       </div>
     </div>,
 
