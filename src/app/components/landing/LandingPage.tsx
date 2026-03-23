@@ -1093,10 +1093,79 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           transition: `all 0.7s ${easing}`,
         }}
       >
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
-          <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, marginBottom: 20 }}>Powered by AI</h2>
-          <p style={{ fontSize: 18, color: '#a1a1aa', marginBottom: 72 }}>Not just an app — your intelligent life operating system</p>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 72 }}>
+            <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
+            <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, marginBottom: 20 }}>Powered by AI</h2>
+            <p style={{ fontSize: 18, color: '#a1a1aa' }}>Not just an app — your intelligent life operating system</p>
+          </div>
+
+          {/* Featured: AI Gym Plans — image + text */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: 56,
+            alignItems: 'center',
+            marginBottom: 72,
+          }}>
+            {/* Screenshot */}
+            <div
+              style={{
+                opacity: aiVisible ? 1 : 0,
+                transform: aiVisible ? 'translateY(0) rotate(-1.5deg)' : 'translateY(30px) rotate(-1.5deg)',
+                transition: `all 0.8s ${easing} 0.1s`,
+                position: 'relative',
+              }}
+            >
+              {/* Glow */}
+              <div style={{ position: 'absolute', inset: '-30px', background: 'radial-gradient(ellipse 80% 60% at 50% 60%, rgba(22,163,74,0.2) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+              <div style={{
+                borderRadius: 24,
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+                position: 'relative',
+              }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/gym-plan.jpg"
+                  alt="AI-generated gym plan with muscular load radar chart"
+                  style={{
+                    width: '100%',
+                    display: 'block',
+                    objectFit: 'cover',
+                    objectPosition: 'top',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Text */}
+            <div style={{ opacity: aiVisible ? 1 : 0, transform: aiVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.8s ${easing} 0.25s` }}>
+              <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
+              <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 18 }}>
+                Your plan,<br />built by AI
+              </h3>
+              <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 28 }}>
+                Tell GAINN your equipment, schedule, and goals — and get a fully personalised workout plan in seconds. Every exercise, every set, every rep. Built for you, not copied from a template.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  'Exercises matched to your available equipment',
+                  'Muscular load radar shows exactly what you\'re training',
+                  'Adjusts week by week as you log sessions',
+                ].map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 15, marginTop: 1 }}>✓</span>
+                    <span style={{ fontSize: 15, color: '#a1a1aa' }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Feature cards grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, textAlign: 'left' }}>
             {aiFeatures.map((f, i) => (
               <div
@@ -1108,7 +1177,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   padding: '24px 24px',
                   opacity: aiVisible ? 1 : 0,
                   transform: aiVisible ? 'translateY(0)' : 'translateY(20px)',
-                  transition: `all 0.6s ${easing} ${i * 0.08}s`,
+                  transition: `all 0.6s ${easing} ${0.35 + i * 0.08}s`,
                   position: 'relative',
                   overflow: 'hidden',
                 }}
