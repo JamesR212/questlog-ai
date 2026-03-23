@@ -41,6 +41,159 @@ const card = (extra?: React.CSSProperties): React.CSSProperties => ({
   borderRadius: 14, padding: '10px 12px', ...extra,
 });
 
+// ─── Finance & Vices animated screen ────────────────────────────────────────
+
+function FinanceVicesScreen() {
+  const [showFinances, setShowFinances] = useState(false);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout>;
+    function cycle(current: boolean) {
+      t = setTimeout(() => {
+        setShowFinances(!current);
+        cycle(!current);
+      }, 2800);
+    }
+    cycle(false);
+    return () => clearTimeout(t);
+  }, []);
+
+  const accent = '#7c3aed';
+  const tabBar = (vicesActive: boolean) => (
+    <div style={{ display: 'flex', background: APP.surface2, borderRadius: 10, padding: 3, gap: 2, margin: '0 0 5px' }}>
+      <div style={{ flex: 1, textAlign: 'center', padding: '3px 0', borderRadius: 7, background: vicesActive ? accent : 'transparent', fontSize: 7, color: vicesActive ? '#fff' : APP.tx3, fontWeight: vicesActive ? 700 : 400 }}>🚫 Vices</div>
+      <div style={{ flex: 1, textAlign: 'center', padding: '3px 0', borderRadius: 7, background: !vicesActive ? accent : 'transparent', fontSize: 7, color: !vicesActive ? '#fff' : APP.tx3, fontWeight: !vicesActive ? 700 : 400 }}>💳 Finances</div>
+    </div>
+  );
+
+  const bottomNav = (
+    <div style={{ height: 40, borderTop: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', background: APP.bg, flexShrink: 0 }}>
+      {[{e:'🏠',n:'Home'},{e:'🥗',n:'Food'},{e:'📅',n:'Calendar'},{e:'💰',n:'Finance',active:true},{e:'💪',n:'Training'}].map((tab: {e:string;n:string;active?:boolean}) => (
+        <div key={tab.n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <div style={{ padding: tab.active ? '2px 5px' : undefined, borderRadius: tab.active ? 7 : undefined, background: tab.active ? '#2d1854' : 'transparent' }}>
+            <span style={{ fontSize: 12 }}>{tab.e}</span>
+          </div>
+          <span style={{ fontSize: 5, color: tab.active ? '#a855f7' : APP.tx3, fontWeight: tab.active ? 700 : 400 }}>{tab.n}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Sliding panels */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <div style={{
+          display: 'flex', width: '200%', height: '100%',
+          transform: showFinances ? 'translateX(-50%)' : 'translateX(0)',
+          transition: 'transform 0.52s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}>
+          {/* ── Panel 1: Vices ── */}
+          <div style={{ width: '50%', height: '100%', overflow: 'hidden', padding: '5px 8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: APP.tx }}>Finance</div>
+            <div style={{ fontSize: 6, color: APP.tx3, marginTop: -3, marginBottom: 1 }}>Track what you skip and manage your money</div>
+            {tabBar(true)}
+            {/* Total Saved */}
+            <div style={{ background: APP.surface, border: `1px solid rgba(251,191,36,0.4)`, borderRadius: 10, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 2 }}>Total Saved</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#f97316', lineHeight: 1 }}>£108.00</div>
+                <div style={{ fontSize: 5.5, color: APP.tx3, marginTop: 2 }}>13 entries logged</div>
+              </div>
+              <span style={{ fontSize: 22 }}>💰</span>
+            </div>
+            {/* Token Bank */}
+            <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 10, padding: '6px 8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 11 }}>🪙</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: APP.tx }}>Token Bank</span>
+                </div>
+                <div style={{ background: APP.surface2, borderRadius: 6, padding: '2px 6px', fontSize: 7, color: '#f59e0b', fontWeight: 700 }}>4 tokens</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                <span style={{ fontSize: 5.5, color: APP.tx3 }}>Progress to next token</span>
+                <span style={{ fontSize: 5.5, color: APP.tx3 }}>1 / 3 skips</span>
+              </div>
+              <div style={{ height: 4, background: APP.surface2, borderRadius: 2, overflow: 'hidden', marginBottom: 3 }}>
+                <div style={{ height: '100%', width: '33%', background: '#f59e0b', borderRadius: 2 }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontSize: 5, color: APP.tx3 }}>Every 3 skips = 1 token · 4 earned total</span>
+                <span style={{ fontSize: 5, color: APP.tx3, textDecoration: 'underline' }}>edit</span>
+              </div>
+              <div style={{ borderTop: `1px solid ${APP.border}`, paddingTop: 4 }}>
+                <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 4 }}>Redeem a reward</div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[{e:'🍺',n:'Pint'},{e:'🍔',n:'Takeaway'}].map(r => (
+                    <div key={r.n} style={{ flex: 1, background: APP.surface2, borderRadius: 8, padding: '5px 4px', textAlign: 'center' }}>
+                      <span style={{ fontSize: 14 }}>{r.e}</span>
+                      <div style={{ fontSize: 6.5, fontWeight: 700, color: APP.tx, marginTop: 2 }}>{r.n}</div>
+                      <div style={{ fontSize: 6, color: '#f59e0b', marginTop: 1 }}>3 🪙</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Panel 2: Finances ── */}
+          <div style={{ width: '50%', height: '100%', overflow: 'hidden', padding: '5px 8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: APP.tx }}>Finance</div>
+            <div style={{ fontSize: 6, color: APP.tx3, marginTop: -3, marginBottom: 1 }}>Track what you skip and manage your money</div>
+            {tabBar(false)}
+            {/* Salary / Variable sub-tabs */}
+            <div style={{ display: 'flex', background: APP.surface2, borderRadius: 8, padding: 2, gap: 2 }}>
+              <div style={{ flex: 1, textAlign: 'center', padding: '2px 0', borderRadius: 6, fontSize: 6, color: APP.tx3 }}>💼 Salary</div>
+              <div style={{ flex: 1, textAlign: 'center', padding: '2px 0', borderRadius: 6, background: accent, fontSize: 6, color: '#fff', fontWeight: 700 }}>📅 Variable</div>
+            </div>
+            {/* Paychecks */}
+            <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 10, padding: '6px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 1 }}>
+                <div>
+                  <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx }}>Paychecks This Month</div>
+                  <div style={{ fontSize: 5.5, color: APP.tx3 }}>£988 received so far</div>
+                </div>
+                <div style={{ border: `1px dashed ${accent}`, borderRadius: 6, padding: '2px 5px', fontSize: 5.5, color: accent }}>+ Log paycheck</div>
+              </div>
+              <div style={{ background: APP.surface2, borderRadius: 7, padding: '4px 7px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
+                <span style={{ fontSize: 6, color: APP.tx3 }}>23 Mar 26</span>
+                <span style={{ fontSize: 6.5, fontWeight: 700, color: APP.tx }}>£987.6 ×</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginTop: 5 }}>
+                {[{e:'✅',v:'£969',l:'After subs',c:'#22c55e'},{e:'📋',v:'£19',l:'Subscriptions',c:'#f59e0b'},{e:'📊',v:'2%',l:'Sub %',c:APP.tx}].map((s,i) => (
+                  <div key={i} style={{ background: APP.surface2, borderRadius: 7, padding: '4px 3px', textAlign: 'center' }}>
+                    <span style={{ fontSize: 10 }}>{s.e}</span>
+                    <div style={{ fontSize: 7.5, fontWeight: 800, color: s.c }}>{s.v}</div>
+                    <div style={{ fontSize: 4.5, color: APP.tx3, marginTop: 1 }}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                <span style={{ fontSize: 5.5, color: APP.tx3 }}>Subscription spend looks healthy</span>
+              </div>
+            </div>
+            {/* Paycheck Planner */}
+            <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 10, padding: '6px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx }}>Paycheck Planner</div>
+                  <div style={{ fontSize: 5.5, color: APP.tx3 }}>Tap a bucket to manage where money goes</div>
+                </div>
+                <div style={{ display: 'flex', gap: 3, flexShrink: 0, marginLeft: 4 }}>
+                  <div style={{ background: accent, borderRadius: 6, padding: '2px 5px', fontSize: 6, color: '#fff', fontWeight: 700 }}>50/30/20</div>
+                  <div style={{ background: APP.surface2, borderRadius: 6, padding: '2px 5px', fontSize: 6, color: APP.tx3 }}>custom</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {bottomNav}
+    </div>
+  );
+}
+
 function Phone({ feature }: { feature: number }) {
   const screens = [
     // 0 — Habit Tracking / Home (real screenshot, with bottom nav)
@@ -622,93 +775,8 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 7 — Finance & Vices
-    <div key="finance" style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-
-      {/* Finance card */}
-      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-          <span style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>💰 Finance</span>
-          <span style={{ fontSize: 6, color: APP.tx3 }}>March 2026</span>
-        </div>
-        {/* Monthly summary */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, background: APP.surface2, borderRadius: 8, padding: '5px 7px' }}>
-          <div style={{ textAlign: 'center' as const }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#22c55e' }}>£1,240</div>
-            <div style={{ fontSize: 5.5, color: APP.tx3 }}>spent</div>
-          </div>
-          <div style={{ textAlign: 'center' as const }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: APP.tx }}>£2,000</div>
-            <div style={{ fontSize: 5.5, color: APP.tx3 }}>budget</div>
-          </div>
-          <div style={{ textAlign: 'center' as const }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#3b82f6' }}>£760</div>
-            <div style={{ fontSize: 5.5, color: APP.tx3 }}>left</div>
-          </div>
-        </div>
-        {/* Budget items */}
-        {[
-          { e: '🏠', n: 'Rent',          amt: '£850', pct: 1.00, c: '#ef4444', b: 'needs'   },
-          { e: '🎮', n: 'Entertainment', amt: '£120', pct: 0.60, c: '#a855f7', b: 'wants'   },
-          { e: '💰', n: 'Savings',       amt: '£270', pct: 0.54, c: '#22c55e', b: 'savings' },
-        ].map((item, i) => (
-          <div key={i} style={{ marginBottom: i < 2 ? 4 : 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 1.5 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-                <span style={{ fontSize: 9, flexShrink: 0 }}>{item.e}</span>
-                <span style={{ fontSize: 6, color: APP.tx, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>{item.n}</span>
-                <span style={{ fontSize: 5, color: APP.tx3, background: APP.surface2, padding: '1px 3px', borderRadius: 3, flexShrink: 0 }}>{item.b}</span>
-              </div>
-              <span style={{ fontSize: 6, color: APP.tx2, fontWeight: 600, flexShrink: 0, marginLeft: 4 }}>{item.amt}</span>
-            </div>
-            <div style={{ height: 2.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${item.pct*100}%`, background: item.c, borderRadius: 2 }}/>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Vices card */}
-      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-          <span style={{ fontSize: 8, fontWeight: 800, color: APP.tx }}>⚠️ Vices</span>
-          <span style={{ fontSize: 6, color: '#fbbf24', fontWeight: 700 }}>💰 +62 gold saved</span>
-        </div>
-        <div style={{ fontSize: 6, color: APP.tx3, marginBottom: 6 }}>Log a vice — lose gold. Avoid it — earn gold.</div>
-        {[
-          { e: '🍺', n: 'Pints',       avoided: 4, rate: '£6',  gold: 24 },
-          { e: '🍔', n: 'Takeaway',    avoided: 3, rate: '£4',  gold: 12 },
-          { e: '🚬', n: 'Cigarettes',  avoided: 12, rate: '50p', gold: 6  },
-        ].map((v, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderTop: i > 0 ? `1px solid ${APP.border}` : 'none' }}>
-            <span style={{ fontSize: 13, flexShrink: 0 }}>{v.e}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 7, fontWeight: 700, color: APP.tx }}>{v.n}</div>
-              <div style={{ fontSize: 5.5, color: APP.tx3 }}>{v.avoided}× avoided · {v.rate}/each</div>
-            </div>
-            <div style={{ flexShrink: 0, background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 6, padding: '2px 5px', fontSize: 6, color: '#fbbf24', fontWeight: 700 }}>+{v.gold}g</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Spending log */}
-      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '7px 9px' }}>
-        <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx, marginBottom: 5 }}>Recent Spending</div>
-        {[
-          { e: '☕', n: 'Coffee',      amt: '-£3.50', d: 'Today' },
-          { e: '🛒', n: 'Groceries',  amt: '-£42.10', d: 'Yesterday' },
-          { e: '⛽', n: 'Petrol',      amt: '-£55.00', d: 'Mon' },
-        ].map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderTop: i > 0 ? `1px solid ${APP.border}` : 'none' }}>
-            <span style={{ fontSize: 10, flexShrink: 0 }}>{s.e}</span>
-            <span style={{ flex: 1, fontSize: 6.5, color: APP.tx, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>{s.n}</span>
-            <span style={{ fontSize: 6, color: APP.tx3, flexShrink: 0 }}>{s.d}</span>
-            <span style={{ fontSize: 6.5, color: '#ef4444', fontWeight: 700, flexShrink: 0 }}>{s.amt}</span>
-          </div>
-        ))}
-      </div>
-
-    </div>,
+    // 7 — Finance & Vices (animated slide between Vices and Finances)
+    <FinanceVicesScreen key="finance" />,
   ];
 
   return (
