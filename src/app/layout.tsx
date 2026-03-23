@@ -5,7 +5,7 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "LOGAI",
+  title: "GAIN",
   description: "Level up your life",
 };
 

@@ -103,7 +103,7 @@ export default function Home() {
         <ThemeApplier />
         <div className="flex flex-col items-center gap-3">
           <div className="text-3xl font-black animate-pulse">
-            <span className="text-ql">LOG</span><span style={{ color: 'var(--ql-accent)' }}>AI</span>
+            <span className="text-ql">G</span><span style={{ color: 'var(--ql-accent)' }}>AI</span><span className="text-ql">N</span>
           </div>
           <p className="text-ql-3 text-sm">Loading…</p>
         </div>
@@ -131,7 +131,7 @@ export default function Home() {
       <header className="shrink-0 z-30 bg-ql-hdr backdrop-blur-xl border-b border-ql px-5 py-3.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            <span className="font-black text-base tracking-tight text-ql">LOG</span><span className="font-black text-base tracking-tight" style={{ color: 'var(--ql-accent)' }}>AI</span>
+            <span className="font-black text-base tracking-tight text-ql">G</span><span className="font-black text-base tracking-tight" style={{ color: 'var(--ql-accent)' }}>AI</span><span className="font-black text-base tracking-tight text-ql">N</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-ql-3 text-xs">

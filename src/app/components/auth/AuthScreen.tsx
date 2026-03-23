@@ -56,7 +56,7 @@ export default function AuthScreen() {
       {/* Logo */}
       <div className="flex flex-col items-center gap-3 mb-8">
         <h1 className="text-4xl font-black tracking-tight">
-          <span className="text-ql">LOG</span><span style={{ color: 'var(--ql-accent)' }}>AI</span>
+          <span className="text-ql">G</span><span style={{ color: 'var(--ql-accent)' }}>AI</span><span className="text-ql">N</span>
         </h1>
         <p className="text-ql-3 text-sm">Level up your life</p>
       </div>
