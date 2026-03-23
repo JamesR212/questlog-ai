@@ -138,8 +138,8 @@ function DayPicker({ selected, onChange, times, endTimes, onTimeChange, onEndTim
                     type="time"
                     value={times[String(d)] ?? ''}
                     onChange={e => onTimeChange(d, e.target.value)}
-                    className="w-full bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-xs text-ql outline-none focus:border-ql-accent transition-colors"
-                    style={{ height: 32 }}
+                    className="w-full bg-ql-input border border-ql-input rounded-lg px-2.5 text-ql outline-none focus:border-ql-accent transition-colors"
+                    style={{ height: 32, fontSize: 13, WebkitAppearance: 'none', appearance: 'none' }}
                   />
                 </div>
                 <span className="text-ql-3 text-xs mt-4">→</span>
@@ -149,8 +149,8 @@ function DayPicker({ selected, onChange, times, endTimes, onTimeChange, onEndTim
                     type="time"
                     value={endTimes[String(d)] ?? ''}
                     onChange={e => onEndTimeChange(d, e.target.value)}
-                    className="w-full bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-xs text-ql outline-none focus:border-ql-accent transition-colors"
-                    style={{ height: 32 }}
+                    className="w-full bg-ql-input border border-ql-input rounded-lg px-2.5 text-ql outline-none focus:border-ql-accent transition-colors"
+                    style={{ height: 32, fontSize: 13, WebkitAppearance: 'none', appearance: 'none' }}
                   />
                 </div>
                 {(times[String(d)] || endTimes[String(d)]) && (

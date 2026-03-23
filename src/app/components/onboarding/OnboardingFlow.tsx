@@ -277,8 +277,8 @@ export default function OnboardingFlow() {
                     type="time"
                     value={wakeInput}
                     onChange={(e) => setWakeInput(e.target.value)}
-                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                    style={{ colorScheme: 'dark' }}
+                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 text-white outline-none focus:border-white/30 transition-colors"
+                    style={{ colorScheme: 'dark', height: 40, fontSize: 15, WebkitAppearance: 'none', appearance: 'none' }}
                   />
                   <p className="text-white/30 text-xs mt-1.5">Check in each morning</p>
                 </div>
@@ -288,8 +288,8 @@ export default function OnboardingFlow() {
                     type="time"
                     value={bedInput}
                     onChange={(e) => setBedInput(e.target.value)}
-                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                    style={{ colorScheme: 'dark' }}
+                    className="w-full bg-white/8 border border-white/10 rounded-xl px-3 text-white outline-none focus:border-white/30 transition-colors"
+                    style={{ colorScheme: 'dark', height: 40, fontSize: 15, WebkitAppearance: 'none', appearance: 'none' }}
                   />
                   <p className="text-white/30 text-xs mt-1.5">Target sleep time</p>
                 </div>
