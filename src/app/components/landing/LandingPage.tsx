@@ -1113,32 +1113,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div
               style={{
                 opacity: aiVisible ? 1 : 0,
-                transform: aiVisible ? 'translateY(0) rotate(-1.5deg)' : 'translateY(30px) rotate(-1.5deg)',
+                transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
                 transition: `all 0.8s ${easing} 0.1s`,
-                position: 'relative',
               }}
             >
-              {/* Glow */}
-              <div style={{ position: 'absolute', inset: '-30px', background: 'radial-gradient(ellipse 80% 60% at 50% 60%, rgba(22,163,74,0.2) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-              <div style={{
-                borderRadius: 24,
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
-                position: 'relative',
-              }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/gym-plan.jpg"
-                  alt="AI-generated gym plan with muscular load radar chart"
-                  style={{
-                    width: '100%',
-                    display: 'block',
-                    objectFit: 'cover',
-                    objectPosition: 'top',
-                  }}
-                />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/gym-plan.jpg"
+                alt="AI-generated gym plan with muscular load radar chart"
+                style={{ width: '100%', display: 'block', borderRadius: 20 }}
+              />
             </div>
 
             {/* Text */}
