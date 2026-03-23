@@ -1583,7 +1583,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Floating phone */}
         <div style={{ marginTop: 60, animation: 'float 6s ease-in-out infinite, fade-up 0.9s 0.6s ease both' }}>
-          <Phone feature={7} />
+          <Phone feature={0} />
         </div>
 
         {/* Scroll indicator */}
