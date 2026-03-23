@@ -26,7 +26,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 const TOGGLEABLE_SECTIONS = [
   { id: 'nutrition', label: 'Food',     icon: '🥗' },
   { id: 'calendar',  label: 'Calendar', icon: '📅' },
-  { id: 'vices',     label: 'Vices',    icon: '🍺' },
+  { id: 'vices',     label: 'Finance',  icon: '💰' },
   { id: 'habits',    label: 'Habits',   icon: '✅' },
   { id: 'gym',       label: 'Fitness',  icon: '💪' },
 ];
