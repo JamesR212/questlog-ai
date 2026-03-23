@@ -1532,7 +1532,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
   const competitors = [
     { name: 'Strava Premium', category: 'GPS & Fitness', price: '£8.99/mo' },
-    { name: 'MyFitnessPal', category: 'Nutrition Tracking', price: '£8.99/mo' },
+    { name: 'MyFitnessPal', category: 'Nutrition Tracking', price: '£19.99/mo' },
     { name: 'Habitify', category: 'Habit Tracking', price: '£2.99/mo' },
     { name: 'Sleep Cycle', category: 'Sleep Tracking', price: '£2.99/mo' },
     { name: 'WaterMinder', category: 'Hydration', price: '£1.99/mo' },
@@ -1893,7 +1893,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: `all 0.5s ${easing} ${competitors.length * 0.07}s`,
             }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fca5a5' }}>TOTAL per month</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£29.93/mo</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£42.94/mo</div>
             </div>
           </div>
 
