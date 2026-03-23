@@ -372,63 +372,103 @@ const FEATURES = [
   },
 ];
 
-function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const FEAT_COLORS = ['#16a34a','#3b82f6','#f97316','#06b6d4','#8b5cf6','#f43f5e','#10b981','#eab308'];
+
+function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number; onActive: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [vis, setVis] = useState(false);
 
   useEffect(() => {
-    const observers: IntersectionObserver[] = [];
-    sectionRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveIdx(i); },
-        { threshold: 0.5 }
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
-    return () => observers.forEach(o => o.disconnect());
-  }, []);
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVis(true); onActive(); }
+    }, { threshold: 0.45 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onActive]);
+
+  const anim = (delay: number): React.CSSProperties => ({
+    opacity: vis ? 1 : 0,
+    transform: vis ? 'translateY(0px)' : 'translateY(44px)',
+    transition: `opacity 0.85s ${EASE} ${delay}ms, transform 0.85s ${EASE} ${delay}ms`,
+  });
 
   return (
-    <div style={{ background: '#050508', position: 'relative' }}>
-      {/* Label */}
-      <div style={{ textAlign: 'center', padding: '80px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase' }}>
-        Everything you need
+    <div ref={ref} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 60, paddingLeft: 8 }}>
+      <div style={{ fontSize: 56, marginBottom: 20, ...anim(0) }}>{f.icon}</div>
+      <div style={{ fontSize: 11, color: FEAT_COLORS[i % FEAT_COLORS.length], fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 12, ...anim(80) }}>{f.subtitle}</div>
+      <h3 style={{ fontSize: 'clamp(30px, 3.8vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 20, ...anim(160) }}>{f.title}</h3>
+      <p style={{ fontSize: 17, color: '#9ca3af', lineHeight: 1.85, maxWidth: 400, ...anim(240) }}>{f.desc}</p>
+    </div>
+  );
+}
+
+function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [phoneVisible, setPhoneVisible] = useState(true);
+
+  const handleActive = useCallback((i: number) => {
+    if (i === activeIdx) return;
+    setPhoneVisible(false);
+    setTimeout(() => { setActiveIdx(i); setPhoneVisible(true); }, 220);
+  }, [activeIdx]);
+
+  const glowColor = FEAT_COLORS[activeIdx % FEAT_COLORS.length];
+
+  return (
+    <div style={{ background: '#050508' }}>
+      {/* Section header */}
+      <div style={{ textAlign: 'center', paddingTop: 100, paddingBottom: 0 }}>
+        <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Everything you need</div>
+        <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>One app.<br />Infinite gains.</h2>
       </div>
 
-      {/* Two-column: text scrolls left, phone sticks right */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1000, margin: '0 auto', padding: '0 40px', boxSizing: 'border-box' }}>
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: '0 48px', boxSizing: 'border-box' }}>
 
-        {/* Left: each feature is 100vh */}
+        {/* Left: scrolling feature sections */}
         <div>
           {FEATURES.map((f, i) => (
-            <div
-              key={i}
-              ref={el => { sectionRefs.current[i] = el; }}
-              style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 40 }}
-            >
-              <div style={{ fontSize: 52, marginBottom: 16 }}>{f.icon}</div>
-              <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>{f.subtitle}</div>
-              <h3 style={{ fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 18 }}>{f.title}</h3>
-              <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.8, maxWidth: 380 }}>{f.desc}</p>
-            </div>
+            <FeatureSection key={i} f={f} i={i} onActive={() => handleActive(i)} />
           ))}
         </div>
 
         {/* Right: sticky phone */}
         <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Animated glow behind phone */}
+          <div style={{
+            position: 'absolute',
+            width: 320, height: 320,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${glowColor}22 0%, transparent 70%)`,
+            transition: `background 1s ${EASE}`,
+            pointerEvents: 'none',
+          }} />
+
+          {/* Phone with pop transition */}
+          <div style={{
+            opacity: phoneVisible ? 1 : 0,
+            transform: phoneVisible ? 'scale(1) translateY(0px)' : 'scale(0.92) translateY(12px)',
+            transition: `opacity 0.35s ${EASE}, transform 0.45s ${EASE}`,
+          }}>
+            <Phone feature={activeIdx} />
+          </div>
+
           {/* Dot nav */}
-          <div style={{ position: 'absolute', right: -16, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 7 }}>
             {FEATURES.map((_, i) => (
               <div key={i} style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: i === activeIdx ? '#16a34a' : 'rgba(255,255,255,0.2)',
-                transition: 'background 0.3s ease',
+                width: i === activeIdx ? 8 : 5,
+                height: i === activeIdx ? 8 : 5,
+                borderRadius: '50%',
+                background: i === activeIdx ? glowColor : 'rgba(255,255,255,0.18)',
+                transition: `all 0.4s ${EASE}`,
+                boxShadow: i === activeIdx ? `0 0 6px ${glowColor}` : 'none',
               }} />
             ))}
           </div>
-          <Phone feature={activeIdx} />
         </div>
       </div>
     </div>
