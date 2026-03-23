@@ -89,7 +89,10 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 1 — Habits (real training tab)
+    // 1 — Customise (placeholder; sticky column shows CustomisePhonesPair instead)
+    <div key="customise" style={{ display: 'none' }} />,
+
+    // 2 — Habits (real training tab)
     <div key="habits" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>Training</div>
       <div style={{ fontSize: 8, color: APP.tx3, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 2 }}>Today's Habits</div>
@@ -655,6 +658,13 @@ const FEATURES = [
     color: '#16a34a',
   },
   {
+    icon: '🎨',
+    title: 'Customise Your Way',
+    subtitle: 'Your app, your rules',
+    desc: 'Toggle sections on or off, pick your theme, and choose exactly which stats appear on your dashboard. GAINN fits around your life — not the other way around.',
+    color: '#16a34a',
+  },
+  {
     icon: '🏋️',
     title: 'Gym & Fitness',
     subtitle: 'Train smarter every session',
@@ -706,7 +716,82 @@ const FEATURES = [
 ];
 
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const FEAT_COLORS = ['#16a34a','#3b82f6','#f97316','#06b6d4','#8b5cf6','#f43f5e','#10b981','#eab308'];
+const FEAT_COLORS = ['#16a34a','#a855f7','#3b82f6','#f97316','#06b6d4','#8b5cf6','#f43f5e','#10b981','#eab308'];
+
+// ─── Customise phones pair (two mini phones, toggle animates) ──────────────────
+
+const SECTIONS_DEMO = [
+  { e: '🥗', n: 'Food'     },
+  { e: '📅', n: 'Calendar' },
+  { e: '💰', n: 'Finance'  },
+  { e: '✅', n: 'Habits'   },
+  { e: '💪', n: 'Fitness'  },
+];
+
+function MiniPhone({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ width: 128, height: 254, background: '#0d0d14', borderRadius: 22, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.6)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 46, height: 13, background: '#0d0d14', borderRadius: '0 0 10px 10px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.1)', borderRight: '2px solid rgba(255,255,255,0.1)', borderBottom: '2px solid rgba(255,255,255,0.1)' }} />
+      <div style={{ height: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 11px', position: 'relative', zIndex: 5 }}>
+        <span style={{ fontSize: 6, color: '#fff', fontWeight: 600 }}>9:41</span>
+        <span style={{ fontSize: 6, color: '#fff' }}>●●●</span>
+      </div>
+      <div style={{ overflowY: 'hidden' as const, height: 222 }}>{children}</div>
+    </div>
+  );
+}
+
+function SettingsScreen({ financeOn, accent }: { financeOn: boolean; accent: string }) {
+  return (
+    <div style={{ padding: '4px 9px 9px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ fontSize: 8, fontWeight: 800, color: '#f0f0f8', marginBottom: 1 }}>Settings</div>
+      <div style={{ fontSize: 6, color: '#6b6b8a', marginBottom: 8 }}>Visible Sections</div>
+      <div style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden' }}>
+        {SECTIONS_DEMO.map((s, i) => {
+          const isFinance = s.n === 'Finance';
+          const on = isFinance ? financeOn : true;
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 9px', borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+              <span style={{ fontSize: 12 }}>{s.e}</span>
+              <span style={{ flex: 1, fontSize: 8, color: on ? '#f0f0f8' : '#6b6b8a', fontWeight: 500, transition: 'color 0.4s ease' }}>{s.n}</span>
+              <div style={{ width: 28, height: 15, borderRadius: 8, background: on ? accent : '#252535', position: 'relative', transition: 'background 0.4s ease', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: 2, left: on ? 13 : 2, width: 11, height: 11, borderRadius: '50%', background: '#fff', transition: 'left 0.4s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 10, background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '8px 9px' }}>
+        <div style={{ fontSize: 7, fontWeight: 700, color: '#f0f0f8', marginBottom: 6 }}>Theme</div>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['#13131f','#1a1a2e','#1a2a1a','#1a1a3e','#2a1a2a'].map((bg, ti) => (
+            <div key={ti} style={{ width: 18, height: 18, borderRadius: '50%', background: bg, border: ti === 0 ? `2px solid ${accent}` : '2px solid rgba(255,255,255,0.1)' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CustomisePhonesPair() {
+  const [financeOn, setFinanceOn] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setFinanceOn(v => !v), 1800);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+      <div>
+        <MiniPhone><SettingsScreen financeOn={true} accent="#7c3aed" /></MiniPhone>
+        <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>All on</p>
+      </div>
+      <div>
+        <MiniPhone><SettingsScreen financeOn={financeOn} accent="#7c3aed" /></MiniPhone>
+        <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>Your choice</p>
+      </div>
+    </div>
+  );
+}
 
 function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number; onActive: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -783,13 +868,13 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
             pointerEvents: 'none',
           }} />
 
-          {/* Phone with pop transition */}
+          {/* Phone(s) with pop transition */}
           <div style={{
             opacity: phoneVisible ? 1 : 0,
             transform: phoneVisible ? 'scale(1) translateY(0px)' : 'scale(0.92) translateY(12px)',
             transition: `opacity 0.35s ${EASE}, transform 0.45s ${EASE}`,
           }}>
-            <Phone feature={activeIdx} />
+            {activeIdx === 1 ? <CustomisePhonesPair /> : <Phone feature={activeIdx} />}
           </div>
 
           {/* Dot nav */}
