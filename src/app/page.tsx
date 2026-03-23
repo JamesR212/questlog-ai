@@ -134,7 +134,6 @@ export default function Home() {
             <span className="text-ql-accent font-semibold text-sm tracking-tight">AI</span>
           </div>
           <div className="flex items-center gap-3">
-            {syncing && <span className="text-ql-3 text-[10px] animate-pulse">syncing…</span>}
             <span className="text-ql-3 text-xs">
               {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
