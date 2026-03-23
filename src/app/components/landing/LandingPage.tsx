@@ -554,6 +554,226 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   );
 }
 
+// ─── Analytics Timelapse Section ─────────────────────────────────────────────
+
+const ANALYTICS_ROWS: Array<{ emoji: string; data: Array<'g'|'o'|'r'> }> = [
+  { emoji: '🌙', data: ['g','g','g','r','g','g','g','r','r','g','g','g','r','g'] },
+  { emoji: '👟', data: ['g','g','o','g','g','g','g','g','o','g','g','g','g','g'] },
+  { emoji: '🌅', data: ['g','g','g','g','g','g','g','r','g','g','r','g','g','g'] },
+  { emoji: '🥗', data: ['g','g','o','g','g','g','g','g','o','o','g','o','g','g'] },
+  { emoji: '💧', data: ['g','o','g','g','g','g','g','o','o','g','g','g','g','g'] },
+];
+const CELL_C: Record<'g'|'o'|'r', string> = { g: '#16a34a', o: '#d97706', r: '#dc2626' };
+const TOTAL_DAYS = 14;
+
+function AnalyticsPhone({ visible }: { visible: boolean }) {
+  const [days, setDays] = useState(0);
+
+  useEffect(() => {
+    if (!visible) { setDays(0); return; }
+    let d = 0;
+    const iv = setInterval(() => { d++; setDays(d); if (d >= TOTAL_DAYS) clearInterval(iv); }, 130);
+    return () => clearInterval(iv);
+  }, [visible]);
+
+  const greenTotal = ANALYTICS_ROWS.reduce((s, r) => s + r.data.slice(0, days).filter(c => c === 'g').length, 0);
+  const totalCells = days * ANALYTICS_ROWS.length;
+  const accuracy = totalCells === 0 ? 0 : Math.round((greenTotal / totalCells) * 100);
+  const R = 28; const circ = 2 * Math.PI * R;
+
+  const analysisRows = ANALYTICS_ROWS.map((row) => {
+    const revealed = row.data.slice(0, days);
+    const done = revealed.filter(c => c === 'g').length;
+    const pct = days === 0 ? 0 : Math.round((done / days) * 100);
+    return { ...row, done, pct };
+  });
+
+  return (
+    <div style={{ width: 230, background: APP.bg, borderRadius: 36, border: '2px solid rgba(255,255,255,0.13)', overflow: 'hidden', padding: '12px 8px 10px', boxSizing: 'border-box', boxShadow: '0 28px 90px rgba(0,0,0,0.75)' }}>
+      {/* Status bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 12px 5px', fontSize: 8, color: APP.tx3, fontWeight: 600 }}>
+        <span>20:14</span><span>45%</span>
+      </div>
+      {/* Month */}
+      <div style={{ textAlign: 'center', fontSize: 9, fontWeight: 800, color: APP.tx, marginBottom: 7, letterSpacing: -0.3 }}>March 2026</div>
+
+      {/* Top stats */}
+      <div style={{ display: 'flex', gap: 6, padding: '0 5px 7px', alignItems: 'center' }}>
+        {/* Ring */}
+        <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+          <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+            <circle cx="32" cy="32" r={R} fill="none" stroke={APP.surface2} strokeWidth="6" />
+            <circle cx="32" cy="32" r={R} fill="none" stroke="#16a34a" strokeWidth="6"
+              strokeDasharray={String(circ)}
+              strokeDashoffset={String(circ - circ * accuracy / 100)}
+              strokeLinecap="round"
+              style={{ transition: 'stroke-dashoffset 0.35s ease' }}
+            />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 15, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>{accuracy}</span>
+            <span style={{ fontSize: 5.5, color: APP.tx3 }}>%</span>
+          </div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ l: 'Tracked', v: days }, { l: 'Done', v: greenTotal }].map(({ l, v }) => (
+              <div key={l} style={{ flex: 1, ...card({ padding: '4px 5px', textAlign: 'center' as const }) }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: APP.tx }}>{v}</div>
+                <div style={{ fontSize: 5.5, color: APP.tx3 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ ...card({ padding: '5px 6px' }) }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+              <span style={{ fontSize: 5.5, color: APP.tx3 }}>Done only</span>
+              <span style={{ fontSize: 5.5, fontWeight: 700, color: APP.tx }}>{accuracy > 6 ? accuracy - 6 : 0}%</span>
+            </div>
+            <div style={{ height: 3.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: '#16a34a', borderRadius: 2, width: `${accuracy > 6 ? accuracy - 6 : 0}%`, transition: 'width 0.35s ease' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Habit grid */}
+      <div style={{ padding: '2px 5px' }}>
+        <div style={{ display: 'flex', marginLeft: 17, marginBottom: 2 }}>
+          {Array.from({ length: TOTAL_DAYS }, (_, i) => (
+            <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 4, color: i < days ? APP.tx3 : 'transparent' }}>{i + 1}</div>
+          ))}
+        </div>
+        {ANALYTICS_ROWS.map((row, ri) => (
+          <div key={ri} style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+            <span style={{ fontSize: 9, width: 15, flexShrink: 0 }}>{row.emoji}</span>
+            <div style={{ flex: 1, display: 'flex', gap: 1.5 }}>
+              {row.data.map((c, di) => {
+                const revealed = di < days;
+                const isNew = di === days - 1;
+                return (
+                  <div
+                    key={di}
+                    style={{
+                      flex: 1,
+                      height: 10,
+                      borderRadius: 2.5,
+                      background: revealed ? CELL_C[c] : APP.surface2,
+                      animation: isNew ? 'cellPop 0.28s cubic-bezier(0.22,1,0.36,1) forwards' : 'none',
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {/* Day % row */}
+        <div style={{ display: 'flex', marginLeft: 17, marginTop: 2, marginBottom: 4 }}>
+          {Array.from({ length: TOTAL_DAYS }, (_, di) => {
+            if (di >= days) return <div key={di} style={{ flex: 1 }} />;
+            const pct = Math.round(ANALYTICS_ROWS.filter(r => r.data[di] === 'g').length / ANALYTICS_ROWS.length * 100);
+            const col = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+            return <div key={di} style={{ flex: 1, textAlign: 'center', fontSize: 3.5, color: col, fontWeight: 700 }}>{pct}%</div>;
+          })}
+        </div>
+      </div>
+
+      {/* Analysis table */}
+      <div style={{ margin: '0 5px', background: APP.surface, borderRadius: 10, border: `1px solid ${APP.border}`, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: `1px solid ${APP.border}` }}>
+          <span style={{ fontSize: 5.5, color: APP.tx3 }}>Habit</span>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <span style={{ fontSize: 5.5, color: APP.tx3 }}>Done</span>
+            <span style={{ fontSize: 5.5, color: APP.tx3 }}>%</span>
+          </div>
+        </div>
+        {analysisRows.map((row, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', borderBottom: i < analysisRows.length - 1 ? `1px solid ${APP.border}` : 'none', gap: 5 }}>
+            <span style={{ fontSize: 8 }}>{row.emoji}</span>
+            <span style={{ fontSize: 6, color: APP.tx2, flex: 1 }}>{['Sleep','Steps','Wake Up','Nutrition','Hydration'][i]}</span>
+            <span style={{ fontSize: 5.5, color: APP.tx3, width: 22, textAlign: 'right' }}>{row.done}/{days}</span>
+            <span style={{ fontSize: 6, fontWeight: 700, color: row.pct >= 80 ? '#16a34a' : row.pct >= 60 ? '#d97706' : '#dc2626', width: 20, textAlign: 'right' }}>{row.pct}%</span>
+            <div style={{ width: 28, height: 3.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: row.pct >= 80 ? '#16a34a' : row.pct >= 60 ? '#d97706' : '#dc2626', borderRadius: 2, width: `${row.pct}%`, transition: 'width 0.35s ease' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsSection({ onGetStarted }: { onGetStarted: () => void }) {
+  const { ref: textRef, visible: textVisible } = useFadeIn(0.2);
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const [phoneVisible, setPhoneVisible] = useState(false);
+
+  useEffect(() => {
+    const el = phoneRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setPhoneVisible(true); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const AE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  const bullets = [
+    { icon: '🟩', text: 'Full month grid — green, orange, red at a glance' },
+    { icon: '🎯', text: 'Live accuracy ring shows your true completion rate' },
+    { icon: '📊', text: 'Per-habit progress bars and done/scheduled counts' },
+    { icon: '✏️', text: 'Tap any cell to manually correct your record' },
+  ];
+
+  return (
+    <section style={{ background: '#06060a', padding: '120px 24px' }}>
+      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 80, alignItems: 'center' }}>
+
+        {/* Text */}
+        <div ref={textRef}>
+          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 16, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE}` }}>
+            Detailed Analytics
+          </div>
+          <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.1s` }}>
+            See exactly<br />how you&apos;re doing
+          </h2>
+          <p style={{ fontSize: 17, color: '#9ca3af', lineHeight: 1.85, marginBottom: 40, maxWidth: 400, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.2s` }}>
+            Every habit, every day. Colour-coded across a full monthly grid so you can spot patterns instantly — and actually fix them.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {bullets.map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(18px)', transition: `all 0.6s ${AE} ${0.3 + i * 0.08}s` }}>
+                <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>{b.icon}</span>
+                <span style={{ fontSize: 15, color: '#a1a1aa', lineHeight: 1.55 }}>{b.text}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 44, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(18px)', transition: `all 0.6s ${AE} 0.65s` }}>
+            <button
+              onClick={onGetStarted}
+              style={{ padding: '14px 32px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', transition: `all 0.3s ${AE}` }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; }}
+            >
+              View Detailed Analytics →
+            </button>
+          </div>
+        </div>
+
+        {/* Phone */}
+        <div ref={phoneRef} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: '-60px', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(22,163,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'scale(1) translateY(0)' : 'scale(0.88) translateY(24px)', transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}` }}>
+            <AnalyticsPhone visible={phoneVisible} />
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
 // ─── Main LandingPage ─────────────────────────────────────────────────────────
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
@@ -640,6 +860,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
           @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(22,163,74,0.3); } 50% { box-shadow: 0 0 40px rgba(22,163,74,0.6); } }
           @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes cellPop { 0% { transform: scale(0.2); opacity:0; } 65% { transform: scale(1.25); } 100% { transform: scale(1); opacity:1; } }
         `}</style>
 
         {/* Logo */}
@@ -785,6 +1006,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── 4. Sticky features ──────────────────────────────────────── */}
       <StickyFeatures onGetStarted={onGetStarted} />
+
+      {/* ── 4.5 Analytics timelapse ─────────────────────────────────── */}
+      <AnalyticsSection onGetStarted={onGetStarted} />
 
       {/* ── 5. AI section ───────────────────────────────────────────── */}
       <section
