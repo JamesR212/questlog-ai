@@ -1,0 +1,134 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
+type Mode = 'login' | 'signup' | 'forgot';
+
+export default function AuthScreen() {
+  const [mode, setMode]         = useState<Mode>('login');
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
+
+  const clear = () => { setError(''); setSuccess(''); };
+
+  const handleSubmit = async () => {
+    clear();
+    if (!email.trim()) { setError('Email is required'); return; }
+    if (mode !== 'forgot' && password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true);
+
+    try {
+      if (mode === 'login') {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+
+      if (mode === 'signup') {
+        if (!username.trim()) { setError('Username is required'); setLoading(false); return; }
+        const { user } = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(user, { displayName: username });
+      }
+
+      if (mode === 'forgot') {
+        await sendPasswordResetEmail(auth, email);
+        setSuccess('Password reset email sent — check your inbox.');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong';
+      setError(msg.replace('Firebase: ', '').replace(/\s*\(auth\/.*?\)\.?/, '').trim());
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-ql-bg flex flex-col items-center justify-center px-5">
+      {/* Logo */}
+      <div className="flex flex-col items-center gap-3 mb-8">
+        <span className="text-5xl">⚔️</span>
+        <h1 className="text-ql text-3xl font-bold tracking-tight">QuestLog</h1>
+        <p className="text-ql-3 text-sm">Level up your life</p>
+      </div>
+
+      {/* Card */}
+      <div className="w-full max-w-sm bg-ql-surface rounded-3xl border border-ql shadow-ql p-6 flex flex-col gap-4">
+        <h2 className="text-ql text-lg font-bold text-center">
+          {mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create account' : 'Reset password'}
+        </h2>
+
+        {/* Fields */}
+        {mode === 'signup' && (
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            className="w-full bg-ql-input border border-ql-input rounded-xl px-4 py-3 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+          />
+        )}
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          className="w-full bg-ql-input border border-ql-input rounded-xl px-4 py-3 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+        />
+        {mode !== 'forgot' && (
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            className="w-full bg-ql-input border border-ql-input rounded-xl px-4 py-3 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+          />
+        )}
+
+        {/* Error / success */}
+        {error   && <p className="text-red-400 text-xs text-center">{error}</p>}
+        {success && <p className="text-emerald-400 text-xs text-center">{success}</p>}
+
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full py-3 bg-ql-accent hover:bg-ql-accent-h disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+        >
+          {loading ? '…' : mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send Reset Email'}
+        </button>
+
+        {/* Mode switchers */}
+        <div className="flex flex-col items-center gap-2 pt-1">
+          {mode === 'login' && (
+            <>
+              <button onClick={() => { setMode('signup'); clear(); }} className="text-ql-accent text-xs font-medium">
+                No account? Sign up free
+              </button>
+              <button onClick={() => { setMode('forgot'); clear(); }} className="text-ql-3 text-xs">
+                Forgot password?
+              </button>
+            </>
+          )}
+          {mode !== 'login' && (
+            <button onClick={() => { setMode('login'); clear(); }} className="text-ql-accent text-xs font-medium">
+              Back to log in
+            </button>
+          )}
+        </div>
+      </div>
+
+      <p className="text-ql-3 text-[10px] mt-6 text-center">Your data is saved to the cloud and syncs across devices.</p>
+    </div>
+  );
+}

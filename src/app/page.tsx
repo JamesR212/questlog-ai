@@ -1,65 +1,176 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { pushToCloud, pullFromCloud, upsertProfile } from '@/lib/sync';
+import { updatePublicProfile } from '@/lib/friends';
+import { useGameStore } from '@/store/gameStore';
+import type { User } from 'firebase/auth';
+import AuthScreen from './components/auth/AuthScreen';
+import NavBar from './components/shared/NavBar';
+import LevelUpModal from './components/shared/LevelUpModal';
+import ThemeApplier from './components/shared/ThemeApplier';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
+import HomePage from './components/dashboard/HomePage';
+import CalendarPage from './components/calendar/CalendarPage';
+import ViceTracker from './components/vice-tracker/ViceTracker';
+import HabitTracker from './components/habits/HabitTracker';
+import GymFitness from './components/gym/GymFitness';
+import TrainingHub from './components/training/TrainingHub';
+import FoodDrink from './components/nutrition/FoodDrink';
+import SettingsPage from './components/settings/SettingsPage';
+import SocialPage from './components/social/SocialPage';
+
+// Debounce helper
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 export default function Home() {
+  const { activeSection, hasOnboarded, setActiveSection } = useGameStore();
+  const store = useGameStore();
+
+  const [user, setUser]             = useState<User | null | undefined>(undefined); // undefined = loading
+  const [syncing, setSyncing]       = useState(false);
+  const hasHydrated                 = useRef(false);
+
+  // ── Auth listener ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsub();
+  }, []);
+
+  // ── On login: pull cloud data and hydrate store ──────────────────────────
+  useEffect(() => {
+    if (!user || hasHydrated.current) return;
+    hasHydrated.current = true;
+
+    const userId = user.uid;
+
+    // Ensure profile exists
+    upsertProfile(userId, {
+      username:     user.displayName ?? '',
+      display_name: user.displayName ?? '',
+    });
+
+    // Pull and merge cloud data
+    pullFromCloud(userId).then(cloudData => {
+      if (cloudData) {
+        useGameStore.setState(cloudData);
+      }
+    });
+  }, [user]);
+
+  // ── On logout: reset hydration flag ─────────────────────────────────────
+  useEffect(() => {
+    if (!user) hasHydrated.current = false;
+  }, [user]);
+
+  // ── Debounced auto-sync to cloud on store changes ────────────────────────
+  const storeSnapshot = useDebounce(store, 3000);
+
+  useEffect(() => {
+    if (!user) return;
+    setSyncing(true);
+    const s = useGameStore.getState();
+    pushToCloud(user.uid, s).finally(() => setSyncing(false));
+    updatePublicProfile(user.uid, {
+      username: s.userName || user.displayName || '',
+      displayName: user.displayName || s.userName || '',
+      level: s.stats.level,
+      xp: s.stats.xp,
+      str: s.stats.str,
+      con: s.stats.con,
+      dex: s.stats.dex,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeSnapshot, user?.uid]);
+
+  // ── Loading splash ───────────────────────────────────────────────────────
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen bg-ql-bg flex items-center justify-center">
+        <ThemeApplier />
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-4xl animate-pulse">⚔️</span>
+          <p className="text-ql-3 text-sm">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Not logged in ────────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <>
+        <ThemeApplier />
+        <AuthScreen />
+      </>
+    );
+  }
+
+  // ── App ──────────────────────────────────────────────────────────────────
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="flex flex-col bg-ql-bg" style={{ position: 'fixed', inset: 0, height: '100dvh' }}>
+      <ThemeApplier />
+      {!hasOnboarded && <OnboardingFlow />}
+
+      {/* Header */}
+      <header className="shrink-0 z-30 bg-ql-hdr backdrop-blur-xl border-b border-ql px-5 py-3.5">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚔️</span>
+            <span className="text-ql font-semibold text-sm tracking-tight">QuestLog</span>
+            <span className="text-ql-accent font-semibold text-sm tracking-tight">AI</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {syncing && <span className="text-ql-3 text-[10px] animate-pulse">syncing…</span>}
+            <span className="text-ql-3 text-xs">
+              {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+            <button
+              onClick={() => setActiveSection(activeSection === 'social' ? 'dashboard' : 'social')}
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
+                activeSection === 'social' ? 'bg-ql-accent text-white' : 'bg-ql-surface2 border border-ql text-ql-3'
+              }`}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              👥
+            </button>
+            <button
+              onClick={() => setActiveSection(activeSection === 'settings' ? 'dashboard' : 'settings')}
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
+                activeSection === 'settings' ? 'bg-ql-accent text-white' : 'bg-ql-surface2 border border-ql text-ql-3'
+              }`}
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              ⚙️
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full px-4 py-5 pb-6">
+        {activeSection === 'dashboard' && <HomePage />}
+        {activeSection === 'calendar'  && <CalendarPage />}
+        {activeSection === 'vices'     && <ViceTracker />}
+        {activeSection === 'training'  && <TrainingHub />}
+        {activeSection === 'habits'    && <HabitTracker />}
+        {activeSection === 'gym'       && <GymFitness />}
+        {activeSection === 'nutrition' && <FoodDrink />}
+        {activeSection === 'settings'  && <SettingsPage />}
+        {activeSection === 'social'    && <SocialPage userId={user.uid} />}
       </main>
+
+      <NavBar />
+      <LevelUpModal />
     </div>
   );
 }
