@@ -1023,7 +1023,7 @@ export default function HomePage() {
     stats, habitLog, gymSessions, wakeQuest, vices,
     savingsGoal,
     userName, currencySymbol,
-    competitionMode, hiddenStats,
+    competitionMode, financialMode, hiddenStats,
     setActiveSection,
     loginStreak, recordAppOpen,
   } = useGameStore();
@@ -1044,7 +1044,7 @@ export default function HomePage() {
       </div>
 
       {/* Hero row: streak (or chill card) + savings circle */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid gap-3 ${financialMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {/* Streak or Chill */}
         {competitionMode ? (
           <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
@@ -1065,7 +1065,7 @@ export default function HomePage() {
         )}
 
         {/* Savings goal — compact circle */}
-        <button onClick={() => setActiveSection('vices')} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 flex flex-col items-center gap-2 w-full">
+        {financialMode && <button onClick={() => setActiveSection('vices')} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 flex flex-col items-center gap-2 w-full">
           {(() => {
             const r = 30, cx = 38, cy = 38;
             const circ = 2 * Math.PI * r;
@@ -1091,7 +1091,7 @@ export default function HomePage() {
               </>
             );
           })()}
-        </button>
+        </button>}
       </div>
 
       {/* Weekly snapshot grid */}
