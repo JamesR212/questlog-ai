@@ -119,7 +119,7 @@ interface GameStore {
   dismissLevelUp: () => void;
   setCharacterAppearance: (appearance: Partial<CharacterAppearance>) => void;
   setNutritionGoal: (goal: NutritionGoal) => void;
-  logMeal: (meal: Omit<MealEntry, 'id' | 'date'>) => void;
+  logMeal: (meal: Omit<MealEntry, 'id' | 'date'>, date?: string) => void;
   deleteMeal: (id: string) => void;
   setSavedGymPrefs: (prefs: Record<string, string>) => void;
   setSavedNutritionPrefs: (prefs: Record<string, string>) => void;
@@ -678,9 +678,9 @@ export const useGameStore = create<GameStore>()(
       removeFromMealLibrary: (id) =>
         set((state) => ({ savedMealLibrary: state.savedMealLibrary.filter(m => m.id !== id) })),
 
-      logMeal: (meal) =>
+      logMeal: (meal, date) =>
         set((state) => {
-          const today = new Date().toISOString().slice(0, 10);
+          const today = date ?? new Date().toISOString().slice(0, 10);
           const entry: MealEntry = { ...meal, id: generateId(), date: today };
           const newStats = tryLevelUp(state.stats, { xp: state.stats.xp + 10 });
           if (newStats.level > state.stats.level) {

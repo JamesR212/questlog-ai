@@ -72,6 +72,8 @@ function WeeklySnapshotGrid() {
     waterLog, waterGoal,
     snapshotHiddenBuiltins, snapshotAddedOptional, accountCreatedDate,
     setSnapshotHiddenBuiltins, setSnapshotAddedOptional,
+    logHabit, unlogHabit, logSteps, deleteMeal, logMeal, addWaterEntry, deleteWaterEntry,
+    checkInWake, deleteWakeCheckIn,
   } = useGameStore();
 
   const weekDates = getWeekDates();
@@ -173,6 +175,32 @@ function WeeklySnapshotGrid() {
     if (!isDueOn(habit, ds)) return 'unscheduled';
     if (isFuture) return 'future';
     return habitLog.some(e => e.habitId === row.id && e.date === ds) ? 'done' : 'missed';
+  }
+
+  function toggleCell(row: Row, ds: string) {
+    const state = cellState(row, ds);
+    if (state === 'future' || (accountCreatedDate && ds < accountCreatedDate)) return;
+    if (row.type === 'wake' || row.type === 'sleep') {
+      const checkIn = wakeQuest.checkIns.find(c => c.date === ds);
+      if (checkIn) deleteWakeCheckIn(checkIn.id);
+      else checkInWake(wakeQuest.targetTime, ds);
+    } else if (row.type === 'steps') {
+      const entry = stepLog.find(e => e.date === ds);
+      if (entry) logSteps(ds, 0, 'manual');
+      else logSteps(ds, stepGoal, 'manual');
+    } else if (row.type === 'nutrition') {
+      const entries = mealLog.filter(m => m.date === ds);
+      if (entries.length > 0) entries.forEach(m => deleteMeal(m.id));
+      else logMeal({ name: 'Logged', calories: nutritionGoal.calories, protein: 0, carbs: 0, fat: 0, sugar: 0 }, ds);
+    } else if (row.type === 'hydration') {
+      const entries = waterLog.filter(e => e.date === ds);
+      if (entries.length > 0) entries.forEach(e => deleteWaterEntry(e.id));
+      else addWaterEntry(ds, waterGoal);
+    } else if (row.type === 'habit') {
+      const done = habitLog.some(e => e.habitId === row.id && e.date === ds);
+      if (done) unlogHabit(row.id, ds);
+      else logHabit(row.id, ds);
+    }
   }
 
   const stateStyle: Record<CellState, string> = {
@@ -358,10 +386,11 @@ function WeeklySnapshotGrid() {
             {/* Day cells */}
             {weekDates.map(ds => {
               const state = cellState(row, ds);
+              const clickable = state !== 'future' && !(accountCreatedDate && ds < accountCreatedDate);
               if (row.type === 'steps') {
                 const n = stepLog.find(e => e.date === ds)?.steps;
                 return (
-                  <div key={ds} className="flex-1">
+                  <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
                     <div className={`h-7 w-full rounded-lg flex items-center justify-center ${stateStyle[state]}`}>
                       {n !== undefined && n > 0 && (
                         <span className="text-white text-[8px] font-bold leading-none drop-shadow">
@@ -375,7 +404,7 @@ function WeeklySnapshotGrid() {
               if (row.type === 'nutrition') {
                 const cal = mealLog.filter(m => m.date === ds).reduce((s, m) => s + m.calories, 0);
                 return (
-                  <div key={ds} className="flex-1">
+                  <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
                     <div className={`h-7 w-full rounded-lg flex items-center justify-center ${stateStyle[state]}`}>
                       {cal > 0 && (
                         <span className="text-white text-[8px] font-bold leading-none drop-shadow">
@@ -387,7 +416,7 @@ function WeeklySnapshotGrid() {
                 );
               }
               return (
-                <div key={ds} className="flex-1">
+                <div key={ds} className="flex-1" onClick={() => toggleCell(row, ds)} style={{ cursor: clickable ? 'pointer' : 'default' }}>
                   <div className={`h-7 w-full rounded-lg ${stateStyle[state]}`} />
                 </div>
               );
