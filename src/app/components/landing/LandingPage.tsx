@@ -794,7 +794,7 @@ const FEATURES = [
     icon: '👟',
     title: 'Steps & GPS',
     subtitle: 'Every step counts toward your stats',
-    desc: 'Step counter, daily goals, GPS activity recording with route maps and floors climbed. Move more, level up faster.',
+    desc: 'Step counter, daily goals, and GPS activity recording for runs, walks, and cycles — with route maps and floors climbed. Move more, level up faster.',
     color: '#16a34a',
   },
   {
