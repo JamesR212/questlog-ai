@@ -73,9 +73,13 @@ export default function Home() {
     });
   }, [user]);
 
-  // ── On logout: reset hydration flag ─────────────────────────────────────
+  // ── On logout: reset hydration flag + clear store ────────────────────────
   useEffect(() => {
-    if (!user) { hasHydrated.current = false; setCloudReady(false); }
+    if (!user) {
+      hasHydrated.current = false;
+      setCloudReady(false);
+      useGameStore.persist.clearStorage();
+    }
   }, [user]);
 
   // ── Debounced auto-sync to cloud on store changes ────────────────────────
