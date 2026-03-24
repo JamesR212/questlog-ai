@@ -1965,7 +1965,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>One price. Everything included.</h2>
           <p style={{ fontSize: 17, color: '#71717a', marginBottom: 64 }}>No feature tiers. No paywalled sections. All of GAINN, for everyone.</p>
 
-          <div style={{ transform: isMobile ? 'scale(0.8)' : 'none', transformOrigin: 'top center', marginBottom: isMobile ? -60 : 48 }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 48 }}>
+          <div style={{ transform: isMobile ? 'scale(0.72)' : 'none', transformOrigin: 'top center', marginBottom: isMobile ? -80 : 48, width: '100%' }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 48 }}>
             {/* Monthly */}
             <div
               style={{
