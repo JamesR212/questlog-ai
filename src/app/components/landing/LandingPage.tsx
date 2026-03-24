@@ -1193,13 +1193,24 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
 
 function ThemeShowcaseSection() {
   const { ref, visible } = useFadeIn(0.15);
+  const [isMobile, setIsMobile] = useState(false);
   const AE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  // [far-left, left, centre, right, far-right]
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const xPos    = [-270, -135,   0, 135, 270];
   const scales  = [0.86,  0.93, 1.0, 0.93, 0.86];
   const zIdx    = [1,       2,   4,   2,    1];
-  const yOffset = [12,      6,   0,   6,   12]; // slight droop on outer phones
-  const delays  = [180,    90,   0,  90,  180]; // centre pops first
+  const yOffset = [12,      6,   0,   6,   12];
+  const delays  = [180,    90,   0,  90,  180];
+
+  // On mobile, shrink xPos and scales by 25%
+  const m = isMobile ? 0.75 : 1;
 
   return (
     <section style={{ padding: '120px 24px 100px', background: '#050508', textAlign: 'center' }}>
@@ -1216,7 +1227,7 @@ function ThemeShowcaseSection() {
       </div>
 
       {/* Fan */}
-      <div style={{ position: 'relative', height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', height: isMobile ? 260 : 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {THEME_PHONES.map((t, i) => (
           <div
             key={i}
@@ -1224,7 +1235,7 @@ function ThemeShowcaseSection() {
               position: 'absolute',
               zIndex: zIdx[i],
               transform: visible
-                ? `translateX(${xPos[i]}px) translateY(${yOffset[i]}px) scale(${scales[i]})`
+                ? `translateX(${xPos[i] * m}px) translateY(${yOffset[i] * m}px) scale(${scales[i] * m})`
                 : `translateX(0px) translateY(30px) scale(0.65)`,
               opacity: visible ? 1 : 0,
               transition: `transform 0.9s ${AE} ${delays[i]}ms, opacity 0.6s ${AE} ${delays[i]}ms`,
