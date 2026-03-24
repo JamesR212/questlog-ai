@@ -855,7 +855,7 @@ const FEATURES = [
     icon: '😴',
     title: 'Sleep & Wake',
     subtitle: 'Rest is part of the grind',
-    desc: 'Set wake targets, log check-ins, and track sleep quality over time. See how sleep affects your XP gains.',
+    desc: 'Set wake targets, log check-ins, and track sleep quality over time. Helping you build a consistent sleep routine to feel more productive day to day.',
     color: '#16a34a',
   },
   {
