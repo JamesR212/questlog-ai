@@ -77,7 +77,7 @@ export default function OnboardingFlow() {
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
     const list: StepId[] = ['welcome'];
-    if (goals.includes('save_money') || goals.includes('quit_vices')) list.push('money');
+    if (goals.includes('save_money')) list.push('money');
     if (goals.includes('wake_early')) list.push('sleep');
     if (goals.includes('get_fit') || goals.includes('build_strength') || goals.includes('track_life')) list.push('fitness');
     list.push('theme');
