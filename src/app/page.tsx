@@ -9,6 +9,9 @@ import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
 import AuthScreen from './components/auth/AuthScreen';
 import LandingPage from './components/landing/LandingPage';
+import SubscriptionGate from './components/subscription/SubscriptionGate';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import NavBar from './components/shared/NavBar';
 import LevelUpModal from './components/shared/LevelUpModal';
 import ThemeApplier from './components/shared/ThemeApplier';
@@ -37,11 +40,12 @@ export default function Home() {
   const { activeSection, hasOnboarded, setActiveSection } = useGameStore();
   const store = useGameStore();
 
-  const [user, setUser]             = useState<User | null | undefined>(undefined); // undefined = loading
-  const [syncing, setSyncing]       = useState(false);
-  const [cloudReady, setCloudReady] = useState(false);
-  const [showAuth, setShowAuth]     = useState(false);
-  const hydratedUid                 = useRef<string | null>(null);
+  const [user, setUser]               = useState<User | null | undefined>(undefined);
+  const [syncing, setSyncing]         = useState(false);
+  const [cloudReady, setCloudReady]   = useState(false);
+  const [showAuth, setShowAuth]       = useState(false);
+  const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
+  const hydratedUid                   = useRef<string | null>(null);
 
   // ── Auth listener ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -66,24 +70,58 @@ export default function Home() {
       display_name: user.displayName ?? '',
     });
 
-    // Pull and merge cloud data, then mark ready
-    pullFromCloud(userId).then(cloudData => {
-      if (cloudData) {
-        useGameStore.setState(cloudData);
-      }
+    // Pull and merge cloud data, then check subscription
+    pullFromCloud(userId).then(async cloudData => {
+      if (cloudData) useGameStore.setState(cloudData);
       setCloudReady(true);
+
+      // Check if returning from Stripe checkout
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      if (params.get('subscribed') === 'true' && sessionId) {
+        window.history.replaceState({}, '', '/');
+        try {
+          const res = await fetch(`/api/stripe/verify?session_id=${sessionId}`);
+          const data = await res.json();
+          if (data.userId === userId) {
+            await setDoc(doc(db, 'subscriptions', userId), {
+              status: data.status,
+              priceId: data.priceId,
+              currentPeriodEnd: data.currentPeriodEnd,
+              customerId: data.customerId,
+              subscriptionId: data.subscriptionId,
+              updatedAt: new Date().toISOString(),
+            });
+            setSubscribed(true);
+            return;
+          }
+        } catch (e) {
+          console.error('[subscription] verify error:', e);
+        }
+      }
+
+      // Check existing subscription in Firestore
+      const subSnap = await getDoc(doc(db, 'subscriptions', userId));
+      if (subSnap.exists()) {
+        const sub = subSnap.data();
+        const isActive = sub.status === 'active' || sub.status === 'trialing';
+        const notExpired = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
+        setSubscribed(isActive && notExpired);
+      } else {
+        setSubscribed(false);
+      }
     });
   }, [user]);
 
   // ── On logout: reload page for a completely clean slate ──────────────────
   useEffect(() => {
     if (!user && hydratedUid.current !== null) {
-      // Was logged in, now signed out — reload to wipe all JS memory
       hydratedUid.current = null;
       localStorage.removeItem('questlog-storage');
       window.location.reload();
     } else if (!user) {
       setCloudReady(false);
+      setSubscribed(null);
     }
   }, [user]);
 
@@ -108,7 +146,7 @@ export default function Home() {
   }, [storeSnapshot, user?.uid, cloudReady]);
 
   // ── Loading splash ───────────────────────────────────────────────────────
-  if (user === undefined || (user && !cloudReady)) {
+  if (user === undefined || (user && (!cloudReady || subscribed === null))) {
     return (
       <div className="min-h-screen bg-ql-bg flex items-center justify-center">
         <ThemeApplier />
@@ -131,6 +169,16 @@ export default function Home() {
           ? <AuthScreen />
           : <LandingPage onGetStarted={() => setShowAuth(true)} />
         }
+      </>
+    );
+  }
+
+  // ── Subscription gate ─────────────────────────────────────────────────────
+  if (!subscribed) {
+    return (
+      <>
+        <ThemeApplier />
+        <SubscriptionGate />
       </>
     );
   }
