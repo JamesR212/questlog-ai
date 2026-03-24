@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!;
 const YEARLY_PRICE_ID  = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID!;
@@ -29,6 +30,12 @@ export default function SubscriptionGate() {
 
   return (
     <div className="min-h-screen bg-ql-bg flex flex-col items-center justify-center px-5">
+      <button
+        onClick={() => signOut(auth)}
+        className="absolute top-5 left-5 flex items-center gap-1.5 text-ql-3 text-sm hover:text-ql transition-colors"
+      >
+        ← Back
+      </button>
       <div className="flex flex-col items-center gap-2 mb-10">
         <h1 className="text-4xl font-black tracking-tight">
           <span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">NN</span>
