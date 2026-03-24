@@ -41,7 +41,7 @@ export default function Home() {
   const [syncing, setSyncing]       = useState(false);
   const [cloudReady, setCloudReady] = useState(false);
   const [showAuth, setShowAuth]     = useState(false);
-  const hasHydrated                 = useRef(false);
+  const hydratedUid                 = useRef<string | null>(null);
 
   // ── Auth listener ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -53,8 +53,10 @@ export default function Home() {
 
   // ── On login: pull cloud data and hydrate store ──────────────────────────
   useEffect(() => {
-    if (!user || hasHydrated.current) return;
-    hasHydrated.current = true;
+    if (!user || hydratedUid.current === user.uid) return;
+    hydratedUid.current = user.uid;
+    setCloudReady(false);
+    useGameStore.persist.clearStorage();
 
     const userId = user.uid;
 
@@ -73,10 +75,10 @@ export default function Home() {
     });
   }, [user]);
 
-  // ── On logout: reset hydration flag + clear store ────────────────────────
+  // ── On logout: reset hydration uid + clear store ─────────────────────────
   useEffect(() => {
     if (!user) {
-      hasHydrated.current = false;
+      hydratedUid.current = null;
       setCloudReady(false);
       useGameStore.persist.clearStorage();
     }
