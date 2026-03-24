@@ -1526,6 +1526,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     }))
   );
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const [compRowsVisible, setCompRowsVisible] = useState(false);
   const compRowsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1755,8 +1763,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
           transition: `all 0.7s ${easing}`,
         }}>
-          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
-          <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 0 }}>Powered by AI</h2>
+          <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
+          <h2 style={{ fontSize: isMobile ? 'clamp(27px, 3.75vw, 48px)' : 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 0 }}>Powered by AI</h2>
         </div>
 
         {/* Sticky two-column */}
@@ -1766,11 +1774,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div>
             {/* Panel 1 — AI Gym Plans */}
             <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 48 }}>
-              <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
-              <h3 style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
+              <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
+              <h3 style={{ fontSize: isMobile ? 'clamp(19px, 2.4vw, 31px)' : 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
                 Your plan,<br />built by AI
               </h3>
-              <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32, maxWidth: 420 }}>
+              <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32, maxWidth: 420 }}>
                 Tell GAINN your equipment, schedule, and goals — and get a fully personalised workout plan in seconds. Every exercise, every set, every rep. Built for you, not copied from a template.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1781,8 +1789,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   'Adjusts week by week as you log sessions',
                 ].map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 15, marginTop: 2, flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: 15, color: '#a1a1aa' }}>{t}</span>
+                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: isMobile ? 11 : 15, marginTop: 2, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: isMobile ? 11 : 15, color: '#a1a1aa' }}>{t}</span>
                   </div>
                 ))}
               </div>
@@ -1810,21 +1818,21 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
               </div>
 
-              <h3 style={{ fontSize: 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
+              <h3 style={{ fontSize: isMobile ? 'clamp(18px, 2.25vw, 28px)' : 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
                 6 AI features,<br />one subscription
               </h3>
 
-              <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
+              <p style={{ fontSize: isMobile ? 11 : 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
                 Every recommendation is tailored to <span style={{ color: '#a1a1aa', fontWeight: 600 }}>your height, weight, age, and goals</span> — not generic advice copied from the internet.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {aiFeatures.map((f, i) => (
                   <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{f.icon}</span>
+                    <span style={{ fontSize: isMobile ? 16 : 22, flexShrink: 0 }}>{f.icon}</span>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{f.title}</div>
-                      <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>{f.desc}</div>
+                      <div style={{ fontSize: isMobile ? 10 : 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{f.title}</div>
+                      <div style={{ fontSize: isMobile ? 10 : 13, color: '#6b7280', lineHeight: 1.5 }}>{f.desc}</div>
                     </div>
                   </div>
                 ))}
