@@ -55,7 +55,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
 type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme';
 
 export default function OnboardingFlow() {
-  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance } = useGameStore();
+  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode } = useGameStore();
 
   const [stepIndex,      setStepIndex]      = useState(0);
   const [name,           setName]           = useState('');
@@ -117,6 +117,7 @@ export default function OnboardingFlow() {
     const s = parseInt(stepInput);
     if (!isNaN(s) && s > 0) setStepGoal(s);
     setTheme(selectedTheme);
+    if (!goals.includes('save_money') && !goals.includes('quit_vices')) setFinancialMode(false);
     const rawWeight = parseFloat(weightVal) || 75;
     const weightKg  = weightUnit === 'lb' ? Math.round(rawWeight * 0.453592) : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
