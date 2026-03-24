@@ -362,6 +362,8 @@ const INITIAL_STATE = {
   paycheckLog: [],
   budgetItems: [],
   spendingLog: [],
+  gpsTrackingEnabled: true,
+  gpsActivities: [],
 };
 
 export function resetGameStore() {

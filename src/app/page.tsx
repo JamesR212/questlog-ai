@@ -75,12 +75,15 @@ export default function Home() {
     });
   }, [user]);
 
-  // ── On logout: reset hydration uid + clear store ─────────────────────────
+  // ── On logout: reload page for a completely clean slate ──────────────────
   useEffect(() => {
-    if (!user) {
+    if (!user && hydratedUid.current !== null) {
+      // Was logged in, now signed out — reload to wipe all JS memory
       hydratedUid.current = null;
+      localStorage.removeItem('questlog-storage');
+      window.location.reload();
+    } else if (!user) {
       setCloudReady(false);
-      resetGameStore();
     }
   }, [user]);
 
