@@ -1210,7 +1210,7 @@ function ThemeShowcaseSection() {
   const delays  = [180,    90,   0,  90,  180];
 
   // On mobile, shrink xPos and scales by 25%
-  const m = isMobile ? 0.75 : 1;
+  const m = isMobile ? 0.675 : 1;
 
   return (
     <section style={{ padding: '120px 24px 100px', background: '#050508', textAlign: 'center' }}>
