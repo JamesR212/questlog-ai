@@ -1560,6 +1560,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const competitors = [
     { name: 'Strava Premium', category: 'GPS & Fitness', price: '£8.99/mo' },
     { name: 'MyFitnessPal', category: 'Nutrition Tracking', price: '£19.99/mo' },
+    { name: 'Notion', category: 'Productivity & Notes', price: '£16.50/mo' },
     { name: 'Habitify', category: 'Habit Tracking', price: '£2.99/mo' },
     { name: 'Sleep Cycle', category: 'Sleep Tracking', price: '£2.99/mo' },
     { name: 'WaterMinder', category: 'Hydration', price: '£0.49/mo' },
@@ -1575,7 +1576,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     { icon: '🍎', title: 'AI Food Suggestions', desc: 'Stuck on what to eat? AI suggests meals that fit your remaining macros.' },
   ];
 
-  const replacesApps = ['Strava', 'MyFitnessPal', 'Habitify', 'Sleep Cycle', 'Spendee', 'WaterMinder'];
+  const replacesApps = ['Strava', 'MyFitnessPal', 'Notion', 'Habitify', 'Sleep Cycle', 'Spendee', 'WaterMinder'];
 
   return (
     <div style={{ background: '#050508', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif', overflow: 'clip' }}>
@@ -1920,7 +1921,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition: `all 0.5s ${easing} ${competitors.length * 0.07}s`,
             }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fca5a5' }}>TOTAL per month</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£38.44/mo</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£54.94/mo</div>
             </div>
           </div>
 
