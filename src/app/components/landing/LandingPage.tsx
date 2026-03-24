@@ -1078,7 +1078,7 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
             position: 'absolute',
             width: 320, height: 320,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${glowColor}22 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${glowColor}2d 0%, transparent 70%)`,
             transition: `background 1s ${EASE}`,
             pointerEvents: 'none',
           }} />
