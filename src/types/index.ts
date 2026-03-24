@@ -253,6 +253,12 @@ export interface GoogleFitTokens {
   expiresAt: number; // Unix ms
 }
 
+export interface FitbitTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number; // Unix ms
+}
+
 export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;

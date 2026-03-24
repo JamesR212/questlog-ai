@@ -27,6 +27,7 @@ import type {
   Outfit,
   StepEntry,
   GoogleFitTokens,
+  FitbitTokens,
   Subscription,
   BudgetItem,
   SpendingEntry,
@@ -141,12 +142,14 @@ interface GameStore {
   detailCellOverrides: Record<string, 'done' | 'late' | 'missed' | 'unscheduled'>;  // key: `${rowId}_${date}`
   setDetailCellOverride: (key: string, value: 'done' | 'late' | 'missed' | 'unscheduled' | null) => void;
   googleFitTokens: GoogleFitTokens | null;
+  fitbitTokens: FitbitTokens | null;
   logSteps: (date: string, steps: number, source: 'manual' | 'google_fit') => void;
   deleteStep: (id: string) => void;
   setStepGoal: (goal: number) => void;
   floorsGoal: number;
   setFloorsGoal: (goal: number) => void;
   setGoogleFitTokens: (tokens: GoogleFitTokens | null) => void;
+  setFitbitTokens: (tokens: FitbitTokens | null) => void;
   subscriptions: Subscription[];
   paycheckIncome: number;
   paycheckFrequency: 'weekly' | 'monthly' | 'annual';
@@ -355,6 +358,7 @@ const INITIAL_STATE = {
   snapshotAddedOptional: [],
   detailCellOverrides: {},
   googleFitTokens: null,
+  fitbitTokens: null,
   subscriptions: [],
   paycheckIncome: 0,
   paycheckFrequency: 'monthly',
@@ -444,6 +448,7 @@ export const useGameStore = create<GameStore>()(
       snapshotAddedOptional: [],
       detailCellOverrides: {},
       googleFitTokens: null,
+      fitbitTokens: null,
       subscriptions: [],
       paycheckIncome: 0,
       paycheckFrequency: 'monthly',
@@ -893,6 +898,7 @@ export const useGameStore = create<GameStore>()(
       }),
 
       setGoogleFitTokens: (tokens) => set({ googleFitTokens: tokens }),
+      setFitbitTokens: (tokens) => set({ fitbitTokens: tokens }),
 
       addSubscription: (sub) =>
         set((state) => ({ subscriptions: [...state.subscriptions, { ...sub, id: generateId() }] })),
