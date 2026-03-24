@@ -1432,10 +1432,18 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
   );
 }
 
-function AnalyticsSection({ onGetStarted }: { onGetStarted: () => void }) {
+function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
   const { ref: textRef, visible: textVisible } = useFadeIn(0.2);
   const phoneRef = useRef<HTMLDivElement>(null);
   const [phoneVisible, setPhoneVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const el = phoneRef.current;
@@ -1456,45 +1464,37 @@ function AnalyticsSection({ onGetStarted }: { onGetStarted: () => void }) {
     { icon: '✏️', text: 'Tap any cell to manually correct your record' },
   ];
 
+  const fs = (desktop: number) => isMobile ? Math.round(desktop * 0.75) : desktop;
+
   return (
-    <section style={{ background: '#06060a', padding: '120px 24px' }}>
-      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 80, alignItems: 'center' }}>
+    <section style={{ background: '#06060a', padding: isMobile ? '60px 16px' : '120px 24px' }}>
+      <div style={{ maxWidth: 1020, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: isMobile ? 20 : 80, alignItems: 'center' }}>
 
         {/* Text */}
         <div ref={textRef}>
-          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 16, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE}` }}>
+          <div style={{ fontSize: fs(11), color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: isMobile ? 8 : 16, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE}` }}>
             Detailed Analytics
           </div>
-          <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.1s` }}>
+          <h2 style={{ fontSize: isMobile ? 'clamp(18px, 3vw, 28px)' : 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: isMobile ? 10 : 20, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.1s` }}>
             See exactly<br />how you&apos;re doing
           </h2>
-          <p style={{ fontSize: 17, color: '#9ca3af', lineHeight: 1.85, marginBottom: 40, maxWidth: 400, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.2s` }}>
-            Every habit, every day. Colour-coded across a full monthly grid so you can spot patterns instantly — and actually fix them.
+          <p style={{ fontSize: fs(17), color: '#9ca3af', lineHeight: 1.7, marginBottom: isMobile ? 16 : 40, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.2s` }}>
+            Every habit, every day. Colour-coded across a full monthly grid so you can spot patterns instantly.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 16 }}>
             {bullets.map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(18px)', transition: `all 0.6s ${AE} ${0.3 + i * 0.08}s` }}>
-                <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>{b.icon}</span>
-                <span style={{ fontSize: 15, color: '#a1a1aa', lineHeight: 1.55 }}>{b.text}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 6 : 14, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(18px)', transition: `all 0.6s ${AE} ${0.3 + i * 0.08}s` }}>
+                <span style={{ fontSize: fs(16), flexShrink: 0, marginTop: 2 }}>{b.icon}</span>
+                <span style={{ fontSize: fs(15), color: '#a1a1aa', lineHeight: 1.55 }}>{b.text}</span>
               </div>
             ))}
-          </div>
-          <div style={{ marginTop: 44, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(18px)', transition: `all 0.6s ${AE} 0.65s` }}>
-            <button
-              onClick={onGetStarted}
-              style={{ padding: '14px 32px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', transition: `all 0.3s ${AE}` }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; }}
-            >
-              View Detailed Analytics →
-            </button>
           </div>
         </div>
 
         {/* Phone */}
         <div ref={phoneRef} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
           <div style={{ position: 'absolute', inset: '-60px', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(22,163,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'scale(1) translateY(0)' : 'scale(0.88) translateY(24px)', transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}` }}>
+          <div style={{ opacity: phoneVisible ? 1 : 0, transform: `${phoneVisible ? 'scale(1)' : 'scale(0.88)'} ${isMobile ? 'scale(0.9)' : ''} translateY(${phoneVisible ? '0' : '24px'})`, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}` }}>
             <AnalyticsPhone visible={phoneVisible} />
           </div>
         </div>
