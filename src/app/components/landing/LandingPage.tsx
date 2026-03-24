@@ -1494,7 +1494,7 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
         {/* Phone */}
         <div ref={phoneRef} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
           <div style={{ position: 'absolute', inset: '-60px', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(22,163,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ opacity: phoneVisible ? 1 : 0, transform: `${phoneVisible ? 'scale(1)' : 'scale(0.88)'} ${isMobile ? 'scale(0.9)' : ''} translateY(${phoneVisible ? '0' : '24px'})`, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}` }}>
+          <div style={{ opacity: phoneVisible ? 1 : 0, transform: `${phoneVisible ? 'scale(1)' : 'scale(0.88)'} ${isMobile ? 'scale(0.81)' : ''} translateY(${phoneVisible ? '0' : '24px'})`, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}` }}>
             <AnalyticsPhone visible={phoneVisible} />
           </div>
         </div>
