@@ -32,7 +32,7 @@ export default function SubscriptionGate() {
     <div className="min-h-screen bg-ql-bg flex flex-col items-center justify-center px-5">
       <button
         onClick={() => signOut(auth)}
-        className="absolute top-5 left-5 flex items-center gap-1.5 text-ql-3 text-sm hover:text-ql transition-colors"
+        className="absolute top-5 left-5 flex items-center gap-1.5 text-white text-sm hover:opacity-70 transition-opacity"
       >
         ← Back
       </button>

@@ -115,7 +115,7 @@ export default function AuthScreen() {
           {mode === 'login' && (
             <>
               <button onClick={() => { setMode('signup'); clear(); }} className="text-xs font-medium" style={{ color: '#16a34a' }}>
-                No account? Sign up free
+                No account? Sign up
               </button>
               <button onClick={() => { setMode('forgot'); clear(); }} className="text-ql-3 text-xs">
                 Forgot password?
