@@ -21,10 +21,12 @@ function sanitise(data: StoreData): StoreData {
 export async function pushToCloud(userId: string, storeState: StoreData) {
   try {
     const payload = sanitise(storeState);
+    console.log('[sync] pushing to cloud for user:', userId, 'keys:', Object.keys(payload).length);
     await setDoc(doc(db, 'users', userId, 'data', 'store'), {
       ...payload,
       _updatedAt: new Date().toISOString(),
     });
+    console.log('[sync] push success');
   } catch (e) {
     console.error('[sync] push error:', e);
   }
@@ -32,7 +34,9 @@ export async function pushToCloud(userId: string, storeState: StoreData) {
 
 export async function pullFromCloud(userId: string): Promise<StoreData | null> {
   try {
+    console.log('[sync] pulling from cloud for user:', userId);
     const snap = await getDoc(doc(db, 'users', userId, 'data', 'store'));
+    console.log('[sync] pull result — exists:', snap.exists());
     if (!snap.exists()) return null;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _updatedAt, ...data } = snap.data();
