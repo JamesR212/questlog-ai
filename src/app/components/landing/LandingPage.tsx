@@ -1965,32 +1965,32 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>One price. Everything included.</h2>
           <p style={{ fontSize: 17, color: '#71717a', marginBottom: 64 }}>No feature tiers. No paywalled sections. All of GAINN, for everyone.</p>
 
-          <div style={{ transform: isMobile ? 'scale(0.72)' : 'none', transformOrigin: 'top center', marginBottom: isMobile ? -80 : 48, width: '100%' }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 48 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: isMobile ? 10 : 20, marginBottom: 48, padding: isMobile ? '0 4px' : 0 }}>
             {/* Monthly */}
             <div
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1.5px solid rgba(255,255,255,0.1)',
                 borderRadius: 24,
-                padding: '40px 36px',
+                padding: isMobile ? '24px 16px' : '40px 36px',
                 opacity: pricingVisible ? 1 : 0,
                 transform: pricingVisible ? 'scale(1)' : 'scale(0.94)',
                 transition: `all 0.6s ${easing} 0.1s`,
               }}
             >
-              <div style={{ fontSize: 14, color: '#a1a1aa', fontWeight: 600, marginBottom: 16 }}>Monthly</div>
-              <div style={{ fontSize: 52, fontWeight: 900, color: '#fff' }}>£2.99</div>
-              <div style={{ fontSize: 14, color: '#71717a', marginBottom: 32 }}>per month</div>
+              <div style={{ fontSize: isMobile ? 11 : 14, color: '#a1a1aa', fontWeight: 600, marginBottom: 12 }}>Monthly</div>
+              <div style={{ fontSize: isMobile ? 36 : 52, fontWeight: 900, color: '#fff' }}>£2.99</div>
+              <div style={{ fontSize: isMobile ? 11 : 14, color: '#71717a', marginBottom: isMobile ? 20 : 32 }}>per month</div>
               <button
                 onClick={onGetStarted}
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: isMobile ? '10px' : '14px',
                   background: 'transparent',
                   color: '#fff',
                   border: '1.5px solid rgba(255,255,255,0.2)',
                   borderRadius: 12,
-                  fontSize: 15,
+                  fontSize: isMobile ? 12 : 15,
                   fontWeight: 700,
                   cursor: 'pointer',
                   transition: `all 0.3s ${easing}`,
@@ -2008,7 +2008,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 background: 'linear-gradient(135deg, rgba(22,163,74,0.15), rgba(22,163,74,0.05))',
                 border: '1.5px solid rgba(22,163,74,0.5)',
                 borderRadius: 24,
-                padding: '40px 36px',
+                padding: isMobile ? '24px 16px' : '40px 36px',
                 position: 'relative',
                 boxShadow: '0 0 60px rgba(22,163,74,0.12)',
                 opacity: pricingVisible ? 1 : 0,
@@ -2019,21 +2019,21 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 100, letterSpacing: 1, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                 Best Value
               </div>
-              <div style={{ fontSize: 14, color: '#86efac', fontWeight: 600, marginBottom: 16 }}>Annual</div>
-              <div style={{ fontSize: 52, fontWeight: 900, color: '#fff' }}>£24.99</div>
-              <div style={{ fontSize: 14, color: '#71717a', marginBottom: 4 }}>per year</div>
-              <div style={{ fontSize: 15, color: '#86efac', fontWeight: 700, marginBottom: 4 }}>£2.08/mo — Save 30% vs monthly</div>
-              <div style={{ fontSize: 12, color: '#52525b', marginBottom: 32 }}>billed annually</div>
+              <div style={{ fontSize: isMobile ? 11 : 14, color: '#86efac', fontWeight: 600, marginBottom: 12 }}>Annual</div>
+              <div style={{ fontSize: isMobile ? 36 : 52, fontWeight: 900, color: '#fff' }}>£24.99</div>
+              <div style={{ fontSize: isMobile ? 11 : 14, color: '#71717a', marginBottom: 4 }}>per year</div>
+              <div style={{ fontSize: isMobile ? 11 : 15, color: '#86efac', fontWeight: 700, marginBottom: 4 }}>£2.08/mo — Save 30% vs monthly</div>
+              <div style={{ fontSize: isMobile ? 10 : 12, color: '#52525b', marginBottom: isMobile ? 20 : 32 }}>billed annually</div>
               <button
                 onClick={onGetStarted}
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: isMobile ? '10px' : '14px',
                   background: '#16a34a',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 12,
-                  fontSize: 15,
+                  fontSize: isMobile ? 12 : 15,
                   fontWeight: 700,
                   cursor: 'pointer',
                   transition: `all 0.3s ${easing}`,
@@ -2044,7 +2044,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 Get Started
               </button>
             </div>
-          </div></div>
+          </div>
 
           {/* Feature list */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
