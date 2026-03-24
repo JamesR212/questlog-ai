@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { Theme, ActivityLevel } from '@/types';
 
@@ -52,7 +52,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'feedback';
 
 export default function OnboardingFlow() {
   const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode } = useGameStore();
@@ -73,6 +73,7 @@ export default function OnboardingFlow() {
   const [selectedTheme,  setSelectedTheme]  = useState<Theme>('dark');
   const [direction,      setDirection]      = useState<'forward' | 'back'>('forward');
   const [animating,      setAnimating]      = useState(false);
+  const [countdown,      setCountdown]      = useState(5);
 
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
@@ -81,6 +82,7 @@ export default function OnboardingFlow() {
     if (goals.includes('wake_early')) list.push('sleep');
     if (goals.includes('get_fit') || goals.includes('build_strength') || goals.includes('track_life')) list.push('fitness');
     list.push('theme');
+    list.push('feedback');
     return list;
   }, [goals]);
 
@@ -123,6 +125,20 @@ export default function OnboardingFlow() {
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
     setHasOnboarded();
   };
+
+  // ── Countdown auto-finish on feedback step ────────────────────────────────
+  useEffect(() => {
+    if (currentStep !== 'feedback') return;
+    setCountdown(5);
+    const interval = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { clearInterval(interval); finish(); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const isDark = selectedTheme === 'dark';
   const activeTheme = THEMES.find(t => t.id === selectedTheme)!;
@@ -431,11 +447,52 @@ export default function OnboardingFlow() {
 
               <div className="pt-4 flex gap-3">
                 <button onClick={goBack} className="px-5 py-4 font-medium rounded-2xl text-sm" style={{ background: backBg, color: backText }}>Back</button>
-                <button onClick={finish} className="flex-1 py-4 font-bold rounded-2xl text-base hover:opacity-90 transition-opacity" style={{ background: btnBg, color: btnText }}>
+                <button onClick={goNext} className="flex-1 py-4 font-bold rounded-2xl text-base hover:opacity-90 transition-opacity" style={{ background: btnBg, color: btnText }}>
                   Start Quest →
                 </button>
               </div>
             </>
+          );
+        })()}
+
+        {/* ── Feedback slide ── */}
+        {currentStep === 'feedback' && (() => {
+          const r = 28;
+          const circ = 2 * Math.PI * r;
+          const progress = countdown / 5;
+          return (
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-6">
+              <div className="text-5xl">💬</div>
+              <h2 className="text-2xl font-black text-white leading-tight">
+                Your voice matters to us
+              </h2>
+              <p className="text-white/60 text-sm leading-relaxed max-w-xs">
+                We're building GAINN for you — and we genuinely want to hear about your experience. Whether it's something you love, something that could be better, or a feature you'd love to see, we want to know.
+              </p>
+              <p className="text-white/40 text-xs leading-relaxed max-w-xs">
+                Head to the <strong className="text-white/60">Community</strong> tab anytime to share feedback directly with our team.
+              </p>
+
+              {/* Circle countdown */}
+              <button onClick={finish} className="flex flex-col items-center gap-2 mt-2">
+                <svg width="72" height="72" viewBox="0 0 72 72">
+                  <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                  <circle
+                    cx="36" cy="36" r={r}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.7)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeDasharray={circ}
+                    strokeDashoffset={circ * (1 - progress)}
+                    transform="rotate(-90 36 36)"
+                    style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+                  />
+                  <text x="36" y="42" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="18" fontWeight="bold">{countdown}</text>
+                </svg>
+                <span className="text-white/30 text-[11px]">tap to skip</span>
+              </button>
+            </div>
           );
         })()}
 

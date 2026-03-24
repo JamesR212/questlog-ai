@@ -57,7 +57,10 @@ export default function SocialPage({ userId }: { userId: string }) {
   const [requests,   setRequests]   = useState<FriendRequest[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [sent,       setSent]       = useState<Set<string>>(new Set());
-  const [tab,        setTab]        = useState<'friends' | 'search' | 'globe'>('friends');
+  const [tab,        setTab]        = useState<'friends' | 'search' | 'globe' | 'feedback'>('friends');
+  const [fbMessages, setFbMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const [fbInput,    setFbInput]    = useState('');
+  const [fbLoading,  setFbLoading]  = useState(false);
   const [myLocation, setMyLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   const [locError,   setLocError]   = useState('');
@@ -175,13 +178,13 @@ export default function SocialPage({ userId }: { userId: string }) {
 
       {/* ── Tabs ── */}
       <div className="flex gap-2">
-        {(['friends', 'globe', 'search'] as const).map(t => (
+        {(['friends', 'globe', 'search', 'feedback'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === t ? 'bg-ql-accent text-white' : 'bg-ql-surface border border-ql text-ql-3'}`}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${tab === t ? 'bg-ql-accent text-white' : 'bg-ql-surface border border-ql text-ql-3'}`}
           >
-            {t === 'friends' ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}` : t === 'globe' ? '🌍 Globe' : 'Find Friends'}
+            {t === 'friends' ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}` : t === 'globe' ? '🌍' : t === 'search' ? 'Find' : '💬'}
           </button>
         ))}
       </div>
@@ -317,6 +320,98 @@ export default function SocialPage({ userId }: { userId: string }) {
           )}
         </div>
       )}
+
+      {/* ── Feedback chat ── */}
+      {tab === 'feedback' && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h3 className="text-ql text-base font-bold">Share Feedback</h3>
+            <p className="text-ql-3 text-xs mt-0.5">Tell us what you love, what could be better, or a feature you&apos;d like to see.</p>
+          </div>
+
+          {/* Messages */}
+          {fbMessages.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {fbMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    m.role === 'user'
+                      ? 'bg-ql-accent text-white rounded-br-sm'
+                      : 'bg-ql-surface border border-ql text-ql rounded-bl-sm'
+                  }`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              {fbLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-ql-surface border border-ql rounded-2xl rounded-bl-sm px-4 py-2.5">
+                    <div className="flex gap-1 items-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-ql-3 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ql-3 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-ql-3 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {fbMessages.length === 0 && (
+            <div className="bg-ql-surface rounded-2xl border border-ql p-4 flex flex-col gap-3">
+              <p className="text-ql-3 text-xs">💡 Some ideas to get started:</p>
+              {['I love the habit tracker!', 'Could you add a water reminder?', 'The AI gym plans are amazing'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setFbInput(s)}
+                  className="text-left text-xs text-ql-3 border border-ql rounded-xl px-3 py-2 hover:text-ql hover:border-ql-accent transition-colors"
+                >
+                  &quot;{s}&quot;
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="flex gap-2">
+            <input
+              value={fbInput}
+              onChange={e => setFbInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendFeedback(); } }}
+              placeholder="Share your thoughts…"
+              className="flex-1 bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql placeholder:text-ql-3 outline-none focus:border-ql-accent"
+            />
+            <button
+              onClick={sendFeedback}
+              disabled={!fbInput.trim() || fbLoading}
+              className="px-4 py-2.5 bg-ql-accent disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-opacity"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  function sendFeedback() {
+    const text = fbInput.trim();
+    if (!text || fbLoading) return;
+    setFbMessages(m => [...m, { role: 'user', text }]);
+    setFbInput('');
+    setFbLoading(true);
+    fetch('/api/feedback/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, userId, userName }),
+    })
+      .then(r => r.json())
+      .then((data: { reply?: string }) => {
+        setFbMessages(m => [...m, { role: 'ai', text: data.reply ?? 'Thanks for your feedback!' }]);
+      })
+      .catch(() => {
+        setFbMessages(m => [...m, { role: 'ai', text: 'Thanks for sharing — we really appreciate it!' }]);
+      })
+      .finally(() => setFbLoading(false));
+  }
 }
