@@ -250,8 +250,8 @@ export default function OnboardingFlow() {
         {currentStep === 'sleep' && (
           <>
             <div className="text-5xl mb-6">🌅</div>
-            <h1 className="text-white text-3xl font-bold mb-2">Morning Routine</h1>
-            <p className="text-white/50 text-sm mb-8">Set your targets and check in each morning to build the habit.</p>
+            <h1 className="text-white text-3xl font-bold mb-2">Sleep Routine</h1>
+            <p className="text-white/50 text-sm mb-8">Set your wake and bedtime targets to build a consistent sleep routine.</p>
 
             <div className="grid grid-cols-2 gap-3 mb-8">
               <div>
