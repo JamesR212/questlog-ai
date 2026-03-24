@@ -126,18 +126,17 @@ export default function OnboardingFlow() {
     setHasOnboarded();
   };
 
-  // ── Countdown auto-finish on feedback step ────────────────────────────────
+  // ── Countdown on feedback step (just enables the button, doesn't auto-advance) ──
   useEffect(() => {
     if (currentStep !== 'feedback') return;
     setCountdown(5);
     const interval = setInterval(() => {
       setCountdown(c => {
-        if (c <= 1) { clearInterval(interval); finish(); return 0; }
+        if (c <= 1) { clearInterval(interval); return 0; }
         return c - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   const isDark = selectedTheme === 'dark';
@@ -473,9 +472,9 @@ export default function OnboardingFlow() {
                 Head to the <strong className="text-white/60">Community</strong> tab anytime to share feedback directly with our team.
               </p>
 
-              {/* Circle countdown */}
-              <button onClick={finish} className="flex flex-col items-center gap-2 mt-2">
-                <svg width="72" height="72" viewBox="0 0 72 72">
+              {/* Circle countdown + Continue button */}
+              <div className="flex flex-col items-center gap-4 mt-2">
+                <svg width="64" height="64" viewBox="0 0 72 72">
                   <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
                   <circle
                     cx="36" cy="36" r={r}
@@ -488,10 +487,22 @@ export default function OnboardingFlow() {
                     transform="rotate(-90 36 36)"
                     style={{ transition: 'stroke-dashoffset 0.9s linear' }}
                   />
-                  <text x="36" y="42" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="18" fontWeight="bold">{countdown}</text>
+                  <text x="36" y="42" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="18" fontWeight="bold">{countdown > 0 ? countdown : '✓'}</text>
                 </svg>
-                <span className="text-white/30 text-[11px]">tap to skip</span>
-              </button>
+                <button
+                  onClick={finish}
+                  disabled={countdown > 0}
+                  className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all"
+                  style={{
+                    background: countdown === 0 ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: countdown === 0 ? 'white' : 'rgba(255,255,255,0.2)',
+                    border: `2px solid ${countdown === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                    cursor: countdown === 0 ? 'pointer' : 'default',
+                  }}
+                >
+                  Continue →
+                </button>
+              </div>
             </div>
           );
         })()}
