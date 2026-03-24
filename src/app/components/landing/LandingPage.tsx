@@ -848,7 +848,7 @@ const FEATURES = [
     icon: '💧',
     title: 'Smart Hydration',
     subtitle: 'Your body\'s personalised water goal',
-    desc: 'AI calculates your daily water target based on your stats. Track intake with a beautiful ring progress view.',
+    desc: 'AI calculates your daily water target based on your activity, height, weight, and age. Track intake with a beautiful ring progress view.',
     color: '#16a34a',
   },
   {
