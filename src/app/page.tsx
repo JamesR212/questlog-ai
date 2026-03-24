@@ -5,7 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { pushToCloud, pullFromCloud, upsertProfile } from '@/lib/sync';
 import { updatePublicProfile } from '@/lib/friends';
-import { useGameStore } from '@/store/gameStore';
+import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
 import AuthScreen from './components/auth/AuthScreen';
 import LandingPage from './components/landing/LandingPage';
@@ -56,7 +56,7 @@ export default function Home() {
     if (!user || hydratedUid.current === user.uid) return;
     hydratedUid.current = user.uid;
     setCloudReady(false);
-    useGameStore.persist.clearStorage();
+    resetGameStore();
 
     const userId = user.uid;
 
@@ -80,7 +80,7 @@ export default function Home() {
     if (!user) {
       hydratedUid.current = null;
       setCloudReady(false);
-      useGameStore.persist.clearStorage();
+      resetGameStore();
     }
   }, [user]);
 
