@@ -82,7 +82,7 @@ export default function Home() {
   const storeSnapshot = useDebounce(store, 3000);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !cloudReady) return;
     setSyncing(true);
     const s = useGameStore.getState();
     pushToCloud(user.uid, s).finally(() => setSyncing(false));
@@ -96,7 +96,7 @@ export default function Home() {
       dex: s.stats.dex,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeSnapshot, user?.uid]);
+  }, [storeSnapshot, user?.uid, cloudReady]);
 
   // ── Loading splash ───────────────────────────────────────────────────────
   if (user === undefined || (user && !cloudReady)) {
