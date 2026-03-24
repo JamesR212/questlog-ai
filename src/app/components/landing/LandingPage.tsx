@@ -1000,7 +1000,7 @@ function CustomisePhone() {
   );
 }
 
-function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number; onActive: () => void }) {
+function FeatureSection({ f, i, onActive, isMobile }: { f: (typeof FEATURES)[0]; i: number; onActive: () => void; isMobile: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [vis, setVis] = useState(false);
 
@@ -1021,11 +1021,11 @@ function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number
   });
 
   return (
-    <div ref={ref} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 60, paddingLeft: 8 }}>
-      <div style={{ fontSize: 56, marginBottom: 20, ...anim(0) }}>{f.icon}</div>
-      <div style={{ fontSize: 11, color: FEAT_COLORS[i % FEAT_COLORS.length], fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 12, ...anim(80) }}>{f.subtitle}</div>
-      <h3 style={{ fontSize: 'clamp(30px, 3.8vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 20, ...anim(160) }}>{f.title}</h3>
-      <p style={{ fontSize: 17, color: '#9ca3af', lineHeight: 1.85, maxWidth: 400, ...anim(240) }}>{f.desc}</p>
+    <div ref={ref} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: isMobile ? 8 : 60, paddingLeft: isMobile ? 4 : 8 }}>
+      <div style={{ fontSize: isMobile ? 44 : 56, marginBottom: isMobile ? 14 : 20, ...anim(0) }}>{f.icon}</div>
+      <div style={{ fontSize: isMobile ? 9 : 11, color: FEAT_COLORS[i % FEAT_COLORS.length], fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: isMobile ? 8 : 12, ...anim(80) }}>{f.subtitle}</div>
+      <h3 style={{ fontSize: isMobile ? 'clamp(22px, 3vw, 36px)' : 'clamp(30px, 3.8vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: isMobile ? 14 : 20, ...anim(160) }}>{f.title}</h3>
+      <p style={{ fontSize: isMobile ? 13 : 17, color: '#9ca3af', lineHeight: 1.85, maxWidth: isMobile ? 180 : 400, ...anim(240) }}>{f.desc}</p>
     </div>
   );
 }
@@ -1033,7 +1033,15 @@ function FeatureSection({ f, i, onActive }: { f: (typeof FEATURES)[0]; i: number
 function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [phoneVisible, setPhoneVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const activeIdxRef = useRef(0);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Stable callback — never recreated, so FeatureSection observers never disconnect
   const handleActive = useCallback((i: number) => {
@@ -1054,12 +1062,12 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
       </div>
 
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: '0 48px', boxSizing: 'border-box' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: isMobile ? '0 12px' : '0 48px', boxSizing: 'border-box' }}>
 
         {/* Left: scrolling feature sections */}
         <div>
           {FEATURES.map((f, i) => (
-            <FeatureSection key={i} f={f} i={i} onActive={() => handleActive(i)} />
+            <FeatureSection key={i} f={f} i={i} onActive={() => handleActive(i)} isMobile={isMobile} />
           ))}
         </div>
 
@@ -1078,7 +1086,7 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
           {/* Phone(s) with pop transition */}
           <div style={{
             opacity: phoneVisible ? 1 : 0,
-            transform: phoneVisible ? 'scale(1) translateY(0px)' : 'scale(0.92) translateY(12px)',
+            transform: `${phoneVisible ? 'scale(1)' : 'scale(0.92)'} ${isMobile ? 'scale(0.9)' : ''} translateY(${phoneVisible ? '0px' : '12px'})`,
             transition: `opacity 0.35s ${EASE}, transform 0.45s ${EASE}`,
           }}>
             {activeIdx === 1 ? <CustomisePhone /> : <Phone feature={activeIdx} />}
