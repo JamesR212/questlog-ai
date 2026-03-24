@@ -1000,8 +1000,12 @@ function CustomisePhone() {
   );
 }
 
+const N_FEAT = FEATURES.length;
+const TRIPLED = [...FEATURES, ...FEATURES, ...FEATURES];
+
 function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [loopIdx, setLoopIdx]     = useState(N_FEAT); // start in middle copy
   const [phoneVisible, setPhoneVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1013,24 +1017,51 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const selectFeature = (i: number) => {
-    if (i === activeIdx) return;
-    setPhoneVisible(false);
-    setTimeout(() => { setActiveIdx(i); setPhoneVisible(true); }, 200);
-    // Scroll card into view
+  // Scroll to center a given rendered index
+  const centerCard = (ri: number, smooth: boolean, cw: number, mobile: boolean) => {
     const row = scrollRef.current;
-    if (row) {
-      const card = row.children[i] as HTMLElement;
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
+    if (!row) return;
+    const gap = mobile ? 13 : 18;
+    const pad = mobile ? 20 : 48;
+    const cardLeft = pad + ri * (cw + gap);
+    const target = cardLeft - row.clientWidth / 2 + cw / 2;
+    row.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'instant' });
+  };
+
+  // On mount + mobile change: jump to middle copy without animation
+  useEffect(() => {
+    const cw = isMobile ? 131 : 174;
+    centerCard(loopIdx, false, cw, isMobile);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
+
+  // After scroll settles, silently teleport to middle copy so both directions work
+  useEffect(() => {
+    if (loopIdx >= N_FEAT && loopIdx < 2 * N_FEAT) return; // already in middle
+    const t = setTimeout(() => {
+      const cw = isMobile ? 131 : 174;
+      const mid = (loopIdx % N_FEAT) + N_FEAT;
+      setLoopIdx(mid);
+      centerCard(mid, false, cw, isMobile);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [loopIdx, isMobile]);
+
+  const selectFeature = (ri: number) => {
+    const feat = ri % N_FEAT;
+    setPhoneVisible(false);
+    setTimeout(() => { setActiveIdx(feat); setPhoneVisible(true); }, 200);
+    setLoopIdx(ri);
+    const cw = isMobile ? 131 : 174;
+    centerCard(ri, true, cw, isMobile);
   };
 
   const f = FEATURES[activeIdx];
   const glowColor = FEAT_COLORS[activeIdx % FEAT_COLORS.length];
-  const cardW = isMobile ? 90 : 110;
-  const phoneScale = isMobile ? 0.22 : 0.27;
-  const phoneW = 375;
-  const phoneH = 680;
+  const cardW = isMobile ? 131 : 174;
+  const phoneW = 160;
+  const phoneH = 320;
+  const phoneScale = (cardW - 16) / phoneW;
 
   return (
     <div style={{ background: '#050508', paddingTop: 100, paddingBottom: 100 }}>
@@ -1046,51 +1077,46 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
         style={{
           display: 'flex',
           overflowX: 'auto',
-          gap: isMobile ? 12 : 16,
+          gap: isMobile ? 13 : 18,
           padding: isMobile ? '0 20px 16px' : '0 48px 20px',
-          scrollSnapType: 'x mandatory',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
       >
-        {FEATURES.map((feat, i) => {
-          const isActive = i === activeIdx;
+        {TRIPLED.map((feat, ri) => {
+          const i = ri % N_FEAT;
+          const isActive = ri === loopIdx;
           const cardColor = FEAT_COLORS[i % FEAT_COLORS.length];
           return (
             <button
-              key={i}
-              onClick={() => selectFeature(i)}
+              key={ri}
+              onClick={() => selectFeature(ri)}
               style={{
                 flex: `0 0 ${cardW}px`,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 10,
-                scrollSnapAlign: 'start',
-                background: isActive ? `${cardColor}18` : 'rgba(255,255,255,0.03)',
-                border: `2px solid ${isActive ? cardColor : 'rgba(255,255,255,0.07)'}`,
+                background: 'none',
+                border: 'none',
                 borderRadius: 20,
                 padding: '14px 8px 12px',
                 cursor: 'pointer',
                 transition: `all 0.35s ${EASE}`,
-                boxShadow: isActive ? `0 0 20px ${cardColor}30` : 'none',
               }}
             >
-              {/* Mini phone frame */}
+              {/* Phone content */}
               <div style={{
                 width: cardW - 16,
-                height: Math.round((cardW - 16) * 1.8),
-                borderRadius: 12,
-                border: `2px solid ${isActive ? cardColor : 'rgba(255,255,255,0.12)'}`,
-                background: '#0a0a14',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                height: Math.round((cardW - 16) * (phoneH / phoneW)),
                 overflow: 'hidden',
                 position: 'relative',
-                transition: `border-color 0.35s ${EASE}`,
+                pointerEvents: 'none',
+                borderRadius: Math.round(28 * phoneScale),
+                outline: isActive ? `3px solid ${cardColor}` : '3px solid transparent',
+                boxShadow: isActive ? `0 0 20px ${cardColor}55` : 'none',
+                transition: `outline 0.35s ${EASE}, box-shadow 0.35s ${EASE}`,
               }}>
-                {/* Scaled phone content */}
                 <div style={{
                   position: 'absolute',
                   top: 0, left: 0,
@@ -1098,7 +1124,6 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
                   height: phoneH,
                   transform: `scale(${phoneScale})`,
                   transformOrigin: 'top left',
-                  pointerEvents: 'none',
                 }}>
                   {i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
                 </div>

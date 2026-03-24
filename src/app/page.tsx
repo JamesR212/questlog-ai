@@ -145,8 +145,21 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeSnapshot, user?.uid, cloudReady]);
 
-  // ── Loading splash ───────────────────────────────────────────────────────
-  if (user === undefined || (user && (!cloudReady || subscribed === null))) {
+  // ── Not logged in (or still resolving auth) → always show landing/auth ──
+  if (!user) {
+    return (
+      <>
+        <ThemeApplier />
+        {showAuth
+          ? <AuthScreen />
+          : <LandingPage onGetStarted={() => setShowAuth(true)} />
+        }
+      </>
+    );
+  }
+
+  // ── Logged in but waiting for cloud data / subscription check ────────────
+  if (!cloudReady || subscribed === null) {
     return (
       <div className="min-h-screen bg-ql-bg flex items-center justify-center">
         <ThemeApplier />
@@ -157,19 +170,6 @@ export default function Home() {
           <p className="text-ql-3 text-sm">Loading…</p>
         </div>
       </div>
-    );
-  }
-
-  // ── Not logged in ────────────────────────────────────────────────────────
-  if (!user) {
-    return (
-      <>
-        <ThemeApplier />
-        {showAuth
-          ? <AuthScreen />
-          : <LandingPage onGetStarted={() => setShowAuth(true)} />
-        }
-      </>
     );
   }
 

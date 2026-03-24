@@ -58,13 +58,13 @@ export default function AuthScreen() {
         <h1 className="text-4xl font-black tracking-tight">
           <span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">NN</span>
         </h1>
-        <p className="text-ql-3 text-sm">Level up your life</p>
+        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>Level up your life</p>
       </div>
 
       {/* Card */}
       <div className="w-full max-w-sm bg-ql-surface rounded-3xl border border-ql shadow-ql p-6 flex flex-col gap-4">
-        <h2 className="text-ql text-lg font-bold text-center">
-          {mode === 'login' ? 'Welcome back' : mode === 'signup' ? 'Create account' : 'Reset password'}
+        <h2 className="text-lg font-bold text-center" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          {mode === 'login' ? 'Welcome' : mode === 'signup' ? 'Create account' : 'Reset password'}
         </h2>
 
         {/* Fields */}
@@ -117,7 +117,7 @@ export default function AuthScreen() {
               <button onClick={() => { setMode('signup'); clear(); }} className="text-xs font-medium" style={{ color: '#16a34a' }}>
                 No account? Sign up
               </button>
-              <button onClick={() => { setMode('forgot'); clear(); }} className="text-ql-3 text-xs">
+              <button onClick={() => { setMode('forgot'); clear(); }} className="text-xs" style={{ color: 'rgba(255,255,255,0.75)' }}>
                 Forgot password?
               </button>
             </>
@@ -130,7 +130,7 @@ export default function AuthScreen() {
         </div>
       </div>
 
-      <p className="text-ql-3 text-[10px] mt-6 text-center">Your data is saved to the cloud and syncs across devices.</p>
+      <p className="text-[10px] mt-6 text-center" style={{ color: 'rgba(255,255,255,0.75)' }}>Your data is saved to the cloud and syncs across devices.</p>
     </div>
   );
 }
