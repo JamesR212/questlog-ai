@@ -1858,7 +1858,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <img
               src="/gym-plan.jpg"
               alt="AI-generated gym plan with muscular load radar chart"
-              style={{ maxHeight: '76vh', width: 'auto', maxWidth: '100%', borderRadius: 20, display: 'block' }}
+              style={{ maxHeight: isMobile ? '55vh' : '76vh', width: isMobile ? '100%' : 'auto', maxWidth: '100%', borderRadius: 20, display: 'block', objectFit: 'contain' as const }}
             />
           </div>
 
