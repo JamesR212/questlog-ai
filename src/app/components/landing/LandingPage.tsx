@@ -1942,7 +1942,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           >
             <div style={{ fontSize: 13, color: '#86efac', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>GAINN does ALL of this</div>
             <div style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 900, color: '#4ade80' }}>£2.99/mo</div>
-            <div style={{ fontSize: 15, color: '#86efac', marginTop: 8 }}>Save over £25 every month</div>
+            <div style={{ fontSize: 15, color: '#86efac', marginTop: 8 }}>Save over £50 every month</div>
           </div>
         </div>
       </section>
