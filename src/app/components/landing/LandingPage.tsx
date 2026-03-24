@@ -1000,41 +1000,11 @@ function CustomisePhone() {
   );
 }
 
-function FeatureSection({ f, i, onActive, isMobile }: { f: (typeof FEATURES)[0]; i: number; onActive: () => void; isMobile: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [vis, setVis] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setVis(true); onActive(); }
-    }, { threshold: 0.25, rootMargin: '0px 0px -10% 0px' });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [onActive]);
-
-  const anim = (delay: number): React.CSSProperties => ({
-    opacity: vis ? 1 : 0,
-    transform: vis ? 'translateY(0px)' : 'translateY(44px)',
-    transition: `opacity 0.85s ${EASE} ${delay}ms, transform 0.85s ${EASE} ${delay}ms`,
-  });
-
-  return (
-    <div ref={ref} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: isMobile ? 8 : 60, paddingLeft: isMobile ? 4 : 8 }}>
-      <div style={{ fontSize: isMobile ? 44 : 56, marginBottom: isMobile ? 14 : 20, ...anim(0) }}>{f.icon}</div>
-      <div style={{ fontSize: isMobile ? 9 : 11, color: FEAT_COLORS[i % FEAT_COLORS.length], fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: isMobile ? 8 : 12, ...anim(80) }}>{f.subtitle}</div>
-      <h3 style={{ fontSize: isMobile ? 'clamp(22px, 3vw, 36px)' : 'clamp(30px, 3.8vw, 48px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: isMobile ? 14 : 20, ...anim(160) }}>{f.title}</h3>
-      <p style={{ fontSize: isMobile ? 13 : 17, color: '#9ca3af', lineHeight: 1.85, maxWidth: isMobile ? 180 : 400, ...anim(240) }}>{f.desc}</p>
-    </div>
-  );
-}
-
 function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [phoneVisible, setPhoneVisible] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const activeIdxRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -1043,69 +1013,128 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Stable callback — never recreated, so FeatureSection observers never disconnect
-  const handleActive = useCallback((i: number) => {
-    if (i === activeIdxRef.current) return;
-    activeIdxRef.current = i;
+  const selectFeature = (i: number) => {
+    if (i === activeIdx) return;
     setPhoneVisible(false);
-    setTimeout(() => { setActiveIdx(i); setPhoneVisible(true); }, 220);
-  }, []);
+    setTimeout(() => { setActiveIdx(i); setPhoneVisible(true); }, 200);
+    // Scroll card into view
+    const row = scrollRef.current;
+    if (row) {
+      const card = row.children[i] as HTMLElement;
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
 
+  const f = FEATURES[activeIdx];
   const glowColor = FEAT_COLORS[activeIdx % FEAT_COLORS.length];
+  const cardW = isMobile ? 90 : 110;
+  const phoneScale = isMobile ? 0.22 : 0.27;
+  const phoneW = 375;
+  const phoneH = 680;
 
   return (
-    <div style={{ background: '#050508' }}>
+    <div style={{ background: '#050508', paddingTop: 100, paddingBottom: 100 }}>
       {/* Section header */}
-      <div style={{ textAlign: 'center', paddingTop: 100, paddingBottom: 0 }}>
+      <div style={{ textAlign: 'center', marginBottom: 60 }}>
         <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Everything you need</div>
         <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>One app.<br />Infinite gains.</h2>
       </div>
 
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: isMobile ? '0 12px' : '0 48px', boxSizing: 'border-box' }}>
+      {/* Horizontal scrollable phone cards */}
+      <div
+        ref={scrollRef}
+        style={{
+          display: 'flex',
+          overflowX: 'auto',
+          gap: isMobile ? 12 : 16,
+          padding: isMobile ? '0 20px 16px' : '0 48px 20px',
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {FEATURES.map((feat, i) => {
+          const isActive = i === activeIdx;
+          const cardColor = FEAT_COLORS[i % FEAT_COLORS.length];
+          return (
+            <button
+              key={i}
+              onClick={() => selectFeature(i)}
+              style={{
+                flex: `0 0 ${cardW}px`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 10,
+                scrollSnapAlign: 'start',
+                background: isActive ? `${cardColor}18` : 'rgba(255,255,255,0.03)',
+                border: `2px solid ${isActive ? cardColor : 'rgba(255,255,255,0.07)'}`,
+                borderRadius: 20,
+                padding: '14px 8px 12px',
+                cursor: 'pointer',
+                transition: `all 0.35s ${EASE}`,
+                boxShadow: isActive ? `0 0 20px ${cardColor}30` : 'none',
+              }}
+            >
+              {/* Mini phone frame */}
+              <div style={{
+                width: cardW - 16,
+                height: Math.round((cardW - 16) * 1.8),
+                borderRadius: 12,
+                border: `2px solid ${isActive ? cardColor : 'rgba(255,255,255,0.12)'}`,
+                background: '#0a0a14',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                position: 'relative',
+                transition: `border-color 0.35s ${EASE}`,
+              }}>
+                {/* Scaled phone content */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  width: phoneW,
+                  height: phoneH,
+                  transform: `scale(${phoneScale})`,
+                  transformOrigin: 'top left',
+                  pointerEvents: 'none',
+                }}>
+                  {i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
+                </div>
+              </div>
 
-        {/* Left: scrolling feature sections */}
-        <div>
-          {FEATURES.map((f, i) => (
-            <FeatureSection key={i} f={f} i={i} onActive={() => handleActive(i)} isMobile={isMobile} />
-          ))}
-        </div>
+              {/* Icon + title */}
+              <div style={{ fontSize: isMobile ? 14 : 16 }}>{feat.icon}</div>
+              <span style={{
+                fontSize: isMobile ? 9 : 10,
+                fontWeight: 700,
+                color: isActive ? '#fff' : 'rgba(255,255,255,0.45)',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                transition: `color 0.3s ${EASE}`,
+              }}>
+                {feat.title}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Right: sticky phone */}
-        <div style={{ position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Animated glow behind phone */}
-          <div style={{
-            position: 'absolute',
-            width: 320, height: 320,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${glowColor}2d 0%, transparent 70%)`,
-            transition: `background 1s ${EASE}`,
-            pointerEvents: 'none',
-          }} />
-
-          {/* Phone(s) with pop transition */}
-          <div style={{
-            opacity: phoneVisible ? 1 : 0,
-            transform: `${phoneVisible ? 'scale(1)' : 'scale(0.92)'} ${isMobile ? 'scale(0.9)' : ''} translateY(${phoneVisible ? '0px' : '12px'})`,
-            transition: `opacity 0.35s ${EASE}, transform 0.45s ${EASE}`,
-          }}>
-            {activeIdx === 1 ? <CustomisePhone /> : <Phone feature={activeIdx} />}
-          </div>
-
-          {/* Dot nav */}
-          <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {FEATURES.map((_, i) => (
-              <div key={i} style={{
-                width: i === activeIdx ? 8 : 5,
-                height: i === activeIdx ? 8 : 5,
-                borderRadius: '50%',
-                background: i === activeIdx ? glowColor : 'rgba(255,255,255,0.18)',
-                transition: `all 0.4s ${EASE}`,
-                boxShadow: i === activeIdx ? `0 0 6px ${glowColor}` : 'none',
-              }} />
-            ))}
-          </div>
-        </div>
+      {/* Detail panel */}
+      <div style={{
+        maxWidth: 620,
+        margin: '40px auto 0',
+        padding: isMobile ? '0 24px' : '0 48px',
+        textAlign: 'center',
+        opacity: phoneVisible ? 1 : 0,
+        transform: phoneVisible ? 'translateY(0px)' : 'translateY(12px)',
+        transition: `opacity 0.35s ${EASE}, transform 0.35s ${EASE}`,
+      }}>
+        <div style={{ fontSize: isMobile ? 44 : 56, marginBottom: 12 }}>{f.icon}</div>
+        <div style={{ fontSize: 11, color: glowColor, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 12 }}>{f.subtitle}</div>
+        <h3 style={{ fontSize: isMobile ? 28 : 40, fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 16 }}>{f.title}</h3>
+        <p style={{ fontSize: isMobile ? 14 : 17, color: '#9ca3af', lineHeight: 1.85 }}>{f.desc}</p>
       </div>
     </div>
   );
