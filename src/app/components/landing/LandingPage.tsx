@@ -820,7 +820,7 @@ const FEATURES = [
     icon: '🔥',
     title: 'Habit Tracking',
     subtitle: 'Build streaks that stick',
-    desc: 'Track any habit with custom schedules, emoji icons, and completion grids. Streaks build momentum — GAINN keeps the fire alive.',
+    desc: 'Track any habit with custom schedules, emoji icons, and completion grids. Streaks build momentum — GAINN keeps the fire alive. Add your own custom habits built around your life, whether that\'s studying, reading, meditation, and more!',
     color: '#16a34a',
   },
   {
