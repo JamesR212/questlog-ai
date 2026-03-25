@@ -1204,20 +1204,39 @@ const THEME_PHONES = [
 
 function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={t.img}
-      alt={`GAINN ${t.label} theme`}
-      style={{
-        width: 130,
-        height: 200,
-        borderRadius: 26,
-        objectFit: 'cover',
-        objectPosition: 'top',
-        display: 'block',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
-      }}
-    />
+    <div style={{
+      width: 130,
+      height: 260,
+      background: '#0d0d14',
+      borderRadius: 28,
+      border: '2px solid rgba(255,255,255,0.12)',
+      boxShadow: '0 0 0 1px rgba(0,0,0,0.6), 0 32px 64px rgba(0,0,0,0.55)',
+      position: 'relative',
+      overflow: 'hidden',
+      flexShrink: 0,
+    }}>
+      {/* Notch */}
+      <div style={{
+        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 49, height: 15, background: '#0d0d14',
+        borderRadius: '0 0 11px 11px', zIndex: 10,
+        borderLeft: '2px solid rgba(255,255,255,0.12)',
+        borderRight: '2px solid rgba(255,255,255,0.12)',
+        borderBottom: '2px solid rgba(255,255,255,0.12)',
+      }} />
+      {/* Status bar */}
+      <div style={{ height: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 11px', position: 'relative', zIndex: 5 }}>
+        <span style={{ fontSize: 6, color: '#fff', fontWeight: 600 }}>9:41</span>
+        <span style={{ fontSize: 6, color: '#fff' }}>●●●</span>
+      </div>
+      {/* Screenshot */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={t.img}
+        alt={`GAINN ${t.label} theme`}
+        style={{ width: '100%', height: 242, objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+      />
+    </div>
   );
 }
 
@@ -1257,7 +1276,7 @@ function ThemeShowcaseSection() {
       </div>
 
       {/* Fan */}
-      <div style={{ position: 'relative', height: isMobile ? 260 : 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', height: isMobile ? 300 : 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {THEME_PHONES.map((t, i) => (
           <div
             key={i}
