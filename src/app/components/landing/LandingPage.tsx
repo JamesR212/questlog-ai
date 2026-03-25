@@ -1260,13 +1260,13 @@ function ThemeShowcaseSection() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const xPos    = [-270, -135,   0, 135, 270];
-  const scales  = [0.86,  0.93, 1.0, 0.93, 0.86];
+  const xPos    = [-300, -150,   0, 150, 300];
+  const scales  = [0.946, 1.023, 1.1, 1.023, 0.946];
   const zIdx    = [1,       2,   4,   2,    1];
   const yOffset = [12,      6,   0,   6,   12];
   const delays  = [180,    90,   0,  90,  180];
 
-  // On mobile, shrink xPos and scales by 25%
+  // On mobile, shrink xPos and scales by ~40%
   const m = isMobile ? 0.607 : 1;
 
   return (
@@ -1284,7 +1284,7 @@ function ThemeShowcaseSection() {
       </div>
 
       {/* Fan */}
-      <div style={{ position: 'relative', height: isMobile ? 340 : 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', height: isMobile ? 370 : 460, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {THEME_PHONES.map((t, i) => (
           <div
             key={i}
@@ -1298,6 +1298,17 @@ function ThemeShowcaseSection() {
               transition: `transform 1.6s ${AE} ${delays[i]}ms, opacity 1.1s ${AE} ${delays[i]}ms`,
             }}
           >
+            {/* Glow */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 24,
+              background: `radial-gradient(ellipse at 50% 60%, ${t.accent}55 0%, transparent 70%)`,
+              filter: 'blur(18px)',
+              zIndex: -1,
+              transform: 'scale(1.15) translateY(8%)',
+              pointerEvents: 'none',
+            }} />
             <ThemePhoneMini t={t} />
             <div style={{
               marginTop: 10, fontSize: 11, fontWeight: 700,
