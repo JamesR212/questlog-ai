@@ -62,10 +62,16 @@ export default function FormAnalyzer() {
     try {
       // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
       setLoadingMsg('Uploading file… (1/3)');
-      const blob = await upload(fileRef.current.name || 'upload', fileRef.current, {
-        access: 'public',
-        handleUploadUrl: '/api/blob/upload',
-      });
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Upload timed out — check your connection and try again')), 30000)
+      );
+      const blob = await Promise.race([
+        upload(fileRef.current.name || 'upload', fileRef.current, {
+          access: 'public',
+          handleUploadUrl: '/api/blob/upload',
+        }),
+        timeout,
+      ]);
 
       // Step 2: tell our server to pull from Blob and forward to Gemini
       setLoadingMsg('Sending to AI… (2/3)');
