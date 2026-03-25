@@ -52,6 +52,8 @@ interface GameStore {
   showLevelUp: boolean;
   levelUpMessage: string;
   userName: string;
+  profilePicUrl: string;
+  weightUnit: 'kg' | 'st_lbs';
   currencySymbol: string;
   hasOnboarded: boolean;
   accountCreatedDate: string | null;
@@ -82,6 +84,8 @@ interface GameStore {
   setTheme: (theme: Theme) => void;
   setSavingsGoal: (goal: number) => void;
   setUserName: (name: string) => void;
+  setProfilePicUrl: (url: string) => void;
+  setWeightUnit: (unit: 'kg' | 'st_lbs') => void;
   setCurrencySymbol: (symbol: string) => void;
   setHasOnboarded: () => void;
   setCompetitionMode: (on: boolean) => void;
@@ -308,6 +312,8 @@ const INITIAL_STATE = {
   showLevelUp: false,
   levelUpMessage: '',
   userName: '',
+  profilePicUrl: '',
+  weightUnit: 'kg',
   currencySymbol: '£',
   hasOnboarded: false,
   accountCreatedDate: null,
@@ -398,6 +404,8 @@ export const useGameStore = create<GameStore>()(
       showLevelUp: false,
       levelUpMessage: '',
       userName: '',
+      profilePicUrl: '',
+      weightUnit: 'kg',
       currencySymbol: '£',
       hasOnboarded: false,
       accountCreatedDate: null,
@@ -463,6 +471,8 @@ export const useGameStore = create<GameStore>()(
       setTheme: (theme) => set({ theme }),
       setSavingsGoal: (goal) => set({ savingsGoal: goal }),
       setUserName: (name) => set({ userName: name }),
+      setProfilePicUrl: (url) => set({ profilePicUrl: url }),
+      setWeightUnit: (unit) => set({ weightUnit: unit }),
       setCurrencySymbol: (symbol) => set({ currencySymbol: symbol }),
       setHasOnboarded: () => set((state) => ({
         hasOnboarded: true,

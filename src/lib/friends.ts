@@ -31,7 +31,7 @@ export interface FriendRequest {
 
 export async function updatePublicProfile(
   userId: string,
-  data: { username: string; displayName: string; level: number; xp: number; str: number; con: number; dex: number }
+  data: { username: string; displayName: string; level: number; xp: number; str: number; con: number; dex: number; profilePicUrl?: string }
 ) {
   try {
     await setDoc(doc(db, 'profiles', userId), {
@@ -43,10 +43,23 @@ export async function updatePublicProfile(
       str: data.str,
       con: data.con,
       dex: data.dex,
+      ...(data.profilePicUrl !== undefined ? { profilePicUrl: data.profilePicUrl } : {}),
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (e) {
     console.error('[friends] updatePublicProfile error:', e);
+  }
+}
+
+/** Returns true if the username is not taken by anyone other than currentUserId */
+export async function checkUsernameAvailable(username: string, currentUserId: string): Promise<boolean> {
+  try {
+    const q = query(collection(db, 'profiles'), where('username', '==', username.trim()), limit(2));
+    const snap = await getDocs(q);
+    // Available if no docs, or only doc is current user
+    return snap.docs.every(d => d.id === currentUserId);
+  } catch {
+    return true; // fail open
   }
 }
 

@@ -1,8 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { checkUsernameAvailable } from '@/lib/friends';
 import type { Theme } from '@/types';
+
+// ── Weight unit helpers ────────────────────────────────────────────────────────
+function kgToStLbs(kg: number): { st: number; lbs: number } {
+  const totalLbs = kg * 2.20462;
+  const st = Math.floor(totalLbs / 14);
+  const lbs = Math.round(totalLbs % 14);
+  return { st, lbs };
+}
+function stLbsToKg(st: number, lbs: number): number {
+  return Math.round(((st * 14) + lbs) / 2.20462 * 10) / 10;
+}
+
+// ── Image resize helper ────────────────────────────────────────────────────────
+function resizeImageToBase64(file: File, size = 200): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      const min = Math.min(img.width, img.height);
+      const sx  = (img.width  - min) / 2;
+      const sy  = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 const THEMES: { id: Theme; label: string; bg: string; accent: string; surface: string }[] = [
   { id: 'dark',  label: 'Dark',    bg: '#13131f', accent: '#7c3aed', surface: '#1e1e2e' },
@@ -46,6 +79,8 @@ export default function SettingsPage() {
     hiddenSections, toggleHiddenSection,
     hiddenStats, toggleHiddenStat,
     userName, setUserName,
+    profilePicUrl, setProfilePicUrl,
+    weightUnit, setWeightUnit,
     currencySymbol, setCurrencySymbol,
     savingsGoal, setSavingsGoal,
     gpsTrackingEnabled, setGpsTrackingEnabled,
@@ -58,12 +93,55 @@ export default function SettingsPage() {
     await signOut(auth);
   };
 
-  const [nameVal,   setNameVal]   = useState(userName);
-  const [symVal,    setSymVal]    = useState(currencySymbol);
-  const [goalVal,   setGoalVal]   = useState(String(savingsGoal));
-  const [ageVal,    setAgeVal]    = useState(String(characterAppearance.age ?? ''));
-  const [weightVal, setWeightVal] = useState(String(characterAppearance.startingWeight ?? ''));
-  const [heightVal, setHeightVal] = useState(String(characterAppearance.height ?? ''));
+  const picRef = useRef<HTMLInputElement>(null);
+
+  const [nameVal,      setNameVal]      = useState(userName);
+  const [nameError,    setNameError]    = useState('');
+  const [nameChecking, setNameChecking] = useState(false);
+  const [symVal,       setSymVal]       = useState(currencySymbol);
+  const [goalVal,      setGoalVal]      = useState(String(savingsGoal));
+  const [ageVal,       setAgeVal]       = useState(String(characterAppearance.age ?? ''));
+  const [heightVal,    setHeightVal]    = useState(String(characterAppearance.height ?? ''));
+
+  // Weight displayed in chosen unit
+  const initWeight = (() => {
+    const kg = characterAppearance.startingWeight ?? 0;
+    if (weightUnit === 'st_lbs') { const { st, lbs } = kgToStLbs(kg); return { st: String(st), lbs: String(lbs) }; }
+    return { kg: String(kg) };
+  })();
+  const [weightKgVal,  setWeightKgVal]  = useState(initWeight.kg ?? '');
+  const [weightStVal,  setWeightStVal]  = useState(initWeight.st ?? '');
+  const [weightLbsVal, setWeightLbsVal] = useState(initWeight.lbs ?? '');
+
+  const saveWeight = () => {
+    if (weightUnit === 'kg') {
+      const v = parseFloat(weightKgVal);
+      if (!isNaN(v) && v > 0) setCharacterAppearance({ ...characterAppearance, startingWeight: v });
+    } else {
+      const st = parseInt(weightStVal); const lbs = parseInt(weightLbsVal);
+      if (!isNaN(st) && !isNaN(lbs)) setCharacterAppearance({ ...characterAppearance, startingWeight: stLbsToKg(st, lbs) });
+    }
+  };
+
+  const handleNameSave = async () => {
+    const trimmed = nameVal.trim();
+    if (!trimmed || trimmed === userName) { setUserName(trimmed); return; }
+    setNameChecking(true); setNameError('');
+    const { auth } = await import('@/lib/firebase');
+    const uid = auth.currentUser?.uid ?? '';
+    const available = await checkUsernameAvailable(trimmed, uid);
+    setNameChecking(false);
+    if (!available) { setNameError('Username already taken — try another'); return; }
+    setUserName(trimmed);
+  };
+
+  const handlePicUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    try {
+      const dataUrl = await resizeImageToBase64(file, 200);
+      setProfilePicUrl(dataUrl);
+    } catch { /* ignore */ }
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -207,17 +285,44 @@ export default function SettingsPage() {
       {/* ── Profile ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
         <p className="text-ql text-sm font-semibold">Profile</p>
-        <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
-          <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
-            <span className="text-ql-3 text-sm w-24 shrink-0">Your name</span>
-            <input
-              value={nameVal}
-              onChange={e => setNameVal(e.target.value)}
-              onBlur={() => setUserName(nameVal)}
-              placeholder="Enter your name"
-              className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
-            />
+
+        {/* Avatar */}
+        <button
+          onClick={() => picRef.current?.click()}
+          className="self-start flex items-center gap-3 bg-ql-surface border border-ql rounded-2xl px-4 py-3 hover:bg-ql-surface2 transition-colors"
+        >
+          {profilePicUrl
+            ? <img src={profilePicUrl} alt="Profile" className="w-14 h-14 rounded-full object-cover" />
+            : <div className="w-14 h-14 rounded-full bg-ql-surface2 border border-ql flex items-center justify-center text-2xl">👤</div>
+          }
+          <div className="text-left">
+            <p className="text-ql text-sm font-semibold">{profilePicUrl ? 'Change photo' : 'Add profile photo'}</p>
+            <p className="text-ql-3 text-xs mt-0.5">Tap to upload</p>
           </div>
+        </button>
+        <input ref={picRef} type="file" accept="image/*" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handlePicUpload(f); e.target.value = ''; }} />
+
+        <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
+          {/* Username */}
+          <div className="flex flex-col px-4 py-3.5 border-b border-ql gap-1">
+            <div className="flex items-center gap-4">
+              <span className="text-ql-3 text-sm w-24 shrink-0">Username</span>
+              <input
+                value={nameVal}
+                onChange={e => { setNameVal(e.target.value); setNameError(''); }}
+                onBlur={handleNameSave}
+                onKeyDown={e => { if (e.key === 'Enter') { handleNameSave(); (e.target as HTMLInputElement).blur(); }}}
+                placeholder="Choose a username"
+                className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
+              />
+              {nameChecking && <span className="text-ql-3 text-xs shrink-0">Checking…</span>}
+            </div>
+            {nameError && <p className="text-red-400 text-xs text-right">{nameError}</p>}
+            <p className="text-ql-3 text-[10px]">Usernames must be unique across all GAINN users</p>
+          </div>
+
+          {/* Currency */}
           <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
             <span className="text-ql-3 text-sm w-24 shrink-0">Currency</span>
             <input
@@ -228,6 +333,28 @@ export default function SettingsPage() {
               className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
             />
           </div>
+
+          {/* Weight unit */}
+          <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
+            <span className="text-ql-3 text-sm w-24 shrink-0">Weight unit</span>
+            <div className="flex-1 flex justify-end">
+              <div className="flex gap-1 bg-ql-surface2 rounded-lg p-0.5 border border-ql">
+                {(['kg', 'st_lbs'] as const).map(u => (
+                  <button key={u} onClick={() => {
+                    const kg = characterAppearance.startingWeight ?? 0;
+                    if (u === 'st_lbs') { const { st, lbs } = kgToStLbs(kg); setWeightStVal(String(st)); setWeightLbsVal(String(lbs)); }
+                    else { setWeightKgVal(String(kg)); }
+                    setWeightUnit(u);
+                  }}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${weightUnit === u ? 'bg-ql-accent text-white' : 'text-ql-3'}`}>
+                    {u === 'kg' ? 'kg' : 'st & lbs'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Savings target */}
           <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
             <span className="text-ql-3 text-sm w-24 shrink-0">Savings target</span>
             <input
@@ -240,6 +367,8 @@ export default function SettingsPage() {
               className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
             />
           </div>
+
+          {/* Age */}
           <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
             <span className="text-ql-3 text-sm w-24 shrink-0">Age</span>
             <input
@@ -252,18 +381,36 @@ export default function SettingsPage() {
               className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
             />
           </div>
+
+          {/* Weight */}
           <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
-            <span className="text-ql-3 text-sm w-24 shrink-0">Weight (kg)</span>
-            <input
-              type="number"
-              value={weightVal}
-              onChange={e => setWeightVal(e.target.value)}
-              onBlur={() => { const v = parseFloat(weightVal); if (!isNaN(v) && v > 0) setCharacterAppearance({ ...characterAppearance, startingWeight: v }); }}
-              onKeyDown={e => { if (e.key === 'Enter') { const v = parseFloat(weightVal); if (!isNaN(v) && v > 0) setCharacterAppearance({ ...characterAppearance, startingWeight: v }); (e.target as HTMLInputElement).blur(); }}}
-              placeholder="80"
-              className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
-            />
+            <span className="text-ql-3 text-sm w-24 shrink-0">Weight</span>
+            {weightUnit === 'kg' ? (
+              <input type="number" value={weightKgVal}
+                onChange={e => setWeightKgVal(e.target.value)}
+                onBlur={saveWeight}
+                onKeyDown={e => { if (e.key === 'Enter') { saveWeight(); (e.target as HTMLInputElement).blur(); }}}
+                placeholder="80 kg"
+                className="flex-1 bg-transparent text-ql text-sm outline-none text-right" />
+            ) : (
+              <div className="flex-1 flex items-center justify-end gap-2">
+                <input type="number" value={weightStVal}
+                  onChange={e => setWeightStVal(e.target.value)}
+                  onBlur={saveWeight}
+                  placeholder="12"
+                  className="w-14 bg-transparent text-ql text-sm outline-none text-right" />
+                <span className="text-ql-3 text-xs">st</span>
+                <input type="number" value={weightLbsVal}
+                  onChange={e => setWeightLbsVal(e.target.value)}
+                  onBlur={saveWeight}
+                  placeholder="8"
+                  className="w-10 bg-transparent text-ql text-sm outline-none text-right" />
+                <span className="text-ql-3 text-xs">lbs</span>
+              </div>
+            )}
           </div>
+
+          {/* Height */}
           <div className="flex items-center px-4 py-3.5 gap-4">
             <span className="text-ql-3 text-sm w-24 shrink-0">Height (cm)</span>
             <input

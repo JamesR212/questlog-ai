@@ -142,6 +142,7 @@ export default function Home() {
       str: s.stats.str,
       con: s.stats.con,
       dex: s.stats.dex,
+      profilePicUrl: s.profilePicUrl || '',
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeSnapshot, user?.uid, cloudReady]);
