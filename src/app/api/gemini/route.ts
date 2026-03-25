@@ -1,6 +1,61 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
+// ── Gemini File API upload (supports files up to 2GB) ─────────────────────────
+async function uploadToFileAPI(base64Data: string, mimeType: string, apiKey: string): Promise<{ uri: string; name: string }> {
+  const bytes = Buffer.from(base64Data, 'base64');
+  const boundary = 'boundary' + Date.now();
+  const metadata = JSON.stringify({ file: { display_name: 'media' } });
+
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\n\r\n`),
+    Buffer.from(metadata),
+    Buffer.from(`\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
+    bytes,
+    Buffer.from(`\r\n--${boundary}--`),
+  ]);
+
+  const uploadRes = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+        'Content-Length': body.length.toString(),
+      },
+      body,
+    }
+  );
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.text();
+    throw new Error(`File API upload failed: ${err}`);
+  }
+
+  let file = (await uploadRes.json()).file;
+
+  // Poll until the file is processed
+  while (file.state === 'PROCESSING') {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${file.name}?key=${apiKey}`
+    );
+    file = await statusRes.json();
+  }
+
+  if (file.state === 'FAILED') throw new Error('File processing failed on Gemini servers');
+
+  return { uri: file.uri as string, name: file.name as string };
+}
+
+// ── Delete file from Gemini after use ─────────────────────────────────────────
+function deleteFileFromAPI(fileName: string, apiKey: string): void {
+  // Fire-and-forget — don't block the response
+  fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`, {
+    method: 'DELETE',
+  }).catch(() => { /* best effort */ });
+}
+
 const SECTION_PROMPTS: Record<string, string> = {
   dashboard:  'You are an RPG quest advisor reviewing a hero\'s overall stats and progress. Be motivational, use RPG fantasy language, and give advice about improving STR, CON, DEX, and GOLD stats.',
   quests:     'You are a wise quest giver in an RPG world. Help the user set and achieve their goals across money, fitness, sleep, and gym categories. Use epic fantasy language.',
@@ -279,10 +334,12 @@ Rules:
 - rejectionReason: be specific (e.g. "Video too dark to verify", "Multiple reps performed", "Exercise does not match claimed lift") — null if verified
 - A blurry or very unclear video should be rejected with low confidence`;
 
+      const { uri: fileUri, name: fileName } = await uploadToFileAPI(mediaBase64, mimeType, apiKey);
       const result = await model.generateContent([
-        { inlineData: { mimeType, data: mediaBase64 } },
+        { fileData: { mimeType, fileUri } },
         prompt,
       ]);
+      deleteFileFromAPI(fileName, apiKey);
       let text = result.response.text().trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const verification = JSON.parse(text);
@@ -313,10 +370,12 @@ Rules:
 - Keep each point concise (max 12 words per item)
 - safetyNote must always be present and relevant`;
 
+      const { uri: fileUri, name: fileName } = await uploadToFileAPI(mediaBase64, mimeType, apiKey);
       const result = await model.generateContent([
-        { inlineData: { mimeType, data: mediaBase64 } },
+        { fileData: { mimeType, fileUri } },
         prompt,
       ]);
+      deleteFileFromAPI(fileName, apiKey);
       let text = result.response.text().trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const analysis = JSON.parse(text);

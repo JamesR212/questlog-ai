@@ -31,8 +31,8 @@ export default function FormAnalyzer() {
     setAnalysis(null);
     setError(null);
 
-    if (file.size > 3 * 1024 * 1024) {
-      setError('File too large — please keep clips under 3 MB. Trim your video or use a photo instead.');
+    if (file.size > 500 * 1024 * 1024) {
+      setError('File too large — please keep clips under 500 MB.');
       return;
     }
 
@@ -73,7 +73,7 @@ export default function FormAnalyzer() {
         setError(data.error ?? 'Could not analyse — try a clearer, well-lit clip.');
       }
     } catch {
-      setError('Upload failed — file may be too large. Try a photo or a very short trimmed clip under 3 MB.');
+      setError('Upload failed — please try again or use a shorter clip.');
     } finally {
       setLoading(false);
     }

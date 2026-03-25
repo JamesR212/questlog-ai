@@ -7,6 +7,7 @@ import {
   fetchLeaderboard, submitEntry, haversineKm, fuzzLocation,
   type LeaderboardEntry, type LeaderboardCategory,
 } from '@/lib/leaderboard';
+import { DEMO_ENTRIES } from '@/lib/leaderboardDemoData';
 
 const LeaderboardMap = dynamic(() => import('./LeaderboardMap'), { ssr: false });
 
@@ -114,7 +115,7 @@ function SubmitSheet({ category, userId, displayName, userLat, userLng, onClose,
 
   const handleFile = (file: File) => {
     setError(null); setVerified(null);
-    if (file.size > 19 * 1024 * 1024) { setError('File too large — keep clips under 19 MB'); return; }
+    if (file.size > 500 * 1024 * 1024) { setError('File too large — keep clips under 500 MB'); return; }
     setMimeType(file.type || 'video/mp4');
     const reader = new FileReader();
     reader.onload = e => {
@@ -315,14 +316,23 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
   const category = CATEGORIES.find(c => c.id === activeCat)!;
 
   const periodEntries = (() => {
-    if (period === 'all') return entries;
-    const now  = new Date();
-    const from = new Date(now);
-    if (period === 'day')   from.setDate(now.getDate() - 1);
-    if (period === 'week')  from.setDate(now.getDate() - 7);
-    if (period === 'month') from.setMonth(now.getMonth() - 1);
-    const fromStr = from.toISOString().slice(0, 10);
-    return entries.filter(e => e.date >= fromStr);
+    // Period filter
+    let result = entries;
+    if (period !== 'all') {
+      const now  = new Date();
+      const from = new Date(now);
+      if (period === 'day')   from.setDate(now.getDate() - 1);
+      if (period === 'week')  from.setDate(now.getDate() - 7);
+      if (period === 'month') from.setMonth(now.getMonth() - 1);
+      const fromStr = from.toISOString().slice(0, 10);
+      result = result.filter(e => e.date >= fromStr);
+    }
+    // Radius guard — hard filter at display time so timing gaps in load() never leak entries through
+    if (radiusKm !== null && userLat !== null && userLng !== null) {
+      result = result.filter(e => haversineKm(userLat, userLng, e.lat, e.lng) <= radiusKm);
+    }
+    // Re-sort after any filtering (higher value = better rank)
+    return [...result].sort((a, b) => b.value - a.value);
   })();
 
   const myEntry  = periodEntries.find(e => e.userId === userId);
@@ -341,10 +351,28 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
 
   const load = useCallback(async () => {
     setLoading(true);
-    const km = sliderToRadius(committedRadius);
-    const data = await fetchLeaderboard(activeCat, userLat, userLng, userLat ? km : null);
-    setEntries(data);
-    setLoading(false);
+    try {
+      const km   = sliderToRadius(committedRadius);
+      const data = await fetchLeaderboard(activeCat, userLat, userLng, userLat ? km : null);
+      const demo = DEMO_ENTRIES[activeCat] ?? [];
+
+      // Apply same radius filter to demo entries
+      const filteredDemo = (km !== null && userLat !== null && userLng !== null)
+        ? demo.filter(e => haversineKm(userLat, userLng, e.lat, e.lng) <= km)
+        : demo;
+
+      // Merge real + demo, keep best per userId
+      const best = new Map<string, LeaderboardEntry>();
+      for (const e of [...filteredDemo, ...data]) {
+        const existing = best.get(e.userId);
+        if (!existing || e.value > existing.value) best.set(e.userId, e);
+      }
+      setEntries([...best.values()].sort((a, b) => b.value - a.value));
+    } catch {
+      setEntries(DEMO_ENTRIES[activeCat] ?? []);
+    } finally {
+      setLoading(false);
+    }
   }, [activeCat, userLat, userLng, committedRadius]);
 
   useEffect(() => { load(); }, [load]);
@@ -469,7 +497,7 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
         periodEntries.length === 0 ? (
           <div className="rounded-2xl border border-ql bg-ql-surface p-8 text-center text-ql-3 text-sm">No entries to show on map</div>
         ) : (
-          <LeaderboardMap entries={periodEntries} unit={category.unit} userId={userId} userLat={userLat} userLng={userLng} />
+          <LeaderboardMap entries={periodEntries} unit={category.unit} userId={userId} userLat={userLat} userLng={userLng} radiusKm={radiusKm} />
         )
       )}
 
@@ -527,22 +555,6 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
         </button>
       )}
 
-      {/* DEV: Seed fake steps entries — remove after testing */}
-      {activeCat === 'steps_day' && (
-        <button
-          onClick={async () => {
-            try {
-              const res  = await fetch('/api/admin/seed-leaderboard', { method: 'POST' });
-              const data = await res.json();
-              if (data.ok) alert('✅ Seeded! Switch away and back to reload.');
-              else alert('❌ ' + data.error);
-            } catch (err: unknown) {
-              alert('❌ ' + String(err));
-            }
-          }}
-          className="w-full py-2 rounded-xl bg-ql-surface2 border border-ql text-ql-3 text-xs"
-        >🌱 Seed test data (dev only)</button>
-      )}
 
       {/* GPS integrity disclaimer */}
       {category.method !== 'ai_video' && (
