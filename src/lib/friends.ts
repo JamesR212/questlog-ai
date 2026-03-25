@@ -25,6 +25,7 @@ export interface FriendRequest {
   fromDisplayName: string;
   to: string;
   createdAt: string;
+  status?: 'pending' | 'accepted';
 }
 
 // ── Profile ────────────────────────────────────────────────────────────────
@@ -146,20 +147,34 @@ export async function sendFriendRequest(
 
 export async function getPendingRequests(userId: string): Promise<FriendRequest[]> {
   try {
-    const q = query(collection(db, 'friendRequests'), where('to', '==', userId));
+    const q = query(
+      collection(db, 'friendRequests'),
+      where('to', '==', userId),
+      where('status', '==', 'pending'),
+    );
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as FriendRequest));
   } catch (e) {
-    console.error('[friends] getPendingRequests error:', e);
-    return [];
+    // Fallback: fetch without status filter (for requests written before the status field existed)
+    try {
+      const q2 = query(collection(db, 'friendRequests'), where('to', '==', userId));
+      const snap2 = await getDocs(q2);
+      return snap2.docs
+        .map(d => ({ id: d.id, ...d.data() } as FriendRequest))
+        .filter(r => !r.status || r.status === 'pending');
+    } catch {
+      return [];
+    }
   }
 }
 
 export async function acceptRequest(request: FriendRequest): Promise<void> {
+  // Only write to the recipient's own friends list (avoids rules blocking cross-user writes).
+  // Mark the request as 'accepted' so the sender's next getFriends call can process it
+  // and add the recipient to their own list.
   await Promise.all([
     setDoc(doc(db, 'friends', request.to, 'list', request.from), { addedAt: new Date().toISOString() }),
-    setDoc(doc(db, 'friends', request.from, 'list', request.to), { addedAt: new Date().toISOString() }),
-    deleteDoc(doc(db, 'friendRequests', request.id)),
+    setDoc(doc(db, 'friendRequests', request.id), { ...request, status: 'accepted' }),
   ]);
 }
 
@@ -171,6 +186,24 @@ export async function declineRequest(requestId: string): Promise<void> {
 
 export async function getFriends(userId: string): Promise<PublicProfile[]> {
   try {
+    // Process any outgoing requests that the other user has accepted.
+    // This lets us add them to our own list without needing to write to their subcollection.
+    const acceptedQ = query(
+      collection(db, 'friendRequests'),
+      where('from', '==', userId),
+      where('status', '==', 'accepted'),
+    );
+    const acceptedSnap = await getDocs(acceptedQ);
+    if (acceptedSnap.docs.length > 0) {
+      await Promise.all(acceptedSnap.docs.map(d => {
+        const req = d.data() as FriendRequest;
+        return Promise.all([
+          setDoc(doc(db, 'friends', userId, 'list', req.to), { addedAt: new Date().toISOString() }),
+          deleteDoc(doc(db, 'friendRequests', d.id)),
+        ]);
+      }));
+    }
+
     const snap = await getDocs(collection(db, 'friends', userId, 'list'));
     const friendIds = snap.docs.map(d => d.id);
     if (friendIds.length === 0) return [];

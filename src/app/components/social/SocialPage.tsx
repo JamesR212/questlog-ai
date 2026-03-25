@@ -56,6 +56,8 @@ export default function SocialPage({ userId }: { userId: string }) {
   const [friends,    setFriends]    = useState<PublicProfile[]>([]);
   const [requests,   setRequests]   = useState<FriendRequest[]>([]);
   const [loading,    setLoading]    = useState(false);
+  const [reqLoading, setReqLoading] = useState<Record<string, boolean>>({});
+  const [reqError,   setReqError]   = useState('');
   const [sent,       setSent]       = useState<Set<string>>(new Set());
   const [tab,        setTab]        = useState<'friends' | 'search' | 'feedback'>('friends');
   const [fbMessages, setFbMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
@@ -140,8 +142,33 @@ export default function SocialPage({ userId }: { userId: string }) {
     setSent(s => new Set(s).add(profile.uid));
   };
 
-  const accept  = async (req: FriendRequest) => { await acceptRequest(req); reload(); };
-  const decline = async (req: FriendRequest) => { await declineRequest(req.id); setRequests(r => r.filter(x => x.id !== req.id)); };
+  const accept = async (req: FriendRequest) => {
+    setReqLoading(l => ({ ...l, [req.id]: true }));
+    setReqError('');
+    try {
+      await acceptRequest(req);
+      setRequests(r => r.filter(x => x.id !== req.id));
+      reload();
+    } catch (e) {
+      console.error('[social] accept error:', e);
+      setReqError('Could not accept request. Please try again.');
+    } finally {
+      setReqLoading(l => ({ ...l, [req.id]: false }));
+    }
+  };
+  const decline = async (req: FriendRequest) => {
+    setReqLoading(l => ({ ...l, [req.id]: true }));
+    setReqError('');
+    try {
+      await declineRequest(req.id);
+      setRequests(r => r.filter(x => x.id !== req.id));
+    } catch (e) {
+      console.error('[social] decline error:', e);
+      setReqError('Could not decline request. Please try again.');
+    } finally {
+      setReqLoading(l => ({ ...l, [req.id]: false }));
+    }
+  };
   const remove  = async (friendId: string)    => { await removeFriend(userId, friendId); setFriends(f => f.filter(x => x.uid !== friendId)); };
 
   const friendSet = new Set(friends.map(f => f.uid));
@@ -158,20 +185,36 @@ export default function SocialPage({ userId }: { userId: string }) {
       {requests.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-ql text-sm font-semibold">Friend Requests</p>
+          {reqError && <p className="text-red-400 text-xs">{reqError}</p>}
           <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
-            {requests.map((req, i) => (
-              <div key={req.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < requests.length - 1 ? 'border-b border-ql' : ''}`}>
-                <div className="w-9 h-9 rounded-full bg-ql-accent/20 flex items-center justify-center text-base shrink-0">
-                  {req.fromDisplayName?.[0]?.toUpperCase() ?? '?'}
+            {requests.map((req, i) => {
+              const busy = !!reqLoading[req.id];
+              return (
+                <div key={req.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < requests.length - 1 ? 'border-b border-ql' : ''}`}>
+                  <div className="w-9 h-9 rounded-full bg-ql-accent/20 flex items-center justify-center text-base shrink-0">
+                    {req.fromDisplayName?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-ql text-sm font-semibold truncate">{req.fromDisplayName}</p>
+                    <p className="text-ql-3 text-xs">@{req.fromUsername}</p>
+                  </div>
+                  <button
+                    onClick={() => accept(req)}
+                    disabled={busy}
+                    className="text-xs px-3 py-1.5 bg-ql-accent text-white rounded-xl font-medium disabled:opacity-50"
+                  >
+                    {busy ? '…' : 'Accept'}
+                  </button>
+                  <button
+                    onClick={() => decline(req)}
+                    disabled={busy}
+                    className="text-xs px-3 py-1.5 border border-ql text-ql-3 rounded-xl disabled:opacity-50"
+                  >
+                    {busy ? '…' : 'Decline'}
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-ql text-sm font-semibold truncate">{req.fromDisplayName}</p>
-                  <p className="text-ql-3 text-xs">@{req.fromUsername}</p>
-                </div>
-                <button onClick={() => accept(req)} className="text-xs px-3 py-1.5 bg-ql-accent text-white rounded-xl font-medium">Accept</button>
-                <button onClick={() => decline(req)} className="text-xs px-3 py-1.5 border border-ql text-ql-3 rounded-xl">Decline</button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -192,20 +235,18 @@ export default function SocialPage({ userId }: { userId: string }) {
       {/* ── Friends + Map ── */}
       {tab === 'friends' && (
         <div className="flex flex-col gap-3">
-          {/* Map — only rendered when at least one friend has shared location */}
+          {/* Map — always visible so you can see yourself */}
+          <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 300 }}>
+            <FriendsGlobe
+              friends={friends}
+              myLocation={myLocation}
+              myName={userName || 'You'}
+            />
+          </div>
           {friendsOnGlobe > 0 && (
-            <>
-              <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 300 }}>
-                <FriendsGlobe
-                  friends={friends}
-                  myLocation={myLocation}
-                  myName={userName || 'You'}
-                />
-              </div>
-              <p className="text-ql-3 text-xs text-center">
-                {friendsOnGlobe} friend{friendsOnGlobe === 1 ? '' : 's'} sharing location
-              </p>
-            </>
+            <p className="text-ql-3 text-xs text-center">
+              {friendsOnGlobe} friend{friendsOnGlobe === 1 ? '' : 's'} sharing location
+            </p>
           )}
 
           {/* Location sharing toggle */}
