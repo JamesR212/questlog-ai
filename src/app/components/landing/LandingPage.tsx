@@ -1994,46 +1994,22 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Scrolling panels — left-aligned, max half width */}
           <div style={{ maxWidth: 1020, margin: '0 auto', padding: isMobile ? '0 24px' : '0 48px', boxSizing: 'border-box' as const }}>
 
-            {/* Panel 1 — AI Gym Plans */}
+            {/* Panel 1 — AI Training (plans + form check merged) */}
             <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
-              <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
+              <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Training</div>
               <h3 style={{ fontSize: isMobile ? 'clamp(19px, 2.4vw, 31px)' : 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
-                Your plan,<br />built by AI
+                Your plan.<br />Your coach.<br />Built by AI.
               </h3>
               <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32 }}>
-                Tell GAINN your equipment, schedule, and goals — and get a fully personalised workout plan in seconds. Every exercise, every set, every rep. Built for you, not copied from a template.
+                Tell GAINN your equipment and goals — get a fully personalised workout plan in seconds. Then upload a photo or video of any exercise and AI analyses your form, flags what to fix, and keeps you injury-free.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
-                  'Exercises matched to your available equipment',
-                  'Personalised using your height, weight, age, and goals',
+                  'Personalised plan built around your equipment, schedule & goals',
                   'Muscular load radar shows exactly what you\'re training',
+                  'Photo & video form analysis — instant rep-by-rep feedback',
+                  'Highlights strengths and flags risks before injury strikes',
                   'Adjusts week by week as you log sessions',
-                ].map((t, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: isMobile ? 11 : 15, marginTop: 2, flexShrink: 0 }}>✓</span>
-                    <span style={{ fontSize: isMobile ? 11 : 15, color: '#a1a1aa' }}>{t}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Panel 1.5 — AI Form Review */}
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
-              <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Form Check</div>
-              <h3 style={{ fontSize: isMobile ? 'clamp(19px, 2.4vw, 31px)' : 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
-                Your coach,<br />in your pocket
-              </h3>
-              <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32 }}>
-                Upload a photo or short video of your exercise and GAINN's AI analyses your form in seconds — spotting what you're doing well and exactly what to fix before injury strikes.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[
-                  'Photo analysis — snap your position and get instant feedback',
-                  'Video review — upload a clip and AI breaks down every rep',
-                  'Highlights strengths and flags form risks clearly',
-                  'Covers compound lifts, cardio form, stretches and more',
-                  'AI guidance note included — not professional medical advice',
                 ].map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <span style={{ color: '#16a34a', fontWeight: 800, fontSize: isMobile ? 11 : 15, marginTop: 2, flexShrink: 0 }}>✓</span>
