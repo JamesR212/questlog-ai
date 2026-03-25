@@ -1535,7 +1535,7 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
 
   return (
     <section style={{ background: '#06060a', padding: isMobile ? '60px 16px' : '120px 24px' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.8fr', gap: isMobile ? 40 : 80, alignItems: 'center' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.8fr', gap: isMobile ? 32 : 80, alignItems: 'center' }}>
 
         {/* Text */}
         <div ref={textRef}>
@@ -1545,7 +1545,7 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
           <h2 style={{ fontSize: isMobile ? 'clamp(18px, 3vw, 28px)' : 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: isMobile ? 10 : 20, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.1s` }}>
             See exactly<br />how you&apos;re doing
           </h2>
-          <p style={{ fontSize: fs(17), color: '#9ca3af', lineHeight: 1.7, marginBottom: isMobile ? 16 : 40, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.2s` }}>
+          <p style={{ fontSize: fs(17), color: '#9ca3af', lineHeight: 1.7, marginBottom: isMobile ? 16 : 40, opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.2s`, wordBreak: 'normal' as const, overflowWrap: 'break-word' as const }}>
             Every habit, every day. Colour-coded across a full monthly grid so you can spot patterns instantly.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 16 }}>
@@ -1561,8 +1561,8 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
         {/* Phones — side by side */}
         <div ref={phoneRef} style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: '-60px', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(22,163,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          {/* Scale wrapper — shrinks both phones together on mobile so they fit side by side */}
-          <div style={{ display: 'flex', alignItems: 'stretch', gap: 12, transform: isMobile ? 'scale(0.52)' : 'scale(0.95)', transformOrigin: 'top center', opacity: phoneVisible ? 1 : 0, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}`, marginBottom: isMobile ? '-48%' : 0 }}>
+          {/* Scale wrapper */}
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 12, transform: isMobile ? 'scale(0.57)' : 'scale(0.95)', transformOrigin: 'top center', opacity: phoneVisible ? 1 : 0, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}`, marginBottom: isMobile ? '-44%' : 0 }}>
             <AnalyticsPhone visible={phoneVisible} />
             {/* Second phone */}
             <div style={{ width: 230, background: APP.bg, borderRadius: 36, border: '2px solid rgba(255,255,255,0.13)', overflow: 'hidden', boxSizing: 'border-box' as const, boxShadow: '0 28px 90px rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column' }}>
