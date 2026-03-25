@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 300;
+// Edge runtime: 25MB body limit vs 4.5MB serverless limit
+export const runtime = 'edge';
+export const maxDuration = 25;
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -13,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (!f || typeof f === 'string') return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     file = f as File;
   } catch {
-    return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+    return NextResponse.json({ error: 'File too large or invalid — keep clips under 25 MB' }, { status: 413 });
   }
 
   const mimeType = file.type || 'video/mp4';
@@ -21,13 +23,19 @@ export async function POST(req: NextRequest) {
   const boundary = 'boundary' + Date.now();
   const metadata = JSON.stringify({ file: { display_name: file.name || 'media' } });
 
-  const body = Buffer.concat([
-    Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\n\r\n`),
-    Buffer.from(metadata),
-    Buffer.from(`\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
-    Buffer.from(bytes),
-    Buffer.from(`\r\n--${boundary}--`),
-  ]);
+  // Build multipart body using Web APIs (no Node.js Buffer in Edge runtime)
+  const enc = new TextEncoder();
+  const parts = [
+    enc.encode(`--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\n\r\n`),
+    enc.encode(metadata),
+    enc.encode(`\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
+    new Uint8Array(bytes),
+    enc.encode(`\r\n--${boundary}--`),
+  ];
+  const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+  const body = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const part of parts) { body.set(part, offset); offset += part.length; }
 
   const uploadRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
@@ -35,7 +43,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': `multipart/related; boundary=${boundary}`,
-        'Content-Length': body.length.toString(),
+        'Content-Length': totalLength.toString(),
       },
       body,
     }
@@ -48,12 +56,15 @@ export async function POST(req: NextRequest) {
 
   let fileData = (await uploadRes.json()).file;
 
-  while (fileData.state === 'PROCESSING') {
+  // Poll until Gemini finishes processing (stay within 25s edge limit)
+  let attempts = 0;
+  while (fileData.state === 'PROCESSING' && attempts < 8) {
     await new Promise(r => setTimeout(r, 2000));
     const statusRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${fileData.name}?key=${apiKey}`
     );
     fileData = await statusRes.json();
+    attempts++;
   }
 
   if (fileData.state === 'FAILED') {
