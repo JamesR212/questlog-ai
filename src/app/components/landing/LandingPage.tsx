@@ -284,20 +284,20 @@ function Phone({ feature }: { feature: number }) {
           </div>
         </div>
       </div>
-      {/* Bottom nav bar */}
-      <div style={{ height: 42, borderTop: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', background: APP.bg, flexShrink: 0 }}>
+      {/* Bottom nav bar — same style as FinanceVicesScreen, Home active */}
+      <div style={{ height: 40, borderTop: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', background: APP.bg, flexShrink: 0 }}>
         {[
-          { e: '🏠', n: 'Home',     active: true },
+          { e: '🏠', n: 'Home',     active: true  },
           { e: '🥗', n: 'Food',     active: false },
           { e: '📅', n: 'Calendar', active: false },
-          { e: '💰', n: 'Finance',  active: false },
+          { e: '🚫', n: 'Vices',    active: false },
           { e: '💪', n: 'Training', active: false },
-        ].map(tab => (
+        ].map((tab: { e: string; n: string; active?: boolean }) => (
           <div key={tab.n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <div style={{ width: tab.active ? 28 : undefined, padding: tab.active ? '3px 6px' : undefined, borderRadius: tab.active ? 8 : undefined, background: tab.active ? '#3b1f6b' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ padding: tab.active ? '2px 5px' : undefined, borderRadius: tab.active ? 7 : undefined, background: tab.active ? '#2d1854' : 'transparent' }}>
               <span style={{ fontSize: 13 }}>{tab.e}</span>
             </div>
-            <span style={{ fontSize: 5, color: tab.active ? '#a855f7' : APP.tx3, fontWeight: tab.active ? 700 : 400 }}>{tab.n}</span>
+            <span style={{ fontSize: 5.5, color: tab.active ? '#7c3aed' : APP.tx3 }}>{tab.n}</span>
           </div>
         ))}
       </div>
