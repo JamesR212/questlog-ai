@@ -1206,7 +1206,6 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
   return (
     <div style={{
       width: 130,
-      height: 298,
       background: '#0d0d14',
       borderRadius: 28,
       border: '2px solid rgba(255,255,255,0.12)',
@@ -1234,7 +1233,7 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
       <img
         src={t.img}
         alt={`GAINN ${t.label} theme`}
-        style={{ width: '100%', height: 280, objectFit: 'contain', objectPosition: 'top', display: 'block' }}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
       />
     </div>
   );
@@ -1262,7 +1261,7 @@ function ThemeShowcaseSection() {
   const m = isMobile ? 0.607 : 1;
 
   return (
-    <section style={{ padding: '120px 24px 100px', background: '#050508', textAlign: 'center' }}>
+    <section style={{ padding: '120px 24px 60px', background: '#050508', textAlign: 'center' }}>
       <div ref={ref}>
         <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 16, opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE}` }}>
           Your style
@@ -1276,7 +1275,7 @@ function ThemeShowcaseSection() {
       </div>
 
       {/* Fan */}
-      <div style={{ position: 'relative', height: isMobile ? 300 : 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', height: isMobile ? 340 : 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {THEME_PHONES.map((t, i) => (
           <div
             key={i}
