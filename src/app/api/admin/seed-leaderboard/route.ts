@@ -11,20 +11,25 @@ function getAdminDb() {
 }
 
 const FAKE_ENTRIES = [
-  { userId: 'seed_steps_1', displayName: 'Alex Turner',   value: 41252, lat: 53.4808, lng: -2.2426 },
-  { userId: 'seed_steps_2', displayName: 'Sophie Clarke', value: 28940, lat: 51.5074, lng: -0.1278 },
-  { userId: 'seed_steps_3', displayName: 'Jamie Walsh',   value: 22105, lat: 52.4862, lng: -1.8904 },
-  { userId: 'seed_steps_4', displayName: 'Priya Sharma',  value: 18430, lat: 53.8008, lng: -1.5491 },
-  { userId: 'seed_steps_5', displayName: 'Callum Ross',   value: 14720, lat: 55.8642, lng: -4.2518 },
+  { userId: 'seed_steps_1', displayName: 'Alex Turner',   value: 41252 },
+  { userId: 'seed_steps_2', displayName: 'Sophie Clarke', value: 28940 },
+  { userId: 'seed_steps_3', displayName: 'Jamie Walsh',   value: 22105 },
+  { userId: 'seed_steps_4', displayName: 'Priya Sharma',  value: 18430 },
+  { userId: 'seed_steps_5', displayName: 'Callum Ross',   value: 14720 },
 ];
 
 function fuzz(coord: number) {
-  return coord + (Math.random() - 0.5) * 0.054;
+  return coord + (Math.random() - 0.5) * 0.1; // ±~5 km
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const db  = getAdminDb();
+    const body = await req.json().catch(() => ({}));
+    // Use provided coords or fall back to London so entries are always placed somewhere
+    const baseLat: number = typeof body.lat === 'number' ? body.lat : 51.5074;
+    const baseLng: number = typeof body.lng === 'number' ? body.lng : -0.1278;
+
+    const db    = getAdminDb();
     const today = new Date().toISOString().split('T')[0];
     const now   = new Date().toISOString();
 
@@ -37,8 +42,8 @@ export async function POST() {
         unit:               'steps',
         verificationStatus: 'synced',
         verificationNote:   'Synced from fitness tracker',
-        lat:                fuzz(e.lat),
-        lng:                fuzz(e.lng),
+        lat:                fuzz(baseLat),
+        lng:                fuzz(baseLng),
         locationFuzzed:     true,
         date:               today,
         createdAt:          now,

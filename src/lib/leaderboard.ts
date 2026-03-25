@@ -77,7 +77,7 @@ export async function fetchLeaderboard(
     return [...best.values()].sort((a, b) => b.value - a.value);
   } catch (e) {
     console.error('[leaderboard] fetch error:', e);
-    return [];
+    throw e;
   }
 }
 
