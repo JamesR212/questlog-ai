@@ -61,14 +61,14 @@ export default function FormAnalyzer() {
 
     try {
       // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
-      setLoadingMsg('Uploading…');
+      setLoadingMsg('Uploading file… (1/3)');
       const blob = await upload(fileRef.current.name || 'upload', fileRef.current, {
         access: 'public',
         handleUploadUrl: '/api/blob/upload',
       });
 
       // Step 2: tell our server to pull from Blob and forward to Gemini
-      setLoadingMsg('Processing…');
+      setLoadingMsg('Sending to AI… (2/3)');
       const geminiRes = await fetch('/api/gemini/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,8 +82,8 @@ export default function FormAnalyzer() {
         throw new Error(uploadData.error as string ?? 'Upload failed');
       }
 
-      // Step 2: analyse using the file URI (tiny JSON payload)
-      setLoadingMsg('Analysing form…');
+      // Step 3: analyse using the file URI
+      setLoadingMsg('Analysing form… (3/3)');
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -218,6 +218,9 @@ export default function FormAnalyzer() {
                 Retake
               </button>
             </div>
+            {loading && (
+              <p className="text-ql-3 text-[11px] text-center">This can take 20–40 seconds for videos — hang tight</p>
+            )}
           </div>
         )}
 
