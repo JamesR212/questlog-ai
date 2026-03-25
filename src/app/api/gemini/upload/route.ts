@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'File too large or invalid — keep clips under 25 MB' }, { status: 413 });
   }
 
-  const mimeType = file.type || 'video/mp4';
+  // Normalise MIME types — Gemini accepts video/mov not video/quicktime
+  const rawType = file.type || 'video/mp4';
+  const mimeType = rawType === 'video/quicktime' ? 'video/mov' : rawType;
   const bytes = await file.arrayBuffer();
   const boundary = 'boundary' + Date.now();
   const metadata = JSON.stringify({ file: { display_name: file.name || 'media' } });
@@ -42,8 +44,8 @@ export async function POST(req: NextRequest) {
     {
       method: 'POST',
       headers: {
+        // Do NOT set Content-Length — fetch computes it automatically
         'Content-Type': `multipart/related; boundary=${boundary}`,
-        'Content-Length': totalLength.toString(),
       },
       body,
     }
