@@ -1149,19 +1149,7 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
                   transform: `scale(${phoneScale})`,
                   transformOrigin: 'top left',
                 }}>
-                  {i === 0
-                    ? (
-                      <div style={{ width: phoneW, height: phoneH, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.6), 0 40px 80px rgba(0,0,0,0.6)', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 60, height: 18, background: '#0d0d14', borderRadius: '0 0 14px 14px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.12)', borderRight: '2px solid rgba(255,255,255,0.12)', borderBottom: '2px solid rgba(255,255,255,0.12)' }} />
-                        <div style={{ height: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 14px', position: 'relative', zIndex: 5 }}>
-                          <span style={{ fontSize: 7, color: '#fff', fontWeight: 600 }}>9:41</span>
-                          <span style={{ fontSize: 7, color: '#fff' }}>●●●</span>
-                        </div>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/theme-dark.jpg" alt="GAINN dark theme" style={{ width: '100%', height: 298, objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
-                      </div>
-                    )
-                    : i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
+                  {i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
                 </div>
               </div>
 
