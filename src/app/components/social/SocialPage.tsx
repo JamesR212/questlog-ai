@@ -57,7 +57,7 @@ export default function SocialPage({ userId }: { userId: string }) {
   const [requests,   setRequests]   = useState<FriendRequest[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [sent,       setSent]       = useState<Set<string>>(new Set());
-  const [tab,        setTab]        = useState<'friends' | 'search' | 'globe' | 'feedback'>('friends');
+  const [tab,        setTab]        = useState<'friends' | 'search' | 'feedback'>('friends');
   const [fbMessages, setFbMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [fbInput,    setFbInput]    = useState('');
   const [fbLoading,  setFbLoading]  = useState(false);
@@ -75,9 +75,9 @@ export default function SocialPage({ userId }: { userId: string }) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  // When globe tab opens and location sharing is on, try to get current position
+  // When friends tab opens and location sharing is on, try to get current position
   useEffect(() => {
-    if (tab !== 'globe' || !shareLocation) return;
+    if (tab !== 'friends' || !shareLocation) return;
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       pos => setMyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -178,57 +178,42 @@ export default function SocialPage({ userId }: { userId: string }) {
 
       {/* ── Tabs ── */}
       <div className="flex gap-2">
-        {(['friends', 'globe', 'search', 'feedback'] as const).map(t => (
+        {(['friends', 'search', 'feedback'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${tab === t ? 'bg-ql-accent text-white' : 'bg-ql-surface border border-ql text-ql-3'}`}
           >
-            {t === 'friends' ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}` : t === 'globe' ? '🌍' : t === 'search' ? 'Find' : '💬'}
+            {t === 'friends' ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}` : t === 'search' ? 'Find' : '💬'}
           </button>
         ))}
       </div>
 
-      {/* ── Friends list ── */}
+      {/* ── Friends + Map ── */}
       {tab === 'friends' && (
-        <div className="flex flex-col gap-2">
-          {loading && <p className="text-ql-3 text-sm text-center py-4">Loading…</p>}
-          {!loading && friends.length === 0 && (
-            <div className="bg-ql-surface rounded-2xl border border-ql p-6 text-center">
-              <p className="text-ql-3 text-sm">No friends yet — use Find Friends to add some!</p>
-            </div>
-          )}
-          {friends.map(f => (
-            <FriendCard key={f.uid} profile={f} onRemove={() => remove(f.uid)} />
-          ))}
-        </div>
-      )}
-
-      {/* ── Globe ── */}
-      {tab === 'globe' && (
         <div className="flex flex-col gap-3">
-          {/* Map */}
-          <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 380 }}>
-            <FriendsGlobe
-              friends={friends}
-              myLocation={myLocation}
-              myName={userName || 'You'}
-            />
-          </div>
-
-          {/* Friend count on globe */}
-          <p className="text-ql-3 text-xs text-center">
-            {friendsOnGlobe === 0
-              ? 'No friends have shared their location yet'
-              : `${friendsOnGlobe} friend${friendsOnGlobe === 1 ? '' : 's'} visible on the globe`}
-          </p>
+          {/* Map — only rendered when at least one friend has shared location */}
+          {friendsOnGlobe > 0 && (
+            <>
+              <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 300 }}>
+                <FriendsGlobe
+                  friends={friends}
+                  myLocation={myLocation}
+                  myName={userName || 'You'}
+                />
+              </div>
+              <p className="text-ql-3 text-xs text-center">
+                {friendsOnGlobe} friend{friendsOnGlobe === 1 ? '' : 's'} sharing location
+              </p>
+            </>
+          )}
 
           {/* Location sharing toggle */}
           <div className="bg-ql-surface rounded-2xl border border-ql p-4 flex items-center gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-ql text-sm font-semibold">Share my location</p>
               <p className="text-ql-3 text-xs mt-0.5">
-                {shareLocation ? 'Your pin is visible to friends on the globe' : 'You are hidden — friends cannot see your location'}
+                {shareLocation ? 'Your pin is visible to friends' : 'You are hidden from the map'}
               </p>
               {locError && <p className="text-red-400 text-xs mt-1">{locError}</p>}
             </div>
@@ -254,6 +239,17 @@ export default function SocialPage({ userId }: { userId: string }) {
               }} />
             </button>
           </div>
+
+          {/* Friends list */}
+          {loading && <p className="text-ql-3 text-sm text-center py-4">Loading…</p>}
+          {!loading && friends.length === 0 && (
+            <div className="bg-ql-surface rounded-2xl border border-ql p-6 text-center">
+              <p className="text-ql-3 text-sm">No friends yet — use Find to add some!</p>
+            </div>
+          )}
+          {friends.map(f => (
+            <FriendCard key={f.uid} profile={f} onRemove={() => remove(f.uid)} />
+          ))}
         </div>
       )}
 
