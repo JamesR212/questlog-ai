@@ -31,8 +31,8 @@ export default function FormAnalyzer() {
     setAnalysis(null);
     setError(null);
 
-    if (file.size > 3 * 1024 * 1024) {
-      setError('File too large — please keep clips under 3 MB. Trim your video or use a photo instead.');
+    if (file.size > 2.5 * 1024 * 1024) {
+      setError('File too large — please keep clips under 2.5 MB. Trim your video or use a photo instead.');
       return;
     }
 
