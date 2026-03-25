@@ -1,24 +1,28 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const body = (await req.json()) as HandleUploadBody;
-
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request: req,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ['video/*', 'image/*'],
-        maximumSizeInBytes: 30 * 1024 * 1024, // 30 MB
-      }),
-      onUploadCompleted: async () => {
-        // Nothing to do — we delete the blob after Gemini analysis
-      },
-    });
-    return NextResponse.json(jsonResponse);
+    const body = await req.json();
+
+    // Handle token generation request from @vercel/blob/client upload()
+    if (body.type === 'blob.generate-client-token') {
+      const { pathname, callbackUrl, multipart } = body.payload;
+      const clientToken = await generateClientTokenFromReadWriteToken({
+        token: process.env.BLOB_READ_WRITE_TOKEN!,
+        pathname,
+        onUploadCompleted: { callbackUrl },
+        maximumSizeInBytes: 30 * 1024 * 1024,
+        allowedContentTypes: ['image/*', 'video/*'],
+      });
+      return NextResponse.json({ clientToken });
+    }
+
+    // Acknowledge webhook callbacks (upload completed etc.) — nothing to do
+    return NextResponse.json({ ok: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: msg }, { status: 400 });
+    console.error('[blob/upload] error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
