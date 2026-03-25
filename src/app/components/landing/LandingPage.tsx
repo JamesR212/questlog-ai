@@ -1584,7 +1584,7 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
                 <span>9:41</span><span>●●●</span>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/analytics-detail.jpg" alt="GAINN workout analytics" style={{ width: '100%', flex: 1, objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+              <img src="/analytics-detail.jpg" alt="GAINN workout analytics" style={{ width: '100%', flex: 1, objectFit: 'contain', objectPosition: 'top', display: 'block' }} />
             </div>
           </div>
         </div>
