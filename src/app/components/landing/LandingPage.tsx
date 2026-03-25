@@ -1965,9 +1965,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4.5 Customise your way ───────────────────────────────────── */}
       <CustomiseSection onGetStarted={onGetStarted} />
 
-      {/* ── 4.7 Analytics timelapse ─────────────────────────────────── */}
-      <AnalyticsSection onGetStarted={onGetStarted} />
-
       {/* ── 5. AI section — sticky background, scrolling text ───────── */}
       <section ref={aiRef} style={{ position: 'relative', background: '#050508' }}>
 
@@ -2155,6 +2152,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         </div>
       </section>
+
+      {/* ── 4.7 Analytics ────────────────────────────────────────────── */}
+      <AnalyticsSection onGetStarted={onGetStarted} />
 
       {/* ── 5.5 Theme showcase ───────────────────────────────────────── */}
       <ThemeShowcaseSection />
