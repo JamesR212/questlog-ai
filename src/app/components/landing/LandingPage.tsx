@@ -2090,30 +2090,37 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
           </div>
 
-          {/* Feature grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 64 }}>
-            {[
-              { emoji: '🗺️', title: 'Location-based ranking', desc: 'Set your search radius from 1 km to global — compete with your neighbourhood or the world.' },
-              { emoji: '🏆', title: 'Multiple categories', desc: 'Steps, workouts, streaks, habits — separate leaderboards for every activity type.' },
-              { emoji: '⏱️', title: 'Four time windows', desc: 'Today, this week, this month, or all time. Climb the ranks on your own schedule.' },
-              { emoji: '📍', title: 'Map or list view', desc: 'Switch between a ranked list and a live map showing top performers near you.' },
-            ].map((f, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '28px 24px' }}>
-                <div style={{ fontSize: 28, marginBottom: 14 }}>{f.emoji}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{f.title}</div>
-                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
+          {/* Two-column: map left, features right */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 60, alignItems: 'center' }}>
 
-          {/* Map screenshot */}
-          <div style={{ maxWidth: 600, margin: '0 auto', borderRadius: 32, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/leaderboard-map-v3.png"
-              alt="Live leaderboard map showing ranked players around Brighton"
-              style={{ width: '100%', display: 'block' }}
-            />
+            {/* Left: map */}
+            <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/leaderboard-map-v3.png"
+                alt="Live leaderboard map showing ranked players around London"
+                style={{ width: '100%', display: 'block' }}
+              />
+            </div>
+
+            {/* Right: feature cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { emoji: '🗺️', title: 'Location-based ranking', desc: 'Set your search radius from 1 km to global — compete with your neighbourhood or the world.' },
+                { emoji: '🏆', title: 'Multiple categories', desc: 'Steps, workouts, streaks, habits — separate leaderboards for every activity type.' },
+                { emoji: '⏱️', title: 'Four time windows', desc: 'Today, this week, this month, or all time. Climb the ranks on your own schedule.' },
+                { emoji: '📍', title: 'Map or list view', desc: 'Switch between a ranked list and a live map showing top performers near you.' },
+              ].map((f, i) => (
+                <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '18px 20px' }}>
+                  <span style={{ fontSize: 22, flexShrink: 0 }}>{f.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.6 }}>{f.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
 
         </div>
