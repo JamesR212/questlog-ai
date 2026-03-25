@@ -1668,29 +1668,31 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
         {/* Right: animated sections list */}
         <div ref={phoneRef} style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
-          {/* Header */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
-            <div style={{ fontSize: isMobile ? 10 : 11, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
-          </div>
-          {/* Sections list */}
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden' }}>
-            {ALL_SECTIONS.map((s, i) => {
-              const on = enabled.has(s.id);
-              return (
-                <div key={s.id} onClick={() => setEnabled(prev => { const next = new Set(prev); if (next.has(s.id)) next.delete(s.id); else next.add(s.id); return next; })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '8px 12px' : '9px 14px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
-                  <span style={{ fontSize: isMobile ? 13 : 14, width: 20, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.3, transition: 'opacity 0.4s' }}>{s.emoji}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'color 0.4s' }}>{s.label}</div>
-                    <div style={{ fontSize: isMobile ? 9 : 10, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)', transition: 'color 0.4s' }}>{s.sub}</div>
+          <div style={{ transform: 'scale(0.67)', transformOrigin: 'top left', width: '149%' }}>
+            {/* Header */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
+              <div style={{ fontSize: isMobile ? 10 : 11, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
+            </div>
+            {/* Sections list */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden' }}>
+              {ALL_SECTIONS.map((s, i) => {
+                const on = enabled.has(s.id);
+                return (
+                  <div key={s.id} onClick={() => setEnabled(prev => { const next = new Set(prev); if (next.has(s.id)) next.delete(s.id); else next.add(s.id); return next; })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '8px 12px' : '9px 14px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
+                    <span style={{ fontSize: isMobile ? 13 : 14, width: 20, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.3, transition: 'opacity 0.4s' }}>{s.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'color 0.4s' }}>{s.label}</div>
+                      <div style={{ fontSize: isMobile ? 9 : 10, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)', transition: 'color 0.4s' }}>{s.sub}</div>
+                    </div>
+                    {/* Toggle */}
+                    <div style={{ width: isMobile ? 30 : 34, height: isMobile ? 18 : 20, borderRadius: 10, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
+                      <div style={{ position: 'absolute', top: 3, left: on ? (isMobile ? 15 : 17) : 3, width: isMobile ? 12 : 14, height: isMobile ? 12 : 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                    </div>
                   </div>
-                  {/* Toggle */}
-                  <div style={{ width: isMobile ? 30 : 34, height: isMobile ? 18 : 20, borderRadius: 10, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
-                    <div style={{ position: 'absolute', top: 3, left: on ? (isMobile ? 15 : 17) : 3, width: isMobile ? 12 : 14, height: isMobile ? 12 : 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
