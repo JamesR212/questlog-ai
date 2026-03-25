@@ -1631,7 +1631,7 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
   return (
     <section style={{ background: '#07070d', padding: isMobile ? '64px 16px' : '120px 24px', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 40 : 80, alignItems: 'center' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 40 : 80, alignItems: 'start' }}>
 
         {/* Left: text */}
         <div ref={headRef}>
@@ -1669,24 +1669,24 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
         {/* Right: animated sections list */}
         <div ref={phoneRef} style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
           {/* Header */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Sections</div>
-            <div style={{ fontSize: isMobile ? 11 : 13, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
+            <div style={{ fontSize: isMobile ? 10 : 11, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
           </div>
           {/* Sections list */}
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, overflow: 'hidden' }}>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden' }}>
             {ALL_SECTIONS.map((s, i) => {
               const on = enabled.has(s.id);
               return (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '11px 16px' : '13px 20px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <span style={{ fontSize: isMobile ? 16 : 18, width: 24, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.3, transition: 'opacity 0.4s' }}>{s.emoji}</span>
+                <div key={s.id} onClick={() => setEnabled(prev => { const next = new Set(prev); if (next.has(s.id)) next.delete(s.id); else next.add(s.id); return next; })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '8px 12px' : '9px 14px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
+                  <span style={{ fontSize: isMobile ? 13 : 14, width: 20, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.3, transition: 'opacity 0.4s' }}>{s.emoji}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'color 0.4s' }}>{s.label}</div>
-                    <div style={{ fontSize: isMobile ? 10 : 11, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)', transition: 'color 0.4s' }}>{s.sub}</div>
+                    <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'color 0.4s' }}>{s.label}</div>
+                    <div style={{ fontSize: isMobile ? 9 : 10, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)', transition: 'color 0.4s' }}>{s.sub}</div>
                   </div>
                   {/* Toggle */}
-                  <div style={{ width: isMobile ? 36 : 42, height: isMobile ? 21 : 24, borderRadius: 12, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
-                    <div style={{ position: 'absolute', top: isMobile ? 3 : 4, left: on ? (isMobile ? 18 : 21) : (isMobile ? 3 : 4), width: isMobile ? 15 : 16, height: isMobile ? 15 : 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                  <div style={{ width: isMobile ? 30 : 34, height: isMobile ? 18 : 20, borderRadius: 10, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
+                    <div style={{ position: 'absolute', top: 3, left: on ? (isMobile ? 15 : 17) : 3, width: isMobile ? 12 : 14, height: isMobile ? 12 : 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
                   </div>
                 </div>
               );
@@ -1705,6 +1705,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { ref: socialRef, visible: socialVisible } = useFadeIn();
   const { ref: replaceRef, visible: replaceVisible } = useFadeIn();
   const { ref: aiRef, visible: aiVisible } = useFadeIn();
+
   const { ref: compRef, visible: compVisible } = useFadeIn();
   const { ref: pricingRef, visible: pricingVisible } = useFadeIn();
   const { ref: ctaRef, visible: ctaVisible } = useFadeIn();
@@ -1769,8 +1770,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── 1. Hero ─────────────────────────────────────────────────── */}
       <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '80px 24px' }}>
+        {/* Hero background photo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hero-bg.png" alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: '72% 30%', opacity: 0.38, pointerEvents: 'none' }} />
+        {/* Dark vignette over photo */}
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 0%, rgba(7,7,13,0.6) 100%)', pointerEvents: 'none' }} />
+        {/* Bottom fade to blend into next section */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to bottom, transparent, #07070d)', pointerEvents: 'none' }} />
         {/* Gradient background */}
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(22,163,74,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(22,163,74,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
         {/* Particle field */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           {particles.map(p => (
@@ -1955,31 +1963,42 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4.7 Analytics timelapse ─────────────────────────────────── */}
       <AnalyticsSection onGetStarted={onGetStarted} />
 
-      {/* ── 5. AI section — sticky scroll ───────────────────────────── */}
-      <section ref={aiRef} style={{ background: '#050508' }}>
-        {/* Section heading */}
-        <div style={{
-          textAlign: 'center', paddingTop: 100,
-          opacity: aiVisible ? 1 : 0,
-          transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
-          transition: `all 0.7s ${easing}`,
-        }}>
-          <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
-          <h2 style={{ fontSize: isMobile ? 'clamp(27px, 3.75vw, 48px)' : 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 0 }}>Powered by AI</h2>
+      {/* ── 5. AI section — sticky background, scrolling text ───────── */}
+      <section ref={aiRef} style={{ position: 'relative', background: '#050508' }}>
+
+        {/* Sticky background image */}
+        <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', zIndex: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ai-bg.png" alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+          {/* Dark overlay so text stays readable */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(5,5,8,0.82) 0%, rgba(5,5,8,0.55) 60%, rgba(5,5,8,0.35) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(5,5,8,0.4) 0%, transparent 20%, transparent 80%, rgba(5,5,8,0.9) 100%)' }} />
         </div>
 
-        {/* Sticky two-column */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', maxWidth: 1020, margin: '0 auto', padding: isMobile ? '0 8px' : '0 48px', boxSizing: 'border-box' as const }}>
+        {/* Scrolling content — pulled up over the sticky bg */}
+        <div style={{ position: 'relative', zIndex: 1, marginTop: '-100vh' }}>
 
-          {/* Left: scrolling panels */}
-          <div>
+          {/* Section heading */}
+          <div style={{
+            textAlign: 'center', paddingTop: 100,
+            opacity: aiVisible ? 1 : 0,
+            transform: aiVisible ? 'translateY(0)' : 'translateY(30px)',
+            transition: `all 0.7s ${easing}`,
+          }}>
+            <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Intelligence built in</div>
+            <h2 style={{ fontSize: isMobile ? 'clamp(27px, 3.75vw, 48px)' : 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 0 }}>Powered by AI</h2>
+          </div>
+
+          {/* Scrolling panels — left-aligned, max half width */}
+          <div style={{ maxWidth: 1020, margin: '0 auto', padding: isMobile ? '0 24px' : '0 48px', boxSizing: 'border-box' as const }}>
+
             {/* Panel 1 — AI Gym Plans */}
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: isMobile ? 8 : 48 }}>
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
               <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Gym Plans</div>
               <h3 style={{ fontSize: isMobile ? 'clamp(19px, 2.4vw, 31px)' : 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
                 Your plan,<br />built by AI
               </h3>
-              <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32, maxWidth: 420 }}>
+              <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32 }}>
                 Tell GAINN your equipment, schedule, and goals — and get a fully personalised workout plan in seconds. Every exercise, every set, every rep. Built for you, not copied from a template.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1997,8 +2016,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
             </div>
 
-            {/* Panel 2 — Powered by Gemini + 6 features */}
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: isMobile ? 8 : 48 }}>
+            {/* Panel 2 — 7 AI features */}
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
               {/* Gemini badge */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px 16px', marginBottom: 32, alignSelf: 'flex-start' }}>
                 <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
@@ -2039,14 +2058,56 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 ))}
               </div>
             </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5.5 Leaderboards ─────────────────────────────────────────── */}
+      <section
+        style={{
+          background: '#07070d',
+          padding: '120px 24px',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Compete</div>
+            <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, color: '#fff', lineHeight: 1.06, marginBottom: 20 }}>
+              Leaderboards that<br />actually mean something
+            </h2>
+            <p style={{ fontSize: 18, color: '#9ca3af', lineHeight: 1.75, maxWidth: 560, margin: '0 auto' }}>
+              Compete locally or globally. Filter by today, this week, month, or all time. See exactly where you rank on the map.
+            </p>
           </div>
 
-          {/* Right: sticky phone mockup */}
-          <div style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'start', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: isMobile ? 8 : 48 }}>
-            <div style={{ height: isMobile ? '60vh' : '75vh', aspectRatio: '804/1428', background: '#000', borderRadius: 53, border: '2px solid rgba(255,255,255,0.15)', overflow: 'hidden', boxShadow: '0 32px 100px rgba(0,0,0,0.8)' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/form-check-screen.jpg" alt="GAINN AI form check" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
-            </div>
+          {/* Feature grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 64 }}>
+            {[
+              { emoji: '🗺️', title: 'Location-based ranking', desc: 'Set your search radius from 1 km to global — compete with your neighbourhood or the world.' },
+              { emoji: '🏆', title: 'Multiple categories', desc: 'Steps, workouts, streaks, habits — separate leaderboards for every activity type.' },
+              { emoji: '⏱️', title: 'Four time windows', desc: 'Today, this week, this month, or all time. Climb the ranks on your own schedule.' },
+              { emoji: '📍', title: 'Map or list view', desc: 'Switch between a ranked list and a live map showing top performers near you.' },
+            ].map((f, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '28px 24px' }}>
+                <div style={{ fontSize: 28, marginBottom: 14 }}>{f.emoji}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Map screenshot */}
+          <div style={{ maxWidth: 600, margin: '0 auto', borderRadius: 32, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/leaderboard-map-v2.png"
+              alt="Live leaderboard map showing ranked players around Brighton"
+              style={{ width: '100%', display: 'block' }}
+            />
           </div>
 
         </div>
