@@ -2090,6 +2090,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ── 4.7 Analytics ────────────────────────────────────────────── */}
+      <AnalyticsSection onGetStarted={onGetStarted} />
+
       {/* ── 5.5 Leaderboards ─────────────────────────────────────────── */}
       <section
         style={{
@@ -2152,9 +2155,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         </div>
       </section>
-
-      {/* ── 4.7 Analytics ────────────────────────────────────────────── */}
-      <AnalyticsSection onGetStarted={onGetStarted} />
 
       {/* ── 5.5 Theme showcase ───────────────────────────────────────── */}
       <ThemeShowcaseSection />
