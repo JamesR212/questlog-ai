@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { ViceDef, SubscriptionCategory, BudgetBucket } from '@/types';
 import AIAdvisor from '../shared/AIAdvisor';
@@ -1331,20 +1331,33 @@ function FinancesTab() {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ViceTracker() {
-  const { financialMode } = useGameStore();
+  const { financialMode, disabledSections } = useGameStore();
+  const vicesDisabled  = disabledSections.includes('vices');
+  const financeDisabled = disabledSections.includes('finance');
   const [activeTab, setActiveTab] = useState<'vices' | 'finances'>('vices');
+
+  // If vices is disabled but finance is on, start on finances tab
+  useEffect(() => {
+    if (vicesDisabled && !financeDisabled) setActiveTab('finances');
+  }, [vicesDisabled, financeDisabled]);
+
+  const showVicesTab   = !vicesDisabled;
+  const showFinanceTab = financialMode && !financeDisabled;
+  const showTabBar     = showVicesTab && showFinanceTab;
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-ql text-xl font-bold">Finance</h2>
+        <h2 className="text-ql text-xl font-bold">
+          {!financialMode || financeDisabled ? 'Vices' : 'Finance'}
+        </h2>
         <p className="text-ql-3 text-xs mt-0.5">
-          {financialMode ? 'Track what you skip and manage your money' : 'Log what you skipped — earn gold and tokens'}
+          {financialMode && !financeDisabled ? 'Track what you skip and manage your money' : 'Log what you skipped — earn gold and tokens'}
         </p>
       </div>
 
-      {/* Tab switcher — only shown in financial mode */}
-      {financialMode && (
+      {/* Tab switcher — only shown when both tabs are available */}
+      {showTabBar && (
         <div className="flex gap-1 bg-ql-surface2 rounded-2xl p-1 border border-ql">
           {([
             { id: 'vices',    label: '🚫 Vices' },
@@ -1361,8 +1374,8 @@ export default function ViceTracker() {
         </div>
       )}
 
-      {(!financialMode || activeTab === 'vices')    && <VicesTab />}
-      {(financialMode  && activeTab === 'finances') && <FinancesTab />}
+      {showVicesTab   && (!showTabBar || activeTab === 'vices')    && <VicesTab />}
+      {showFinanceTab && (!showTabBar || activeTab === 'finances') && <FinancesTab />}
     </div>
   );
 }

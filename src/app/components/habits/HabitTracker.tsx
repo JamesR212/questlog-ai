@@ -548,7 +548,7 @@ export default function HabitTracker() {
 
       {/* Stats */}
       {habitLog.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
             <div className="text-ql text-lg font-bold tabular-nums">{habitLog.length}</div>
             <div className="text-ql-3 text-[10px] font-medium mt-0.5">Total done</div>
@@ -556,10 +556,6 @@ export default function HabitTracker() {
           <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
             <div className="text-ql text-lg font-bold tabular-nums">{habitDefs.length}</div>
             <div className="text-ql-3 text-[10px] font-medium mt-0.5">Active habits</div>
-          </div>
-          <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-            <div className="text-ql text-lg font-bold tabular-nums">Lv.{stats.level}</div>
-            <div className="text-ql-3 text-[10px] font-medium mt-0.5">Character</div>
           </div>
         </div>
       )}

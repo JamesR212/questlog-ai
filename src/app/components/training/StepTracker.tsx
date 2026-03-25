@@ -73,7 +73,7 @@ export function StepsChart({ bars, goal }: { bars: StepBar[]; goal: number }) {
         return (
           <g key={t}>
             <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="var(--ql-surface-3)" strokeWidth="0.5" strokeDasharray="3 3" />
-            <text x={W - PAD_R + 4} y={y + 3} fill="var(--ql-fg-3)" fontSize="8" textAnchor="start">
+            <text x={W - PAD_R + 4} y={y + 3} fill="var(--ql-tx)" fontSize="8" textAnchor="start">
               {t >= 1000 ? `${t/1000}k` : t}
             </text>
           </g>
@@ -93,7 +93,7 @@ export function StepsChart({ bars, goal }: { bars: StepBar[]; goal: number }) {
             <rect x={x} y={by} width={barW} height={bh} rx="1.5" fill={color} opacity={b.value === 0 ? 0.25 : 1} />
             {b.value === 0 && <rect x={x} y={PAD_T + chartH - 2} width={barW} height={2} rx="1" fill={color} opacity={0.3} />}
             {b.showLabel && (
-              <text x={x + barW / 2} y={H - 3} fill="var(--ql-fg-3)" fontSize="8" textAnchor="middle">{b.label}</text>
+              <text x={x + barW / 2} y={H - 3} fill="var(--ql-tx)" fontSize="8" textAnchor="middle">{b.label}</text>
             )}
           </g>
         );

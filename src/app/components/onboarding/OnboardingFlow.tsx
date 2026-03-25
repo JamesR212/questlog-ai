@@ -52,28 +52,44 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'feedback';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'sections' | 'feedback';
+
+const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
+  { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
+  { id: 'hydration',  label: 'Hydration',  icon: '💧', desc: 'Daily water tracking'             },
+  { id: 'sleep',      label: 'Sleep',      icon: '🌙', desc: 'Sleep log & bedtime tracker'      },
+  { id: 'wake',       label: 'Wake Up',    icon: '🌅', desc: 'Morning check-in & wake quest'    },
+  { id: 'calendar',   label: 'Calendar',   icon: '📅', desc: 'Events & scheduling'              },
+  { id: 'vices',      label: 'Vices',      icon: '🚫', desc: 'Bad habit tracker'                },
+  { id: 'finance',    label: 'Finance',    icon: '💰', desc: 'Budget & spending tracker'        },
+  { id: 'habits',     label: 'Habits',     icon: '✅', desc: 'Daily habit tracking'             },
+  { id: 'plans',      label: 'Plans',      icon: '🏋️', desc: 'Workout plans & programmes'       },
+  { id: 'steps',      label: 'Steps',      icon: '👟', desc: 'Daily step counting'              },
+  { id: 'stats',      label: 'Stats',      icon: '📊', desc: 'Performance stats & metrics'      },
+  { id: 'track',      label: 'GPS Track',  icon: '🗺️', desc: 'GPS activity recording'           },
+];
 
 export default function OnboardingFlow() {
-  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode } = useGameStore();
+  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode, setDisabledSections } = useGameStore();
 
-  const [stepIndex,      setStepIndex]      = useState(0);
-  const [name,           setName]           = useState('');
-  const [goals,          setGoals]          = useState<string[]>([]);
-  const [savingsInput,   setSavingsInput]   = useState('500');
-  const [currency,       setCurrency]       = useState(CURRENCIES[0]);
-  const [wakeInput,      setWakeInput]      = useState('07:00');
-  const [bedInput,       setBedInput]       = useState('23:00');
-  const [stepInput,      setStepInput]      = useState('10000');
-  const [heightVal,      setHeightVal]      = useState('175');
-  const [weightVal,      setWeightVal]      = useState('75');
-  const [ageVal,         setAgeVal]         = useState('25');
-  const [activity,       setActivity]       = useState<ActivityLevel>('moderate');
-  const [weightUnit,     setWeightUnit]     = useState<'kg' | 'lb'>('kg');
-  const [selectedTheme,  setSelectedTheme]  = useState<Theme>('dark');
-  const [direction,      setDirection]      = useState<'forward' | 'back'>('forward');
-  const [animating,      setAnimating]      = useState(false);
-  const [countdown,      setCountdown]      = useState(5);
+  const [stepIndex,         setStepIndex]         = useState(0);
+  const [name,              setName]              = useState('');
+  const [goals,             setGoals]             = useState<string[]>([]);
+  const [savingsInput,      setSavingsInput]      = useState('500');
+  const [currency,          setCurrency]          = useState(CURRENCIES[0]);
+  const [wakeInput,         setWakeInput]         = useState('07:00');
+  const [bedInput,          setBedInput]          = useState('23:00');
+  const [stepInput,         setStepInput]         = useState('10000');
+  const [heightVal,         setHeightVal]         = useState('175');
+  const [weightVal,         setWeightVal]         = useState('75');
+  const [ageVal,            setAgeVal]            = useState('25');
+  const [activity,          setActivity]          = useState<ActivityLevel>('moderate');
+  const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lb'>('kg');
+  const [selectedTheme,     setSelectedTheme]     = useState<Theme>('dark');
+  const [disabledOnboarding, setDisabledOnboarding] = useState<string[]>([]);
+  const [direction,         setDirection]         = useState<'forward' | 'back'>('forward');
+  const [animating,         setAnimating]         = useState(false);
+  const [countdown,         setCountdown]         = useState(5);
 
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
@@ -82,6 +98,7 @@ export default function OnboardingFlow() {
     if (goals.includes('wake_early')) list.push('sleep');
     if (goals.includes('get_fit') || goals.includes('build_strength') || goals.includes('track_life')) list.push('fitness');
     list.push('theme');
+    list.push('sections');
     list.push('feedback');
     return list;
   }, [goals]);
@@ -120,6 +137,7 @@ export default function OnboardingFlow() {
     if (!isNaN(s) && s > 0) setStepGoal(s);
     setTheme(selectedTheme);
     if (!goals.includes('save_money') && !goals.includes('quit_vices')) setFinancialMode(false);
+    if (disabledOnboarding.length > 0) setDisabledSections(disabledOnboarding);
     const rawWeight = parseFloat(weightVal) || 75;
     const weightKg  = weightUnit === 'lb' ? Math.round(rawWeight * 0.453592) : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
@@ -453,6 +471,46 @@ export default function OnboardingFlow() {
             </>
           );
         })()}
+
+        {/* ── Sections ── */}
+        {currentStep === 'sections' && (
+          <>
+            <div className="text-5xl mb-4">🎛️</div>
+            <h1 className="text-white text-3xl font-bold mb-2">Your Sections</h1>
+            <p className="text-white/50 text-sm mb-6">Turn off anything you don't need. You can always change this in Settings.</p>
+
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
+              {ONBOARDING_SECTIONS.map(s => {
+                const isOff = disabledOnboarding.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setDisabledOnboarding(prev =>
+                      isOff ? prev.filter(x => x !== s.id) : [...prev, s.id]
+                    )}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all text-left ${
+                      isOff ? 'bg-white/3 border-white/8 opacity-50' : 'bg-white/8 border-white/20'
+                    }`}
+                  >
+                    <span className="text-xl w-7 text-center">{s.icon}</span>
+                    <div className="flex-1">
+                      <p className={`text-sm font-semibold ${isOff ? 'text-white/40 line-through' : 'text-white'}`}>{s.label}</p>
+                      <p className="text-white/30 text-[10px]">{s.desc}</p>
+                    </div>
+                    <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isOff ? 'bg-white/10' : 'bg-white/30'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOff ? 'translate-x-0.5 opacity-40' : 'translate-x-5'}`} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+            </div>
+          </>
+        )}
 
         {/* ── Feedback slide ── */}
         {currentStep === 'feedback' && (() => {

@@ -60,6 +60,11 @@ interface GameStore {
   financialMode: boolean;
   hiddenSections: string[];
   hiddenStats: string[];
+  disabledSections: string[];
+  setDisabledSections: (sections: string[]) => void;
+  toggleDisabledSection: (section: string) => void;
+  clockFormat: '12h' | '24h';
+  setClockFormat: (f: '12h' | '24h') => void;
   tokensSpent: number;
   tokensPerEarn: number;
   tokenRedemptions: { id: string; label: string; emoji: string; cost: number; date: string }[];
@@ -318,6 +323,8 @@ const INITIAL_STATE = {
   financialMode: true,
   hiddenSections: [],
   hiddenStats: [],
+  disabledSections: [],
+  clockFormat: (typeof navigator !== 'undefined' && navigator.language === 'en-US') ? '12h' : '24h',
   tokensSpent: 0,
   tokensPerEarn: 3,
   tokenRedemptions: [],
@@ -409,6 +416,8 @@ export const useGameStore = create<GameStore>()(
       financialMode: true,
       hiddenSections: [],
       hiddenStats: [],
+      disabledSections: [],
+      clockFormat: (typeof navigator !== 'undefined' && navigator.language === 'en-US') ? '12h' : '24h',
       tokensSpent: 0,
       tokensPerEarn: 3,
       tokenRedemptions: [],
@@ -475,6 +484,14 @@ export const useGameStore = create<GameStore>()(
       })),
       setCompetitionMode: (on) => set({ competitionMode: on }),
       setFinancialMode: (on) => set({ financialMode: on }),
+      setDisabledSections: (sections) => set({ disabledSections: sections }),
+      toggleDisabledSection: (section) =>
+        set((state) => ({
+          disabledSections: state.disabledSections.includes(section)
+            ? state.disabledSections.filter((s) => s !== section)
+            : [...state.disabledSections, section],
+        })),
+      setClockFormat: (f) => set({ clockFormat: f }),
 
       toggleHiddenSection: (section) =>
         set((state) => ({

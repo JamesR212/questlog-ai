@@ -75,6 +75,7 @@ function WeeklySnapshotGrid() {
     logHabit, unlogHabit, logSteps, deleteMeal, logMeal, addWaterEntry, deleteWaterEntry,
     checkInWake, deleteWakeCheckIn,
     detailCellOverrides, setDetailCellOverride,
+    disabledSections,
   } = useGameStore();
 
   const weekDates = getWeekDates();
@@ -101,13 +102,13 @@ function WeeklySnapshotGrid() {
 
   type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' | 'hydration' };
 
-  const builtinRows: Row[] = [
-    { id: '__sleep__',     emoji: '🌙', label: 'Sleep',     type: 'sleep'     },
-    { id: '__steps__',     emoji: '👟', label: 'Steps',     type: 'steps'     },
-    { id: '__wake__',      emoji: '🌅', label: 'Wake Up',   type: 'wake'      },
-    { id: '__nutrition__', emoji: '🥗', label: 'Nutrition', type: 'nutrition' },
-    { id: '__hydration__', emoji: '💧', label: 'Hydration', type: 'hydration' },
-  ];
+  const builtinRows: Row[] = ([
+    { id: '__sleep__',     emoji: '🌙', label: 'Sleep',     type: 'sleep'     as const, section: 'sleep'     },
+    { id: '__steps__',     emoji: '👟', label: 'Steps',     type: 'steps'     as const, section: 'steps'     },
+    { id: '__wake__',      emoji: '🌅', label: 'Wake Up',   type: 'wake'      as const, section: 'wake'      },
+    { id: '__nutrition__', emoji: '🥗', label: 'Nutrition', type: 'nutrition' as const, section: 'food'      },
+    { id: '__hydration__', emoji: '💧', label: 'Hydration', type: 'hydration' as const, section: 'hydration' },
+  ] as (Row & { section: string })[]).filter(r => !disabledSections.includes(r.section));
   const optionalRows: Row[] = [
     ...habitDefs.map(h => ({ id: h.id, emoji: h.emoji, label: h.name, type: 'habit' as const })),
   ];
@@ -327,7 +328,7 @@ function WeeklySnapshotGrid() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           {/* Accuracy ring */}
-          {weeklyAccuracy !== null && (() => {
+          {!disabledSections.includes('stats') && weeklyAccuracy !== null && (() => {
             const R = 17.5, C = 22.5, circ = 2 * Math.PI * R;
             return (
               <svg width="45" height="45" viewBox="0 0 45 45" style={{ display: 'block', flexShrink: 0 }}>
@@ -347,7 +348,7 @@ function WeeklySnapshotGrid() {
           })()}
           <div>
             <p className="text-ql text-sm font-semibold">Weekly Snapshot</p>
-            {weeklyAccuracy !== null && (
+            {!disabledSections.includes('stats') && weeklyAccuracy !== null && (
               <p className="text-[10px] font-semibold" style={{ color: accColor }}>
                 {weeklyAccuracy}% accuracy this week
               </p>
@@ -990,6 +991,7 @@ function DailyTrioCard() {
     mealLog, nutritionGoal,
     waterLog, waterGoal,
     setActiveSection, setTrainingTab, setNutritionTab,
+    disabledSections,
   } = useGameStore();
 
   const today = todayStr();
@@ -1012,51 +1014,48 @@ function DailyTrioCard() {
   const waterPct   = waterGoal > 0 ? Math.min(1, todayWater / waterGoal) : 0;
   const waterHit   = todayWater >= waterGoal;
 
-  return (
-    <div className="grid grid-cols-3 gap-3">
+  const foodOff      = disabledSections.includes('food');
+  const hydrationOff = disabledSections.includes('hydration');
+  const stepsOff     = disabledSections.includes('steps');
 
-      {/* Steps */}
-      <button
+  const rings = [
+    !stepsOff && (
+      <button key="steps"
         onClick={() => { setTrainingTab('steps'); setActiveSection('training'); }}
         className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-3 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform"
       >
-        <ProgressRing
-          pct={stepPct} hit={stepsHit} color="#4a9eff"
-          valLine1={fmt(todaySteps)}
-          valLine2={todaySteps >= 1000 ? 'steps' : ''}
-          goalLine={`/ ${fmt(stepGoal)}`}
-        />
+        <ProgressRing pct={stepPct} hit={stepsHit} color="#4a9eff"
+          valLine1={fmt(todaySteps)} valLine2={todaySteps >= 1000 ? 'steps' : ''} goalLine={`/ ${fmt(stepGoal)}`} />
         <p className="text-ql-3 text-[10px] font-medium">👟 Steps</p>
       </button>
-
-      {/* Nutrition */}
-      <button
+    ),
+    !foodOff && (
+      <button key="nutrition"
         onClick={() => { setNutritionTab('food'); setActiveSection('nutrition'); }}
         className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-3 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform"
       >
-        <ProgressRing
-          pct={calPct} hit={calHit} color="#34c759"
-          valLine1={fmt(totalCal)}
-          valLine2={totalCal >= 1000 ? 'kcal' : ''}
-          goalLine={`/ ${fmt(calGoal)}kcal`}
-        />
+        <ProgressRing pct={calPct} hit={calHit} color="#34c759"
+          valLine1={fmt(totalCal)} valLine2={totalCal >= 1000 ? 'kcal' : ''} goalLine={`/ ${fmt(calGoal)}kcal`} />
         <p className="text-ql-3 text-[10px] font-medium">🥗 Nutrition</p>
       </button>
-
-      {/* Hydration */}
-      <button
+    ),
+    !hydrationOff && (
+      <button key="hydration"
         onClick={() => { setNutritionTab('drink'); setActiveSection('nutrition'); }}
         className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-3 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform"
       >
-        <ProgressRing
-          pct={waterPct} hit={waterHit} color="#3b9eff"
-          valLine1={fmtMl(todayWater)}
-          valLine2=""
-          goalLine={`/ ${fmtMl(waterGoal)}`}
-        />
+        <ProgressRing pct={waterPct} hit={waterHit} color="#3b9eff"
+          valLine1={fmtMl(todayWater)} valLine2="" goalLine={`/ ${fmtMl(waterGoal)}`} />
         <p className="text-ql-3 text-[10px] font-medium">💧 Hydration</p>
       </button>
+    ),
+  ].filter(Boolean);
 
+  if (rings.length === 0) return null;
+
+  return (
+    <div className={`grid gap-3 grid-cols-${rings.length}`}>
+      {rings}
     </div>
   );
 }
@@ -1068,7 +1067,7 @@ export default function HomePage() {
     stats, habitLog, gymSessions, wakeQuest, vices,
     savingsGoal,
     userName, currencySymbol,
-    competitionMode, financialMode, hiddenStats,
+    competitionMode, financialMode, hiddenStats, disabledSections,
     setActiveSection,
     loginStreak, recordAppOpen,
   } = useGameStore();
@@ -1143,70 +1142,31 @@ export default function HomePage() {
       <WeeklySnapshotGrid />
 
       {/* Steps · Nutrition · Hydration rings */}
-      <DailyTrioCard />
+      {!disabledSections.includes('stats') && <DailyTrioCard />}
 
       {/* Pinned budget allowances */}
       <BudgetTrackerCard />
 
-      {/* Level & XP */}
-      {(() => {
-        const xpPct = Math.min(100, (stats.xp / stats.xpToNext) * 100);
-        const allStats = [
-          { key: 'STR',  val: stats.str,  color: 'text-red-400',     bgColor: 'bg-red-500',     icon: '⚔️',  max: 150 },
-          { key: 'CON',  val: stats.con,  color: 'text-emerald-400', bgColor: 'bg-emerald-500', icon: '🛡️',  max: 150 },
-          { key: 'DEX',  val: stats.dex,  color: 'text-blue-400',    bgColor: 'bg-blue-500',    icon: '🏹',  max: 150 },
-          { key: 'GOLD', val: stats.gold, color: 'text-amber-400',   bgColor: 'bg-amber-400',   icon: '💰',  max: 1000 },
-        ];
-        const visible = allStats.filter(s => competitionMode || !hiddenStats.includes(s.key));
-        return (
-          <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="text-ql text-sm font-semibold">Level {stats.level}</p>
-              <span className="text-ql-3 text-xs tabular-nums">{stats.xp} / {stats.xpToNext} XP</span>
-            </div>
-            <div className="h-1.5 bg-ql-surface3 rounded-full overflow-hidden">
-              <div className="h-full bg-ql-accent rounded-full transition-all duration-1000" style={{ width: `${xpPct}%` }} />
-            </div>
-            {visible.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {visible.map(({ key, val, color, bgColor, icon, max }) => (
-                  <div key={key} className="bg-ql-surface2 rounded-xl p-3 border border-ql">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-base">{icon}</span>
-                      <span className={`text-xs font-bold ${color}`}>{key}</span>
-                      <span className="text-ql text-xs font-bold tabular-nums ml-auto">{val}</span>
-                    </div>
-                    <div className="h-1 bg-ql-surface3 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${bgColor} transition-all duration-500`}
-                        style={{ width: `${Math.min(100, (val / max) * 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      {/* Level & XP — hidden (coming soon as dedicated tab) */}
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-          <div className="text-ql text-lg font-bold tabular-nums">{(gymSessions?.length ?? 0) + habitLog.length}</div>
-          <div className="text-ql-3 text-[10px] font-medium mt-0.5">Activities done</div>
-        </div>
-        <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-          <div className="text-ql text-lg font-bold tabular-nums">
-            {wakeQuest.checkIns.filter((c) => c.onTime).length}
+      {!disabledSections.includes('stats') && (() => {
+        const cards = [
+          { show: true,                                    value: (gymSessions?.length ?? 0) + habitLog.length,             label: 'Activities done'  },
+          { show: !disabledSections.includes('wake'),      value: wakeQuest.checkIns.filter((c) => c.onTime).length,        label: 'On-time rises'    },
+          { show: !disabledSections.includes('vices'),     value: vices.reduce((s, v) => s + v.count, 0),                   label: 'Vices skipped'    },
+        ].filter(c => c.show);
+        return cards.length > 0 ? (
+          <div className={`grid gap-2 grid-cols-${cards.length}`}>
+            {cards.map(c => (
+              <div key={c.label} className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
+                <div className="text-ql text-lg font-bold tabular-nums">{c.value}</div>
+                <div className="text-ql-3 text-[10px] font-medium mt-0.5">{c.label}</div>
+              </div>
+            ))}
           </div>
-          <div className="text-ql-3 text-[10px] font-medium mt-0.5">On-time rises</div>
-        </div>
-        <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-          <div className="text-ql text-lg font-bold tabular-nums">
-            {vices.reduce((s, v) => s + v.count, 0)}
-          </div>
-          <div className="text-ql-3 text-[10px] font-medium mt-0.5">Vices skipped</div>
-        </div>
-      </div>
+        ) : null;
+      })()}
 
       <AIAdvisor section="dashboard" />
     </div>

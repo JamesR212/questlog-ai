@@ -74,7 +74,7 @@ export default function CharacterPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-ql text-xl font-bold">Your Hero</h2>
-          <p className="text-ql-3 text-sm">Level {stats.level} · {STAGE_LABELS[morphStage]}</p>
+          <p className="text-ql-3 text-sm">{STAGE_LABELS[morphStage]}</p>
         </div>
         <button
           onClick={() => setEditing(true)}
@@ -93,29 +93,11 @@ export default function CharacterPage() {
             morphStage={morphStage}
             size={120}
           />
-          {/* Level badge */}
-          <div className="absolute -top-1 -right-3 bg-ql-accent text-white text-[10px] font-bold rounded-full w-7 h-7 flex items-center justify-center shadow-ql">
-            {stats.level}
-          </div>
           {previewOutfit && (
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-ql-surface border border-ql rounded-full px-2 py-0.5 text-[9px] text-ql-accent font-semibold whitespace-nowrap">
               Preview
             </div>
           )}
-        </div>
-
-        {/* XP bar */}
-        <div className="w-full">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-ql-3 text-[11px]">XP</span>
-            <span className="text-ql text-[11px] tabular-nums">{stats.xp} / {stats.xpToNext}</span>
-          </div>
-          <div className="h-1.5 bg-ql-surface3 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-ql-accent rounded-full transition-all duration-1000"
-              style={{ width: `${xpPct}%` }}
-            />
-          </div>
         </div>
 
         {/* Morph stage */}
@@ -136,33 +118,6 @@ export default function CharacterPage() {
               />
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Stats grid */}
-      <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
-        <p className="text-ql text-sm font-semibold mb-3">Stats</p>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { key: 'STR', val: stats.str, color: 'text-red-400', icon: '⚔️', max: 150 },
-            { key: 'CON', val: stats.con, color: 'text-emerald-400', icon: '🛡️', max: 150 },
-            { key: 'DEX', val: stats.dex, color: 'text-blue-400', icon: '🏹', max: 150 },
-            { key: 'GOLD', val: stats.gold, color: 'text-amber-400', icon: '💰', max: 1000 },
-          ].map(({ key, val, color, icon, max }) => (
-            <div key={key} className="bg-ql-surface2 rounded-xl p-3 border border-ql">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-base">{icon}</span>
-                <span className={`text-xs font-bold ${color}`}>{key}</span>
-                <span className="text-ql text-xs font-bold tabular-nums ml-auto">{val}</span>
-              </div>
-              <div className="h-1 bg-ql-surface3 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${color.replace('text-', 'bg-')} transition-all duration-500`}
-                  style={{ width: `${Math.min(100, (val / max) * 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -201,7 +156,7 @@ export default function CharacterPage() {
             <p className="text-ql text-sm font-semibold">Wardrobe</p>
             <p className="text-ql-3 text-[11px] mt-0.5">Tap to equip · Premium unlocked with 💰 100,000 gold</p>
           </div>
-          <span className="text-amber-400 text-xs font-bold tabular-nums">{stats.gold.toLocaleString()} 💰</span>
+          <span />
         </div>
 
         {/* Free outfits */}

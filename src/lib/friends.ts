@@ -37,6 +37,7 @@ export async function updatePublicProfile(
     await setDoc(doc(db, 'profiles', userId), {
       uid: userId,
       username: data.username,
+      username_lower: data.username.trim().toLowerCase(),
       display_name: data.displayName,
       level: data.level,
       xp: data.xp,
@@ -54,7 +55,7 @@ export async function updatePublicProfile(
 /** Returns true if the username is not taken by anyone other than currentUserId */
 export async function checkUsernameAvailable(username: string, currentUserId: string): Promise<boolean> {
   try {
-    const q = query(collection(db, 'profiles'), where('username', '==', username.trim()), limit(2));
+    const q = query(collection(db, 'profiles'), where('username_lower', '==', username.trim().toLowerCase()), limit(2));
     const snap = await getDocs(q);
     // Available if no docs, or only doc is current user
     return snap.docs.every(d => d.id === currentUserId);
@@ -81,14 +82,38 @@ export async function clearLocation(userId: string): Promise<void> {
 
 export async function searchUsers(username: string): Promise<PublicProfile[]> {
   try {
-    const q = query(
-      collection(db, 'profiles'),
-      where('username', '>=', username),
-      where('username', '<=', username + '\uf8ff'),
-      limit(10)
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as PublicProfile);
+    const original = username.trim();
+    const lower = original.toLowerCase();
+
+    // Run two queries in parallel:
+    // 1. username_lower — case-insensitive, works for profiles written after the fix
+    // 2. username — case-sensitive fallback for older profiles without username_lower
+    const [snap1, snap2] = await Promise.all([
+      getDocs(query(
+        collection(db, 'profiles'),
+        where('username_lower', '>=', lower),
+        where('username_lower', '<=', lower + '\uf8ff'),
+        limit(10)
+      )),
+      getDocs(query(
+        collection(db, 'profiles'),
+        where('username', '>=', original),
+        where('username', '<=', original + '\uf8ff'),
+        limit(10)
+      )),
+    ]);
+
+    const seen = new Set<string>();
+    const results: PublicProfile[] = [];
+    for (const snap of [snap1, snap2]) {
+      for (const d of snap.docs) {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          results.push(d.data() as PublicProfile);
+        }
+      }
+    }
+    return results;
   } catch (e) {
     console.error('[friends] searchUsers error:', e);
     return [];

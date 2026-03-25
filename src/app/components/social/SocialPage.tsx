@@ -120,7 +120,7 @@ export default function SocialPage({ userId }: { userId: string }) {
   const doSearch = async () => {
     if (!search.trim()) return;
     setLoading(true);
-    const res = await searchUsers(search.trim().toLowerCase());
+    const res = await searchUsers(search.trim());
     const filtered = res.filter(p => p.uid !== userId);
     const friendSet = new Set(friends.map(f => f.uid));
     const sentChecks = await Promise.all(

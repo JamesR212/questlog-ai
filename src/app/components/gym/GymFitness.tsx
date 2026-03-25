@@ -584,18 +584,10 @@ export default function GymFitness() {
 
       {/* Stats */}
       {gymSessions.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
             <div className="text-ql text-lg font-bold tabular-nums">{gymSessions.length}</div>
             <div className="text-ql-3 text-[10px] font-medium mt-0.5">Sessions</div>
-          </div>
-          <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-            <div className="text-ql text-lg font-bold tabular-nums">{stats.str}</div>
-            <div className="text-ql-3 text-[10px] font-medium mt-0.5">STR</div>
-          </div>
-          <div className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-            <div className="text-ql text-lg font-bold tabular-nums">Lv.{stats.level}</div>
-            <div className="text-ql-3 text-[10px] font-medium mt-0.5">Character</div>
           </div>
         </div>
       )}

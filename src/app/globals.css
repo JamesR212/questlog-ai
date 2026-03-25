@@ -14,7 +14,7 @@
   --ql-border-2:     rgba(255, 255, 255, 0.04);
   --ql-tx:           #f0f0f8;
   --ql-tx-2:         #8888aa;
-  --ql-tx-3:         #555570;
+  --ql-tx-3:         #8888aa;
   --ql-accent:       #2d6a27;
   --ql-accent-h:     #245520;
   --ql-accent-tx:    #86efac;
@@ -36,7 +36,7 @@
   --ql-border-2:     rgba(0, 0, 0, 0.04);
   --ql-tx:           #1d1d1f;
   --ql-tx-2:         #6e6e73;
-  --ql-tx-3:         #a1a1aa;
+  --ql-tx-3:         #888894;
   --ql-accent:       #2d6a27;
   --ql-accent-h:     #245520;
   --ql-accent-tx:    #2d6a27;
@@ -58,7 +58,7 @@
   --ql-border-2:     rgba(210, 60, 120, 0.06);
   --ql-tx:           #2a0d1a;
   --ql-tx-2:         #5c2238;
-  --ql-tx-3:         #8a4860;
+  --ql-tx-3:         #aa6080;
   --ql-accent:       #d6306a;
   --ql-accent-h:     #bc2258;
   --ql-accent-tx:    #d6306a;
@@ -80,7 +80,7 @@
   --ql-border-2:     rgba(255, 255, 255, 0.04);
   --ql-tx:           #f9fbff;
   --ql-tx-2:         #a8bfd6;
-  --ql-tx-3:         #6e8faa;
+  --ql-tx-3:         #92b4cc;
   --ql-accent:       #1d58d4;
   --ql-accent-h:     #1648b8;
   --ql-accent-tx:    #60a5fa;
@@ -102,7 +102,7 @@
   --ql-border-2:     rgba(255, 255, 255, 0.04);
   --ql-tx:           #f2faf4;
   --ql-tx-2:         #aad4b6;
-  --ql-tx-3:         #6fa882;
+  --ql-tx-3:         #90c4a0;
   --ql-accent:       #27a24a;
   --ql-accent-h:     #1e8a3c;
   --ql-accent-tx:    #34c45c;

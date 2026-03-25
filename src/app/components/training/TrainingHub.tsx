@@ -1951,7 +1951,7 @@ export default function TrainingHub() {
     gpsActivities, floorsGoal,
   } = useGameStore();
 
-  const { trainingTab, gpsTrackingEnabled } = useGameStore();
+  const { trainingTab, gpsTrackingEnabled, disabledSections } = useGameStore();
   const [activeTab, setActiveTab] = useState<'habits' | 'plans' | 'performance' | 'steps' | 'track'>(trainingTab ?? 'habits');
 
   useEffect(() => {
@@ -2122,7 +2122,9 @@ export default function TrainingHub() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-ql text-xl font-bold">Training</h2>
+          <h2 className="text-ql text-xl font-bold">
+            {['plans','steps','stats','track'].every(s => disabledSections.includes(s)) && !disabledSections.includes('habits') ? 'Habits' : 'Training'}
+          </h2>
           <p className="text-ql-3 text-xs mt-0.5">
             {doneToday}/{todayHabits.length} habits · {gymSessions.length} sessions · +20 XP habits · +75 XP workouts
           </p>
@@ -2212,12 +2214,12 @@ export default function TrainingHub() {
       {/* ── Sub-tabs ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'habits',      label: '✅ Habits'  },
-          { id: 'plans',       label: '🏋️ Plans'   },
-          { id: 'steps',       label: '👟 Steps'   },
-          { id: 'performance', label: '📊 Stats'   },
-          ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track' }] : []),
-        ] as const).map(({ id, label }) => (
+          { id: 'habits',      label: '✅ Habits',  disabled: disabledSections.includes('habits')      },
+          { id: 'plans',       label: '🏋️ Plans',   disabled: disabledSections.includes('plans')       },
+          { id: 'steps',       label: '👟 Steps',   disabled: disabledSections.includes('steps')       },
+          { id: 'performance', label: '📊 Stats',   disabled: disabledSections.includes('stats')       },
+          ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track', disabled: disabledSections.includes('track') }] : []),
+        ] as const).filter(tab => !tab.disabled).map(({ id, label }) => (
           <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === id ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'
@@ -2301,8 +2303,8 @@ export default function TrainingHub() {
             </div>
           )}
 
-          {habitLog.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mt-1">
+          {habitLog.length > 0 && !disabledSections.includes('stats') && (
+            <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
                 <div className="text-ql text-lg font-bold">{habitLog.length}</div>
                 <div className="text-ql-3 text-[10px] mt-0.5">Total done</div>
@@ -2310,10 +2312,6 @@ export default function TrainingHub() {
               <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
                 <div className="text-ql text-lg font-bold">{habitDefs.length}</div>
                 <div className="text-ql-3 text-[10px] mt-0.5">Active</div>
-              </div>
-              <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
-                <div className="text-ql text-lg font-bold">Lv.{stats.level}</div>
-                <div className="text-ql-3 text-[10px] mt-0.5">Level</div>
               </div>
             </div>
           )}
@@ -2467,18 +2465,10 @@ export default function TrainingHub() {
           {/* Stats + recent */}
           {gymSessions.length > 0 && (
             <>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
                   <div className="text-ql text-lg font-bold">{gymSessions.length}</div>
                   <div className="text-ql-3 text-[10px] mt-0.5">Sessions</div>
-                </div>
-                <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
-                  <div className="text-ql text-lg font-bold">{stats.str}</div>
-                  <div className="text-ql-3 text-[10px] mt-0.5">STR</div>
-                </div>
-                <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
-                  <div className="text-ql text-lg font-bold">Lv.{stats.level}</div>
-                  <div className="text-ql-3 text-[10px] mt-0.5">Level</div>
                 </div>
               </div>
               <div className="flex flex-col gap-2">

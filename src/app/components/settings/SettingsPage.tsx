@@ -64,6 +64,21 @@ const TOGGLEABLE_SECTIONS = [
   { id: 'gym',       label: 'Fitness',  icon: '💪' },
 ];
 
+const ALL_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
+  { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition plans'    },
+  { id: 'hydration',  label: 'Hydration',  icon: '💧', desc: 'Daily water tracking'              },
+  { id: 'sleep',      label: 'Sleep',      icon: '🌙', desc: 'Sleep log & bedtime tracking'      },
+  { id: 'wake',       label: 'Wake Up',    icon: '🌅', desc: 'Morning check-in & wake quest'     },
+  { id: 'calendar',   label: 'Calendar',   icon: '📅', desc: 'Events & scheduling'               },
+  { id: 'vices',      label: 'Vices',      icon: '🚫', desc: 'Bad habit tracker'                 },
+  { id: 'finance',    label: 'Finance',    icon: '💰', desc: 'Budget & spending tracker'         },
+  { id: 'habits',     label: 'Habits',     icon: '✅', desc: 'Daily habit tracking'              },
+  { id: 'plans',      label: 'Plans',      icon: '🏋️', desc: 'Workout plans & programmes'        },
+  { id: 'steps',      label: 'Steps',      icon: '👟', desc: 'Daily step counting'               },
+  { id: 'stats',      label: 'Stats',      icon: '📊', desc: 'Performance stats & metrics'       },
+  { id: 'track',      label: 'GPS Track',  icon: '🗺️', desc: 'GPS activity recording'            },
+];
+
 const TOGGLEABLE_STATS = [
   { id: 'STR',  label: 'Strength',  icon: '⚔️' },
   { id: 'CON',  label: 'Endurance', icon: '🛡️' },
@@ -85,6 +100,8 @@ export default function SettingsPage() {
     savingsGoal, setSavingsGoal,
     gpsTrackingEnabled, setGpsTrackingEnabled,
     characterAppearance, setCharacterAppearance,
+    disabledSections, toggleDisabledSection,
+    clockFormat, setClockFormat,
   } = useGameStore();
 
   const handleSignOut = async () => {
@@ -187,43 +204,32 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── Competition Mode ─────────────────────────────────────── */}
+      {/* ── Sections ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
-        <p className="text-ql text-sm font-semibold">Mode</p>
+        <div>
+          <p className="text-ql text-sm font-semibold">Sections</p>
+          <p className="text-ql-3 text-xs mt-0.5">Turn off sections you don't want to see</p>
+        </div>
         <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-ql">
-            <div>
-              <p className="text-ql text-sm font-semibold">Competition Mode</p>
-              <p className="text-ql-3 text-xs mt-0.5 leading-relaxed">
-                {competitionMode
-                  ? '🔥 Streak counter on — keep the chain going'
-                  : '🧘 Chill mode — track progress without streak pressure'}
-              </p>
-            </div>
-            <Toggle on={competitionMode} onToggle={() => setCompetitionMode(!competitionMode)} />
-          </div>
-          <div className="flex items-center justify-between px-4 py-4 border-b border-ql">
-            <div>
-              <p className="text-ql text-sm font-semibold">Financial Mode</p>
-              <p className="text-ql-3 text-xs mt-0.5 leading-relaxed">
-                {financialMode
-                  ? '💳 Budget tracking visible on home & nav'
-                  : '💤 Financial features hidden from main view'}
-              </p>
-            </div>
-            <Toggle on={financialMode} onToggle={() => setFinancialMode(!financialMode)} />
-          </div>
-          <div className="flex items-center justify-between px-4 py-4">
-            <div>
-              <p className="text-ql text-sm font-semibold">GPS Activity Tracking</p>
-              <p className="text-ql-3 text-xs mt-0.5 leading-relaxed">
-                {gpsTrackingEnabled
-                  ? '🗺️ Track runs, rides & walks with GPS'
-                  : '📍 Enable to record outdoor activities'}
-              </p>
-            </div>
-            <Toggle on={gpsTrackingEnabled} onToggle={() => setGpsTrackingEnabled(!gpsTrackingEnabled)} />
-          </div>
+          {ALL_SECTIONS.map((s, i) => {
+            const disabled = disabledSections.includes(s.id);
+            return (
+              <div
+                key={s.id}
+                onClick={() => toggleDisabledSection(s.id)}
+                className={`flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-ql-surface2 transition-colors ${i < ALL_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{s.icon}</span>
+                  <div className="text-left">
+                    <span className={`text-sm font-medium ${disabled ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
+                    <p className="text-ql-3 text-[10px] mt-0.5">{s.desc}</p>
+                  </div>
+                </div>
+                <Toggle on={!disabled} onToggle={() => toggleDisabledSection(s.id)} />
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -332,6 +338,21 @@ export default function SettingsPage() {
               placeholder="£"
               className="flex-1 bg-transparent text-ql text-sm outline-none text-right"
             />
+          </div>
+
+          {/* Clock format */}
+          <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
+            <span className="text-ql-3 text-sm w-24 shrink-0">Clock</span>
+            <div className="flex-1 flex justify-end">
+              <div className="flex gap-1 bg-ql-surface2 rounded-lg p-0.5 border border-ql">
+                {(['12h', '24h'] as const).map(f => (
+                  <button key={f} onClick={() => setClockFormat(f)}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${clockFormat === f ? 'bg-ql-accent text-white' : 'text-ql-3'}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Weight unit */}

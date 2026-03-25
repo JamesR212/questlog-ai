@@ -6,7 +6,7 @@ import type { CalendarEvent, HabitDef } from '@/types';
 import HabitEmoji from '../shared/HabitEmoji';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DAYS_SHORT  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_SHORT  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS      = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 const EVENT_COLORS = [
@@ -62,23 +62,26 @@ function getMonthDays(year: number, month: number): Date[] {
   const first = new Date(year, month, 1);
   const last  = new Date(year, month + 1, 0);
   const days: Date[] = [];
-  // Pad from Sunday
-  for (let i = 0; i < first.getDay(); i++) {
-    days.push(new Date(year, month, 1 - (first.getDay() - i)));
+  // Pad from Monday (Mon=0 … Sun=6)
+  const startOffset = (first.getDay() + 6) % 7;
+  for (let i = 0; i < startOffset; i++) {
+    days.push(new Date(year, month, 1 - (startOffset - i)));
   }
   for (let d = 1; d <= last.getDate(); d++) {
     days.push(new Date(year, month, d));
   }
   // Pad to complete last row
+  let overflow = 1;
   while (days.length % 7 !== 0) {
-    days.push(new Date(year, month + 1, days.length - last.getDate() - first.getDay() + 1));
+    days.push(new Date(year, month + 1, overflow++));
   }
   return days;
 }
 
-function fmt12(t: string): string {
+function fmtTime(t: string, format: '12h' | '24h'): string {
   if (!t) return '';
   const [h, m] = t.split(':').map(Number);
+  if (format === '24h') return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   const ampm = h >= 12 ? 'pm' : 'am';
   const h12  = h % 12 || 12;
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
@@ -260,7 +263,8 @@ function EventSheet({
 
 // ─── Merged sleep & wake card (targets + log) ────────────────────────────────
 function SleepWakeCard({ date }: { date: string }) {
-  const { wakeQuest, bedTime, setWakeTarget, setBedTime, sleepLog, checkInWake, logSleep, deleteWakeCheckIn, deleteSleepEntry } = useGameStore();
+  const { wakeQuest, bedTime, setWakeTarget, setBedTime, sleepLog, checkInWake, logSleep, deleteWakeCheckIn, deleteSleepEntry, clockFormat } = useGameStore();
+  const fmt = (t: string) => fmtTime(t, clockFormat);
   const [editWake, setEditWake] = useState(false);
   const [newWake, setNewWake]   = useState(wakeQuest.targetTime);
   const [editBed, setEditBed]   = useState(false);
@@ -290,7 +294,7 @@ function SleepWakeCard({ date }: { date: string }) {
             </div>
           ) : (
             <button onClick={() => setEditBed(true)} className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-ql-3 text-[10px] tabular-nums">{fmt12(bedTime)}</span>
+              <span className="text-ql-3 text-[10px] tabular-nums">{fmt(bedTime)}</span>
               {sleepEntry ? (
                 <span className={`text-[10px] font-medium ${sleepEntry.onTime ? 'text-emerald-400' : 'text-red-400'}`}>
                   · {sleepEntry.onTime ? 'Done ✓' : 'Missed ✗'}
@@ -333,7 +337,7 @@ function SleepWakeCard({ date }: { date: string }) {
             </div>
           ) : (
             <button onClick={() => setEditWake(true)} className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-ql-3 text-[10px] tabular-nums">{fmt12(wakeQuest.targetTime)}</span>
+              <span className="text-ql-3 text-[10px] tabular-nums">{fmt(wakeQuest.targetTime)}</span>
               {wakeEntry ? (
                 <span className={`text-[10px] font-medium ${wakeEntry.onTime ? 'text-emerald-400' : 'text-red-400'}`}>
                   · {wakeEntry.onTime ? 'Done ✓' : 'Missed ✗'}
@@ -363,7 +367,8 @@ function SleepWakeCard({ date }: { date: string }) {
 
 // ─── Main calendar page ───────────────────────────────────────────────────────
 export default function CalendarPage() {
-  const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, habitDefs, habitLog, logHabit, unlogHabit, gymPlans, gymSessions, mealLog, nutritionGoal, wakeQuest, sleepLog, stepLog, stepGoal, waterLog, waterGoal, setActiveSection, setTrainingTab, setNutritionTab } = useGameStore();
+  const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, habitDefs, habitLog, logHabit, unlogHabit, gymPlans, gymSessions, mealLog, nutritionGoal, wakeQuest, sleepLog, stepLog, stepGoal, waterLog, waterGoal, setActiveSection, setTrainingTab, setNutritionTab, disabledSections, clockFormat } = useGameStore();
+  const fmt = (t: string) => fmtTime(t, clockFormat);
 
   const now   = new Date();
   const [viewYear,  setViewYear]  = useState(now.getFullYear());
@@ -400,7 +405,7 @@ export default function CalendarPage() {
           new Notification(`📅 ${ev.title}`, {
             body: ev.allDay
               ? `All day · ${fmtDate(ev.date)}`
-              : `${fmt12(ev.startTime)} · ${fmtDate(ev.date)}${ev.location ? ` · ${ev.location}` : ''}`,
+              : `${fmt(ev.startTime)} · ${fmtDate(ev.date)}${ev.location ? ` · ${ev.location}` : ''}`,
             icon: '/favicon.ico',
           });
         }, delay));
@@ -518,7 +523,7 @@ export default function CalendarPage() {
   return (
     <div className="flex flex-col gap-4">
       {/* ── Sleep & wake ── */}
-      <SleepWakeCard date={today} />
+      {!disabledSections.includes('sleep') && !disabledSections.includes('wake') && <SleepWakeCard date={today} />}
 
       <div className="flex flex-col gap-0">
       {/* ── Month header ── */}
@@ -585,7 +590,7 @@ export default function CalendarPage() {
                   />
                 ))}
                 {/* Sleep dot — indigo, fades if not logged */}
-                {ds <= today && (
+                {ds <= today && !disabledSections.includes('sleep') && !disabledSections.includes('wake') && (
                   <div className={`w-1.5 h-1.5 rounded-full ${
                     wakeQuest.checkIns.some(c => c.date === ds) || sleepLog.some(e => e.date === ds)
                       ? 'bg-indigo-400'
@@ -601,12 +606,16 @@ export default function CalendarPage() {
       {/* ── Day accuracy ring ── */}
       {(() => {
         if (selected > today) return null;
+        if (disabledSections.includes('stats')) return null;
         const habitsDue  = dayHabits.length;
         const habitsDone = dayHabits.filter(h => isHabitLogged(h.id, selected)).length;
-        const sleepDone  = sleepLog.some(e => e.date === selected) ? 1 : 0;
-        const wakeDone   = wakeQuest.checkIns.some(c => c.date === selected) ? 1 : 0;
+        const sleepDisabled = disabledSections.includes('sleep');
+        const wakeDisabled  = disabledSections.includes('wake');
+        const sleepDone  = !sleepDisabled && sleepLog.some(e => e.date === selected) ? 1 : 0;
+        const wakeDone   = !wakeDisabled  && wakeQuest.checkIns.some(c => c.date === selected) ? 1 : 0;
+        const sleepWakeTotal = (sleepDisabled ? 0 : 1) + (wakeDisabled ? 0 : 1);
         const stepsDone  = stepGoal > 0 && (stepLog.find(e => e.date === selected)?.steps ?? 0) >= stepGoal ? 1 : 0;
-        const total      = habitsDue + 2 + (stepGoal > 0 ? 1 : 0);
+        const total      = habitsDue + sleepWakeTotal + (stepGoal > 0 ? 1 : 0);
         const done       = habitsDone + sleepDone + wakeDone + stepsDone;
         const pct        = total > 0 ? done / total : 0;
         const R = 22; const C = 28; const circ = 2 * Math.PI * R;
@@ -675,7 +684,7 @@ export default function CalendarPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-ql text-sm font-semibold leading-tight">{ev.title}</p>
                 <p className="text-ql-3 text-xs mt-0.5">
-                  {ev.allDay ? 'All day' : `${fmt12(ev.startTime)} – ${fmt12(ev.endTime)}`}
+                  {ev.allDay ? 'All day' : `${fmt(ev.startTime)} – ${fmt(ev.endTime)}`}
                 </p>
                 {ev.location && (
                   <p className="text-ql-3 text-xs mt-0.5 flex items-center gap-1">
@@ -722,7 +731,7 @@ export default function CalendarPage() {
             const startStr  = (habit.dayTimes    ?? {})[String(dow)];
             const endStr    = (habit.dayEndTimes ?? {})[String(dow)];
             const timeLabel = startStr
-              ? endStr ? `${fmt12(startStr)} – ${fmt12(endStr)}` : fmt12(startStr)
+              ? endStr ? `${fmt(startStr)} – ${fmt(endStr)}` : fmt(startStr)
               : '';
             return (
               <div
@@ -772,7 +781,7 @@ export default function CalendarPage() {
                   <p className={`text-sm font-medium ${done ? 'line-through text-ql-3' : 'text-ql'}`}>{plan.name}</p>
                   <p className="text-ql-3 text-[10px] mt-0.5">
                     {plan.exercises.length} exercise{plan.exercises.length !== 1 ? 's' : ''}
-                    {plan.scheduleTime ? ` · ${fmt12(plan.scheduleTime)}` : ''}
+                    {plan.scheduleTime ? ` · ${fmt(plan.scheduleTime)}` : ''}
                   </p>
                 </div>
                 {done && <span className="text-ql-accent text-xs font-bold">Done</span>}
@@ -783,12 +792,14 @@ export default function CalendarPage() {
       )}
 
       {/* ── Sleep & wake log for selected day ── */}
-      <div className="mt-4">
-        <SleepWakeCard date={selected} />
-      </div>
+      {!disabledSections.includes('sleep') && !disabledSections.includes('wake') && (
+        <div className="mt-4">
+          <SleepWakeCard date={selected} />
+        </div>
+      )}
 
       {/* ── Steps / Nutrition / Hydration for selected day ── */}
-      {(() => {
+      {!disabledSections.includes('stats') && (() => {
         const isToday  = selected === today;
 
         // Steps

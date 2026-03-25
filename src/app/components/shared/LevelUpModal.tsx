@@ -15,6 +15,10 @@ export default function LevelUpModal() {
 
   if (!showLevelUp) return null;
 
+  // Stats/level UI hidden for now — dismiss silently
+  return null;
+
+  // eslint-disable-next-line no-unreachable
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-6"

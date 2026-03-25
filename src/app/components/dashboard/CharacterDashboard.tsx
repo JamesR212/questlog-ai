@@ -162,34 +162,10 @@ export default function CharacterDashboard() {
       {/* Hero card */}
       <div className="bg-ql-surface rounded-3xl shadow-ql border border-ql overflow-hidden">
         <div className="px-6 pt-6 pb-5">
-          <div className="flex items-start justify-between mb-5">
+          <div className="flex items-start justify-between mb-2">
             <div>
               <p className="text-ql-3 text-xs font-medium mb-0.5">Adventurer</p>
               <h1 className="text-ql text-2xl font-bold">Your Hero</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-right bg-ql-surface2 rounded-2xl px-4 py-2">
-                <div className="text-amber-400 text-2xl font-bold tabular-nums">{stats.gold}</div>
-                <div className="text-ql-3 text-[10px] font-medium">💰 Gold</div>
-              </div>
-              <div className="text-right bg-ql-surface2 rounded-2xl px-4 py-2">
-                <div className="text-ql-accent text-2xl font-bold tabular-nums">{stats.level}</div>
-                <div className="text-ql-3 text-[10px] font-medium">Level</div>
-              </div>
-            </div>
-          </div>
-
-          {/* XP bar */}
-          <div>
-            <div className="flex justify-between text-[10px] text-ql-3 font-medium mb-1.5">
-              <span>Experience</span>
-              <span className="tabular-nums">{stats.xp} / {stats.xpToNext} XP</span>
-            </div>
-            <div className="h-2 bg-ql-surface3 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-ql-accent rounded-full transition-all duration-1000"
-                style={{ width: `${xpPct}%` }}
-              />
             </div>
           </div>
         </div>
