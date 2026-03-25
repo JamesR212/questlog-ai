@@ -52,6 +52,7 @@ interface Props {
   userId: string;
   userLat: number | null;
   userLng: number | null;
+  radiusKm: number | null;
 }
 
 function fmt(value: number, unit: string) {
@@ -60,7 +61,7 @@ function fmt(value: number, unit: string) {
   return String(value);
 }
 
-export default function LeaderboardMap({ entries, unit, userId, userLat, userLng }: Props) {
+export default function LeaderboardMap({ entries, unit, userId, userLat, userLng, radiusKm }: Props) {
   const centre: [number, number] = userLat && userLng
     ? [userLat, userLng]
     : entries.length > 0 ? [entries[0].lat, entries[0].lng] : [51.5, -0.12];
@@ -69,10 +70,19 @@ export default function LeaderboardMap({ entries, unit, userId, userLat, userLng
     <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 360 }}>
       <MapContainer center={centre} zoom={10} style={{ height: '100%', width: '100%' }} zoomControl={false}>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
         />
         {userLat && userLng && <MapController lat={userLat} lng={userLng} />}
+
+        {/* Single radius circle for the viewer's search area */}
+        {userLat && userLng && radiusKm !== null && (
+          <Circle
+            center={[userLat, userLng]}
+            radius={radiusKm * 1000}
+            pathOptions={{ color: '#6366f1', weight: 1.5, dashArray: '6 4', fillColor: '#6366f1', fillOpacity: 0.06 }}
+          />
+        )}
 
         {entries.map((entry, idx) => {
           const rank = idx + 1;
@@ -83,14 +93,6 @@ export default function LeaderboardMap({ entries, unit, userId, userLat, userLng
               position={[entry.lat, entry.lng]}
               icon={rankIcon(rank, isMe, entry.locationFuzzed)}
             >
-              {/* Fuzzy radius ring */}
-              {entry.locationFuzzed && (
-                <Circle
-                  center={[entry.lat, entry.lng]}
-                  radius={3200}
-                  pathOptions={{ color: isMe ? '#16a34a' : '#94a3b8', weight: 1, dashArray: '4 4', fillOpacity: 0.05 }}
-                />
-              )}
               <Popup>
                 <div style={{ minWidth: 140 }}>
                   <p style={{ fontWeight: 700, margin: 0 }}>#{rank} {entry.displayName}</p>
