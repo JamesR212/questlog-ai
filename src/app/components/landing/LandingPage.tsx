@@ -1668,7 +1668,7 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
         {/* Right: animated sections list */}
         <div ref={phoneRef} style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
-          <div style={{ transform: 'scale(0.67)', transformOrigin: 'top left', width: '149%' }}>
+          <div style={{ transform: 'scale(0.77)', transformOrigin: 'top left', width: '130%' }}>
             {/* Header */}
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
