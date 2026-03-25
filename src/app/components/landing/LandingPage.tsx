@@ -1558,16 +1558,14 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
           </div>
         </div>
 
-        {/* Phones — side by side, stretched to same height */}
-        <div ref={phoneRef} style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: isMobile ? 8 : 16, position: 'relative' }}>
+        {/* Phones — side by side */}
+        <div ref={phoneRef} style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: '-60px', background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(22,163,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ opacity: phoneVisible ? 1 : 0, transform: `${phoneVisible ? 'scale(0.95)' : 'scale(0.88)'} ${isMobile ? 'scale(0.55)' : ''} translateY(${phoneVisible ? '0' : '24px'})`, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}`, transformOrigin: 'top center' }}>
+          {/* Scale wrapper — shrinks both phones together on mobile so they fit side by side */}
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 12, transform: isMobile ? 'scale(0.52)' : 'scale(0.95)', transformOrigin: 'top center', opacity: phoneVisible ? 1 : 0, transition: `opacity 0.7s ${AE}, transform 0.7s ${AE}`, marginBottom: isMobile ? '-48%' : 0 }}>
             <AnalyticsPhone visible={phoneVisible} />
-          </div>
-          {/* Second phone — workout detail screenshot, same height as left */}
-          <div style={{ opacity: phoneVisible ? 1 : 0, transform: `${phoneVisible ? 'scale(0.95)' : 'scale(0.88)'} ${isMobile ? 'scale(0.55)' : ''} translateY(${phoneVisible ? '0' : '24px'})`, transition: `opacity 0.7s ${AE} 0.15s, transform 0.7s ${AE} 0.15s`, transformOrigin: 'top center', display: 'flex' }}>
+            {/* Second phone */}
             <div style={{ width: 230, background: APP.bg, borderRadius: 36, border: '2px solid rgba(255,255,255,0.13)', overflow: 'hidden', boxSizing: 'border-box' as const, boxShadow: '0 28px 90px rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column' }}>
-              {/* Status bar */}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 20px 5px', fontSize: 8, color: APP.tx3, fontWeight: 600, flexShrink: 0 }}>
                 <span>9:41</span><span>●●●</span>
               </div>
