@@ -531,22 +531,13 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
       {activeCat === 'steps_day' && (
         <button
           onClick={async () => {
-            const today = new Date().toISOString().split('T')[0];
-            const fakeEntries = [
-              { userId: 'seed_steps_1', displayName: 'Alex Turner',   value: 41252, lat: 53.4808, lng: -2.2426 },
-              { userId: 'seed_steps_2', displayName: 'Sophie Clarke', value: 28940, lat: 51.5074, lng: -0.1278 },
-              { userId: 'seed_steps_3', displayName: 'Jamie Walsh',   value: 22105, lat: 52.4862, lng: -1.8904 },
-              { userId: 'seed_steps_4', displayName: 'Priya Sharma',  value: 18430, lat: 53.8008, lng: -1.5491 },
-              { userId: 'seed_steps_5', displayName: 'Callum Ross',   value: 14720, lat: 55.8642, lng: -4.2518 },
-            ];
             try {
-              for (const e of fakeEntries) {
-                const { lat, lng } = fuzzLocation(e.lat, e.lng);
-                await submitEntry({ userId: e.userId, displayName: e.displayName, category: 'steps_day', value: e.value, unit: 'steps', verificationStatus: 'synced', verificationNote: 'Synced from fitness tracker', lat, lng, locationFuzzed: true, date: today });
-              }
-              alert('✅ Seeded! Switch away and back to reload.');
+              const res  = await fetch('/api/admin/seed-leaderboard', { method: 'POST' });
+              const data = await res.json();
+              if (data.ok) alert('✅ Seeded! Switch away and back to reload.');
+              else alert('❌ ' + data.error);
             } catch (err: unknown) {
-              alert('❌ Error: ' + (err instanceof Error ? err.message : String(err)));
+              alert('❌ ' + String(err));
             }
           }}
           className="w-full py-2 rounded-xl bg-ql-surface2 border border-ql text-ql-3 text-xs"
