@@ -1249,14 +1249,14 @@ function ThemeShowcaseSection() {
   }, []);
 
   const xPos        = [-300, -150,   0, 150, 300];
-  const scales      = [0.946, 1.023, 1.1, 1.023, 0.946];
+  const scales      = [1.012, 1.095, 1.177, 1.095, 1.012]; // +7%
   const zIdx        = [1,       2,   4,   2,    1];
   const yOffset     = [12,      6,   0,   6,   12];
   const delays      = [180,    90,   0,  90,  180];
 
-  // Mobile: tighter spacing + stronger depth effect
-  const mobileXPos    = [-115, -58, 0, 58, 115];
-  const mobileScales  = [0.62,  0.78, 1.0, 0.78, 0.62];
+  // Mobile: tighter spacing + stronger depth effect, +7% size, +2% spacing
+  const mobileXPos    = [-117, -60, 0, 60, 117];
+  const mobileScales  = [0.663, 0.835, 1.07, 0.835, 0.663];
   const mobileYOffset = [28,    14,   0,  14,   28];
 
   return (
