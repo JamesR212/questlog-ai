@@ -196,8 +196,12 @@ export default function FormAnalyzer() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-400 text-xs">
-            {error}
+          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 flex gap-3 items-start">
+            <span className="text-base shrink-0">⚠️</span>
+            <div>
+              <p className="text-red-400 text-sm font-semibold">File too big</p>
+              <p className="text-red-300 text-xs mt-0.5">{error}</p>
+            </div>
           </div>
         )}
 
