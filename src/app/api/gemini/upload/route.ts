@@ -1,31 +1,27 @@
+import { del } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Edge runtime: 25MB body limit vs 4.5MB serverless limit
-export const runtime = 'edge';
-export const maxDuration = 25;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
 
-  let file: File;
-  try {
-    const formData = await req.formData();
-    const f = formData.get('file');
-    if (!f || typeof f === 'string') return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    file = f as File;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: `FormData parse failed: ${msg}` }, { status: 413 });
-  }
+  const { blobUrl, mimeType: rawType } = await req.json();
+  if (!blobUrl) return NextResponse.json({ error: 'No blobUrl provided' }, { status: 400 });
 
   // Normalise MIME types — Gemini accepts video/mov not video/quicktime
-  const rawType = file.type || 'video/mp4';
-  const mimeType = rawType === 'video/quicktime' ? 'video/mov' : rawType;
-  const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
-  const bytes = await file.arrayBuffer();
+  const mimeType = rawType === 'video/quicktime' ? 'video/mov' : (rawType || 'video/mp4');
 
-  // ── Step 1: initiate resumable upload session ──────────────────────────────
+  // Download file from Vercel Blob (server→server, no payload limit)
+  const blobRes = await fetch(blobUrl);
+  if (!blobRes.ok) {
+    await del(blobUrl);
+    return NextResponse.json({ error: `Failed to fetch blob: ${blobRes.status}` }, { status: 500 });
+  }
+  const bytes = await blobRes.arrayBuffer();
+
+  // Initiate resumable upload session with Gemini
   const initRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
     {
@@ -41,20 +37,17 @@ export async function POST(req: NextRequest) {
     }
   );
 
+  await del(blobUrl); // Delete blob regardless of Gemini outcome
+
   if (!initRes.ok) {
     const err = await initRes.text();
-    return NextResponse.json(
-      { error: `Session init failed (${initRes.status}): ${err}`, debug: { fileSizeMB, mimeType } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Gemini session init failed (${initRes.status}): ${err}` }, { status: 500 });
   }
 
   const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
-  if (!uploadUrl) {
-    return NextResponse.json({ error: 'No upload URL returned from Gemini' }, { status: 500 });
-  }
+  if (!uploadUrl) return NextResponse.json({ error: 'No upload URL from Gemini' }, { status: 500 });
 
-  // ── Step 2: upload file bytes ───────────────────────────────────────────────
+  // Upload file bytes to Gemini
   const uploadRes = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
@@ -67,17 +60,14 @@ export async function POST(req: NextRequest) {
 
   if (!uploadRes.ok) {
     const err = await uploadRes.text();
-    return NextResponse.json(
-      { error: `File upload failed (${uploadRes.status}): ${err}`, debug: { fileSizeMB, mimeType } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Gemini upload failed (${uploadRes.status}): ${err}` }, { status: 500 });
   }
 
   let fileData = (await uploadRes.json()).file;
 
-  // ── Step 3: poll until active ───────────────────────────────────────────────
+  // Poll until Gemini finishes processing
   let attempts = 0;
-  while (fileData.state === 'PROCESSING' && attempts < 8) {
+  while (fileData.state === 'PROCESSING' && attempts < 15) {
     await new Promise(r => setTimeout(r, 2000));
     const statusRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${fileData.name}?key=${apiKey}`
@@ -87,7 +77,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (fileData.state === 'FAILED') {
-    return NextResponse.json({ error: 'File processing failed on Gemini servers' }, { status: 500 });
+    return NextResponse.json({ error: 'Gemini file processing failed' }, { status: 500 });
   }
 
   return NextResponse.json({

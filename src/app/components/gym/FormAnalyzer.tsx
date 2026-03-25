@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { upload } from '@vercel/blob/client';
 
 interface FormAnalysis {
   exercise: string;
@@ -32,8 +33,8 @@ export default function FormAnalyzer() {
     setAnalysis(null);
     setError(null);
 
-    if (file.size > 25 * 1024 * 1024) {
-      setError('File too large — please keep clips under 25 MB. Trim your video or reduce resolution in your phone settings.');
+    if (file.size > 20 * 1024 * 1024) {
+      setError('File too large — please keep clips under 20 MB. Trim your video or reduce resolution in your phone settings.');
       return;
     }
 
@@ -59,18 +60,26 @@ export default function FormAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Step 1: upload file as binary FormData (no base64 overhead)
+      // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
       setLoadingMsg('Uploading…');
-      const formData = new FormData();
-      formData.append('file', fileRef.current);
-      const uploadRes = await fetch('/api/gemini/upload', { method: 'POST', body: formData });
-      const rawText = await uploadRes.text();
+      const blob = await upload(fileRef.current.name || 'upload', fileRef.current, {
+        access: 'public',
+        handleUploadUrl: '/api/blob/upload',
+      });
+
+      // Step 2: tell our server to pull from Blob and forward to Gemini
+      setLoadingMsg('Processing…');
+      const geminiRes = await fetch('/api/gemini/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blobUrl: blob.url, mimeType: fileRef.current.type }),
+      });
+      const rawText = await geminiRes.text();
       let uploadData: Record<string, unknown>;
       try { uploadData = JSON.parse(rawText); }
-      catch { throw new Error(`HTTP ${uploadRes.status} — ${rawText.slice(0, 200)}`); }
+      catch { throw new Error(`HTTP ${geminiRes.status} — ${rawText.slice(0, 200)}`); }
       if (!uploadData.fileUri) {
-        const detail = uploadData.debug ? ` | ${JSON.stringify(uploadData.debug)}` : '';
-        throw new Error(`${uploadData.error ?? 'Upload failed'}${detail}`);
+        throw new Error(uploadData.error as string ?? 'Upload failed');
       }
 
       // Step 2: analyse using the file URI (tiny JSON payload)
@@ -149,7 +158,7 @@ export default function FormAnalyzer() {
             <span className="text-4xl">📹</span>
             <div className="text-center">
               <p className="text-ql text-sm font-medium">Drop a video or photo here</p>
-              <p className="text-ql-3 text-xs mt-1">or tap to browse — max 25 MB, keep clips under 30 seconds</p>
+              <p className="text-ql-3 text-xs mt-1">or tap to browse — max 20 MB, keep clips under 30 seconds</p>
             </div>
             <div className="flex gap-2 mt-1">
               <button
