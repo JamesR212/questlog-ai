@@ -1666,37 +1666,31 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
           </div>
         </div>
 
-        {/* Right: animated phone mockup */}
-        <div ref={phoneRef} style={{ display: 'flex', justifyContent: 'center', opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
-          <div style={{ width: isMobile ? 280 : 320, background: '#0d0d12', borderRadius: 40, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 32px 100px rgba(0,0,0,0.8), 0 0 60px rgba(22,163,74,0.1)', overflow: 'hidden' }}>
-            {/* Status bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 22px 8px', fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-              <span>9:41</span><span>●●●</span>
-            </div>
-            {/* Header */}
-            <div style={{ padding: '8px 20px 14px' }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
-            </div>
-            {/* Sections list */}
-            <div style={{ margin: '0 12px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, overflow: 'hidden' }}>
-              {ALL_SECTIONS.map((s, i) => {
-                const on = enabled.has(s.id);
-                return (
-                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                    <span style={{ fontSize: 16, width: 22, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.35, transition: 'opacity 0.4s' }}>{s.emoji}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'color 0.4s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</div>
-                      <div style={{ fontSize: 8.5, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)', transition: 'color 0.4s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.sub}</div>
-                    </div>
-                    {/* Toggle */}
-                    <div style={{ width: 34, height: 20, borderRadius: 10, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
-                      <div style={{ position: 'absolute', top: 3, left: on ? 17 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                    </div>
+        {/* Right: animated sections list */}
+        <div ref={phoneRef} style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
+          {/* Header */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Sections</div>
+            <div style={{ fontSize: isMobile ? 11 : 13, color: 'rgba(255,255,255,0.35)' }}>Turn off sections you don&apos;t want to see</div>
+          </div>
+          {/* Sections list */}
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, overflow: 'hidden' }}>
+            {ALL_SECTIONS.map((s, i) => {
+              const on = enabled.has(s.id);
+              return (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '11px 16px' : '13px 20px', borderBottom: i < ALL_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <span style={{ fontSize: isMobile ? 16 : 18, width: 24, textAlign: 'center', flexShrink: 0, opacity: on ? 1 : 0.3, transition: 'opacity 0.4s' }}>{s.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: on ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'color 0.4s' }}>{s.label}</div>
+                    <div style={{ fontSize: isMobile ? 10 : 11, color: on ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)', transition: 'color 0.4s' }}>{s.sub}</div>
                   </div>
-                );
-              })}
-            </div>
+                  {/* Toggle */}
+                  <div style={{ width: isMobile ? 36 : 42, height: isMobile ? 21 : 24, borderRadius: 12, background: on ? '#16a34a' : 'rgba(255,255,255,0.15)', position: 'relative', flexShrink: 0, transition: 'background 0.35s' }}>
+                    <div style={{ position: 'absolute', top: isMobile ? 3 : 4, left: on ? (isMobile ? 18 : 21) : (isMobile ? 3 : 4), width: isMobile ? 15 : 16, height: isMobile ? 15 : 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.4)', transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
