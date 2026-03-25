@@ -1,107 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useGameStore } from '@/store/gameStore';
 import {
   searchUsers, sendFriendRequest, getPendingRequests, acceptRequest,
   declineRequest, getFriends, removeFriend, hasSentRequest, areFriends,
-  updateLocation, clearLocation, getMessages, sendMessage,
+  updateLocation, clearLocation,
 } from '@/lib/friends';
-import type { PublicProfile, FriendRequest, ChatMessage } from '@/lib/friends';
+import type { PublicProfile, FriendRequest } from '@/lib/friends';
 
 const FriendsGlobe = dynamic(() => import('./FriendsGlobe'), { ssr: false });
 
-// ── Chat view ────────────────────────────────────────────────────────────────
-function ChatView({
-  userId, friend, onBack,
-}: { userId: string; friend: PublicProfile; onBack: () => void }) {
-  const [messages,  setMessages]  = useState<ChatMessage[]>([]);
-  const [input,     setInput]     = useState('');
-  const [loading,   setLoading]   = useState(true);
-  const [sending,   setSending]   = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    getMessages(userId, friend.uid).then(msgs => {
-      setMessages(msgs);
-      setLoading(false);
-    });
-  }, [userId, friend.uid]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const send = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-    setInput('');
-    setSending(true);
-    const msg = await sendMessage(userId, friend.uid, text);
-    setMessages(m => [...m, msg]);
-    setSending(false);
-  };
-
-  return (
-    <div className="flex flex-col gap-0" style={{ minHeight: 0 }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={onBack} className="text-ql-3 text-sm p-1">←</button>
-        <div className="w-8 h-8 rounded-full bg-ql-accent/20 flex items-center justify-center text-sm shrink-0">
-          {(friend.display_name || friend.username)?.[0]?.toUpperCase() ?? '?'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-ql text-sm font-semibold truncate">{friend.display_name || friend.username}</p>
-          <p className="text-ql-3 text-[10px]">@{friend.username}</p>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex flex-col gap-2 mb-3" style={{ minHeight: 200 }}>
-        {loading && <p className="text-ql-3 text-sm text-center py-6">Loading…</p>}
-        {!loading && messages.length === 0 && (
-          <p className="text-ql-3 text-sm text-center py-6">No messages yet — say hi!</p>
-        )}
-        {messages.map(m => (
-          <div key={m.id} className={`flex ${m.from === userId ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[78%] px-3.5 py-2 text-sm rounded-2xl ${
-              m.from === userId
-                ? 'bg-ql-accent text-white rounded-br-sm'
-                : 'bg-ql-surface border border-ql text-ql rounded-bl-sm'
-            }`}>
-              {m.text}
-            </div>
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Input */}
-      <div className="flex gap-2">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-          placeholder="Message…"
-          className="flex-1 bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql placeholder:text-ql-3 outline-none focus:border-ql-accent"
-        />
-        <button
-          onClick={send}
-          disabled={!input.trim() || sending}
-          className="px-4 py-2.5 bg-ql-accent disabled:opacity-40 text-white text-sm font-semibold rounded-xl"
-        >
-          Send
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Friend card ───────────────────────────────────────────────────────────────
-function FriendCard({
-  profile, onMessage, onRemove,
-}: { profile: PublicProfile; onMessage: () => void; onRemove: () => void }) {
+function FriendCard({ profile, onRemove }: { profile: PublicProfile; onRemove: () => void }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="bg-ql-surface rounded-2xl border border-ql p-4 flex items-center gap-3">
@@ -112,12 +24,6 @@ function FriendCard({
         <p className="text-ql text-sm font-semibold truncate">{profile.display_name || profile.username}</p>
         <p className="text-ql-3 text-xs">@{profile.username}</p>
       </div>
-      <button
-        onClick={onMessage}
-        className="text-xs px-3 py-1.5 bg-ql-surface2 border border-ql text-ql-2 rounded-xl font-medium"
-      >
-        💬
-      </button>
       <button
         onClick={() => confirming ? onRemove() : setConfirming(true)}
         className={`text-xs px-2 py-1 rounded-lg border transition-colors ${confirming ? 'border-red-400 text-red-400' : 'border-ql text-ql-3 hover:text-ql'}`}
@@ -141,7 +47,6 @@ export default function SocialPage({ userId }: { userId: string }) {
   const [reqError,   setReqError]   = useState('');
   const [sent,       setSent]       = useState<Set<string>>(new Set());
   const [tab,        setTab]        = useState<'friends' | 'search' | 'feedback'>('friends');
-  const [chatFriend, setChatFriend] = useState<PublicProfile | null>(null);
   const [fbMessages, setFbMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [fbInput,    setFbInput]    = useState('');
   const [fbLoading,  setFbLoading]  = useState(false);
@@ -297,7 +202,7 @@ export default function SocialPage({ userId }: { userId: string }) {
       {/* ── Tabs ── */}
       <div className="flex gap-2">
         {(['friends', 'search', 'feedback'] as const).map(t => (
-          <button key={t} onClick={() => { setTab(t); setChatFriend(null); }}
+          <button key={t} onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${tab === t ? 'bg-ql-accent text-white' : 'bg-ql-surface border border-ql text-ql-3'}`}>
             {t === 'friends' ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}` : t === 'search' ? 'Find' : '💬 Feedback'}
           </button>
@@ -306,9 +211,6 @@ export default function SocialPage({ userId }: { userId: string }) {
 
       {/* ── Friends + Map / Chat ── */}
       {tab === 'friends' && (
-        chatFriend ? (
-          <ChatView userId={userId} friend={chatFriend} onBack={() => setChatFriend(null)} />
-        ) : (
           <div className="flex flex-col gap-3">
             {/* Map */}
             <div className="rounded-2xl overflow-hidden border border-ql" style={{ height: 300 }}>
@@ -352,12 +254,9 @@ export default function SocialPage({ userId }: { userId: string }) {
               </div>
             )}
             {friends.map(f => (
-              <FriendCard key={f.uid} profile={f}
-                onMessage={() => setChatFriend(f)}
-                onRemove={() => remove(f.uid)} />
+              <FriendCard key={f.uid} profile={f} onRemove={() => remove(f.uid)} />
             ))}
           </div>
-        )
       )}
 
       {/* ── Search ── */}
