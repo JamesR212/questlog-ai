@@ -527,6 +527,28 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
         </button>
       )}
 
+      {/* DEV: Seed fake steps entries — remove after testing */}
+      {activeCat === 'steps_day' && (
+        <button
+          onClick={async () => {
+            const today = new Date().toISOString().split('T')[0];
+            const fakeEntries = [
+              { userId: 'seed_steps_1', displayName: 'Alex Turner',   value: 41252, lat: 53.4808, lng: -2.2426 },
+              { userId: 'seed_steps_2', displayName: 'Sophie Clarke', value: 28940, lat: 51.5074, lng: -0.1278 },
+              { userId: 'seed_steps_3', displayName: 'Jamie Walsh',   value: 22105, lat: 52.4862, lng: -1.8904 },
+              { userId: 'seed_steps_4', displayName: 'Priya Sharma',  value: 18430, lat: 53.8008, lng: -1.5491 },
+              { userId: 'seed_steps_5', displayName: 'Callum Ross',   value: 14720, lat: 55.8642, lng: -4.2518 },
+            ];
+            for (const e of fakeEntries) {
+              const { lat, lng } = fuzzLocation(e.lat, e.lng);
+              await submitEntry({ userId: e.userId, displayName: e.displayName, category: 'steps_day', value: e.value, unit: 'steps', verificationStatus: 'synced', verificationNote: 'Synced from fitness tracker', lat, lng, locationFuzzed: true, date: today });
+            }
+            alert('Seeded! Reload the leaderboard.');
+          }}
+          className="w-full py-2 rounded-xl bg-ql-surface2 border border-ql text-ql-3 text-xs"
+        >🌱 Seed test data (dev only)</button>
+      )}
+
       {/* GPS integrity disclaimer */}
       {category.method !== 'ai_video' && (
         <div className="rounded-xl border border-ql bg-ql-surface2 px-4 py-3 flex gap-2.5">
