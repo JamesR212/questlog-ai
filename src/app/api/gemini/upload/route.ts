@@ -24,46 +24,58 @@ export async function POST(req: NextRequest) {
   const mimeType = rawType === 'video/quicktime' ? 'video/mov' : rawType;
   const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
   const bytes = await file.arrayBuffer();
-  const boundary = 'boundary' + Date.now();
-  const metadata = JSON.stringify({ file: { display_name: file.name || 'media' } });
 
-  // Build multipart body using Web APIs (no Node.js Buffer in Edge runtime)
-  const enc = new TextEncoder();
-  const parts = [
-    enc.encode(`--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\n\r\n`),
-    enc.encode(metadata),
-    enc.encode(`\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
-    new Uint8Array(bytes),
-    enc.encode(`\r\n--${boundary}--`),
-  ];
-  const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
-  const body = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const part of parts) { body.set(part, offset); offset += part.length; }
-
-  const uploadRes = await fetch(
+  // ── Step 1: initiate resumable upload session ──────────────────────────────
+  const initRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
     {
       method: 'POST',
       headers: {
-        // Do NOT set Content-Length — fetch computes it automatically
-        'Content-Type': `multipart/related; boundary=${boundary}`,
+        'Content-Type': 'application/json',
+        'X-Goog-Upload-Protocol': 'resumable',
+        'X-Goog-Upload-Command': 'start',
+        'X-Goog-Upload-Header-Content-Length': String(bytes.byteLength),
+        'X-Goog-Upload-Header-Content-Type': mimeType,
       },
-      body,
+      body: JSON.stringify({ file: { display_name: 'upload' } }),
     }
   );
 
+  if (!initRes.ok) {
+    const err = await initRes.text();
+    return NextResponse.json(
+      { error: `Session init failed (${initRes.status}): ${err}`, debug: { fileSizeMB, mimeType } },
+      { status: 500 }
+    );
+  }
+
+  const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
+  if (!uploadUrl) {
+    return NextResponse.json({ error: 'No upload URL returned from Gemini' }, { status: 500 });
+  }
+
+  // ── Step 2: upload file bytes ───────────────────────────────────────────────
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Length': String(bytes.byteLength),
+      'X-Goog-Upload-Offset': '0',
+      'X-Goog-Upload-Command': 'upload, finalize',
+    },
+    body: bytes,
+  });
+
   if (!uploadRes.ok) {
     const err = await uploadRes.text();
-    return NextResponse.json({
-      error: `Gemini rejected upload (${uploadRes.status}): ${err}`,
-      debug: { fileSizeMB, mimeType, rawType },
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: `File upload failed (${uploadRes.status}): ${err}`, debug: { fileSizeMB, mimeType } },
+      { status: 500 }
+    );
   }
 
   let fileData = (await uploadRes.json()).file;
 
-  // Poll until Gemini finishes processing (stay within 25s edge limit)
+  // ── Step 3: poll until active ───────────────────────────────────────────────
   let attempts = 0;
   while (fileData.state === 'PROCESSING' && attempts < 8) {
     await new Promise(r => setTimeout(r, 2000));
