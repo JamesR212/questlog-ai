@@ -1291,10 +1291,10 @@ function ThemeShowcaseSection() {
               position: 'absolute',
               inset: 0,
               borderRadius: 24,
-              background: `radial-gradient(ellipse at 50% 60%, ${t.accent}55 0%, transparent 70%)`,
-              filter: 'blur(18px)',
+              background: `radial-gradient(ellipse at 50% 55%, ${t.accent}70 0%, transparent 75%)`,
+              filter: 'blur(22px)',
               zIndex: -1,
-              transform: 'scale(1.15) translateY(8%)',
+              transform: 'scale(1.35) translateY(4%)',
               pointerEvents: 'none',
             }} />
             <ThemePhoneMini t={t} />
@@ -1582,6 +1582,175 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
   );
 }
 
+// ─── Customise Section ────────────────────────────────────────────────────────
+
+const PERSONAS = [
+  {
+    label: 'Diet & Hydration',
+    emoji: '🥗',
+    tagline: 'Track every meal and every sip.',
+    color: '#16a34a',
+    on:  ['Food & Nutrition', 'Water Intake', 'Daily Goals', 'AI Advisor'],
+    off: ['Finance', 'Vices', 'Gym Plans'],
+  },
+  {
+    label: 'Finance & Fitness',
+    emoji: '💪',
+    tagline: 'Build wealth and strength together.',
+    color: '#a855f7',
+    on:  ['Gym & Training', 'Finance', 'Habit Tracker', 'Steps'],
+    off: ['Food Logging', 'Sleep Tracking'],
+  },
+  {
+    label: 'Full Life OS',
+    emoji: '🚀',
+    tagline: 'Track everything, improve everything.',
+    color: '#f59e0b',
+    on:  ['Habits', 'Food', 'Finance', 'Gym', 'Sleep', 'Steps', 'AI'],
+    off: [],
+  },
+  {
+    label: 'Minimalist',
+    emoji: '🧘',
+    tagline: 'Just habits. Simple, clean, focused.',
+    color: '#38bdf8',
+    on:  ['Habit Tracker', 'Sleep', 'Daily Streaks'],
+    off: ['Finance', 'Food', 'Gym', 'Vices', 'Steps'],
+  },
+];
+
+function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
+  const { ref: headRef, visible: headVisible } = useFadeIn(0.15);
+  const { ref: cardsRef, visible: cardsVisible } = useFadeIn(0.1);
+  const [active, setActive] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const AE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const persona = PERSONAS[active];
+
+  return (
+    <section style={{ background: '#07070d', padding: isMobile ? '64px 16px' : '120px 24px', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
+        {/* Heading */}
+        <div ref={headRef} style={{ textAlign: 'center', marginBottom: isMobile ? 40 : 72 }}>
+          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 16, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(20px)', transition: `all 0.6s ${AE}` }}>
+            Customise Your Way
+          </div>
+          <h2 style={{ fontSize: isMobile ? 'clamp(30px, 7vw, 44px)' : 'clamp(40px, 5vw, 68px)', fontWeight: 900, color: '#fff', lineHeight: 1.05, marginBottom: 20, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.08s` }}>
+            Your app.<br />Your rules.
+          </h2>
+          <p style={{ fontSize: isMobile ? 15 : 19, color: '#9ca3af', lineHeight: 1.7, maxWidth: 600, margin: '0 auto', opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(20px)', transition: `all 0.7s ${AE} 0.16s` }}>
+            Only tracking your diet and water? Done. Just want gym and finance? Easy. You decide exactly what you see — everything else stays out of your way.
+          </p>
+        </div>
+
+        {/* Persona selector + preview */}
+        <div ref={cardsRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.1fr', gap: isMobile ? 32 : 64, alignItems: 'start' }}>
+
+          {/* Left: persona tabs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {PERSONAS.map((p, i) => {
+              const isActive = i === active;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    padding: '18px 20px',
+                    background: isActive ? `${p.color}18` : 'rgba(255,255,255,0.03)',
+                    border: `1.5px solid ${isActive ? p.color + '60' : 'rgba(255,255,255,0.07)'}`,
+                    borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+                    opacity: cardsVisible ? 1 : 0,
+                    transform: cardsVisible ? 'translateX(0)' : 'translateX(-24px)',
+                    transition: `all 0.55s ${AE} ${0.1 + i * 0.07}s, background 0.2s, border-color 0.2s`,
+                  }}
+                >
+                  <span style={{ fontSize: isMobile ? 22 : 28, flexShrink: 0 }}>{p.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: isActive ? '#fff' : '#a1a1aa', marginBottom: 2 }}>{p.label}</div>
+                    <div style={{ fontSize: isMobile ? 11 : 13, color: isActive ? '#9ca3af' : '#52525b' }}>{p.tagline}</div>
+                  </div>
+                  {isActive && <span style={{ marginLeft: 'auto', color: p.color, fontSize: 18, flexShrink: 0 }}>›</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: sections preview */}
+          <div style={{
+            background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.08)',
+            borderRadius: 24, padding: isMobile ? '24px 20px' : '36px 32px',
+            opacity: cardsVisible ? 1 : 0,
+            transform: cardsVisible ? 'translateY(0)' : 'translateY(24px)',
+            transition: `all 0.65s ${AE} 0.3s`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+              <span style={{ fontSize: 28 }}>{persona.emoji}</span>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{persona.label}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{persona.tagline}</div>
+              </div>
+            </div>
+
+            {persona.on.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: '#16a34a', marginBottom: 10 }}>Active sections</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {persona.on.map(s => (
+                    <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: `${persona.color}20`, border: `1px solid ${persona.color}50`, borderRadius: 100, fontSize: 12, color: '#e5e7eb', fontWeight: 600 }}>
+                      <span style={{ color: '#4ade80', fontWeight: 900, fontSize: 10 }}>✓</span> {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {persona.off.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: '#52525b', marginBottom: 10 }}>Hidden away</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {persona.off.map(s => (
+                    <span key={s} style={{ padding: '5px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 100, fontSize: 12, color: '#4b5563', fontWeight: 500 }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>
+              Switch sections on or off any time in settings — no data is ever deleted.
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom CTA line */}
+        <div style={{ textAlign: 'center', marginTop: isMobile ? 48 : 72, opacity: cardsVisible ? 1 : 0, transition: `all 0.7s ${AE} 0.5s` }}>
+          <button
+            onClick={onGetStarted}
+            style={{ padding: isMobile ? '14px 32px' : '16px 44px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 14, fontSize: isMobile ? 14 : 16, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#15803d'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.04)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+          >
+            Build your version →
+          </button>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
 // ─── Main LandingPage ─────────────────────────────────────────────────────────
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
@@ -1834,6 +2003,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4.5 Analytics timelapse ─────────────────────────────────── */}
       <AnalyticsSection onGetStarted={onGetStarted} />
 
+      {/* ── 4.7 Customise your way ───────────────────────────────────── */}
+      <CustomiseSection onGetStarted={onGetStarted} />
+
       {/* ── 5. AI section — sticky scroll ───────────────────────────── */}
       <section ref={aiRef} style={{ background: '#050508' }}>
         {/* Section heading */}
@@ -1920,14 +2092,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           </div>
 
-          {/* Right: sticky image */}
+          {/* Right: sticky phone mockup */}
           <div style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'start', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: isMobile ? 8 : 48 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/gym-ai.jpg"
-              alt="GAINN AI form check in action"
-              style={{ maxHeight: '76vh', width: 'auto', borderRadius: 24, display: 'block', objectFit: 'contain' as const, margin: '0 auto' }}
-            />
+            <div style={{ height: isMobile ? '60vh' : '75vh', aspectRatio: '804/1428', background: '#000', borderRadius: 53, border: '2px solid rgba(255,255,255,0.15)', overflow: 'hidden', boxShadow: '0 32px 100px rgba(0,0,0,0.8)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/form-check-screen.jpg" alt="GAINN AI form check" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }} />
+            </div>
           </div>
 
         </div>
