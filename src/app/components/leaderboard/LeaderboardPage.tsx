@@ -83,11 +83,12 @@ interface SubmitSheetProps {
 function SubmitSheet({ category, userId, displayName, userLat, userLng, onClose, onSubmitted }: SubmitSheetProps) {
   const { gpsActivities, stepLog } = useGameStore();
 
-  const fileRef                       = useRef<HTMLInputElement>(null);
-  const [weight, setWeight]           = useState('');
-  const [mediaUrl, setMediaUrl]       = useState<string | null>(null);
-  const [mediaBase64, setMediaBase64] = useState<string | null>(null);
-  const [mimeType, setMimeType]       = useState('video/mp4');
+  const fileRef                         = useRef<HTMLInputElement>(null);
+  const pendingFileRef                  = useRef<File | null>(null);
+  const [weight, setWeight]             = useState('');
+  const [mediaUrl, setMediaUrl]         = useState<string | null>(null);
+  const [uploadedFileUri, setUploadedFileUri] = useState<string | null>(null);
+  const [mimeType, setMimeType]         = useState('video/mp4');
   const [verifying, setVerifying]     = useState(false);
   const [submitting, setSubmitting]   = useState(false);
   const [verified, setVerified]       = useState<boolean | null>(null);
@@ -114,26 +115,30 @@ function SubmitSheet({ category, userId, displayName, userLat, userLng, onClose,
   const getCoords = () => hideLocation ? fuzzLocation(userLat, userLng) : { lat: userLat, lng: userLng };
 
   const handleFile = (file: File) => {
-    setError(null); setVerified(null);
+    setError(null); setVerified(null); setUploadedFileUri(null);
     if (file.size > 500 * 1024 * 1024) { setError('File too large — keep clips under 500 MB'); return; }
     setMimeType(file.type || 'video/mp4');
-    const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target?.result as string;
-      setMediaUrl(dataUrl);
-      setMediaBase64(dataUrl.split(',')[1]);
-    };
-    reader.readAsDataURL(file);
+    pendingFileRef.current = file;
+    setMediaUrl(URL.createObjectURL(file));
   };
 
   const verifyLift = async () => {
-    if (!mediaBase64 || !weight) return;
+    if (!pendingFileRef.current || !weight) return;
     setVerifying(true); setError(null);
     try {
+      // Step 1: upload file as binary FormData
+      const formData = new FormData();
+      formData.append('file', pendingFileRef.current);
+      const uploadRes = await fetch('/api/gemini/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed');
+      setUploadedFileUri(uploadData.fileUri);
+
+      // Step 2: verify using just the URI
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'verify_lift', context: { mediaBase64, mimeType, exercise: category.label, weight: parseFloat(weight) } }),
+        body: JSON.stringify({ mode: 'verify_lift', context: { fileUri: uploadData.fileUri, mimeType: uploadData.mimeType, exercise: category.label, weight: parseFloat(weight) } }),
       });
       const data = await res.json();
       if (data.verification) {
@@ -253,14 +258,14 @@ function SubmitSheet({ category, userId, displayName, userLat, userLng, onClose,
               ) : (
                 <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
                   {mimeType.startsWith('video/') ? <video src={mediaUrl} controls className="w-full h-full object-contain" /> : <img src={mediaUrl} alt="Lift" className="w-full h-full object-contain" />}
-                  <button onClick={() => { setMediaUrl(null); setMediaBase64(null); setVerified(null); setVerifyNote(''); }}
+                  <button onClick={() => { setMediaUrl(null); setUploadedFileUri(null); pendingFileRef.current = null; setVerified(null); setVerifyNote(''); }}
                     className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-lg">Change</button>
                 </div>
               )}
               <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
             </div>
 
-            {mediaBase64 && weight && verified === null && (
+            {pendingFileRef.current && weight && verified === null && (
               <button onClick={verifyLift} disabled={verifying}
                 className="w-full py-3 rounded-xl bg-ql-surface2 border border-ql text-ql font-semibold text-sm hover:bg-ql-surface3 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {verifying ? <><span className="inline-flex gap-1"><span className="animate-bounce [animation-delay:0ms]">·</span><span className="animate-bounce [animation-delay:150ms]">·</span><span className="animate-bounce [animation-delay:300ms]">·</span></span>Verifying with AI…</> : '🤖 Verify with AI'}

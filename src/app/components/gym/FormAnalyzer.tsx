@@ -18,14 +18,15 @@ const RATING_CONFIG = {
 };
 
 export default function FormAnalyzer() {
-  const inputRef                    = useRef<HTMLInputElement>(null);
-  const [mediaUrl, setMediaUrl]     = useState<string | null>(null);
-  const [mediaBase64, setMediaBase64] = useState<string | null>(null);
-  const [mimeType, setMimeType]     = useState('video/mp4');
-  const [isVideo, setIsVideo]       = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [analysis, setAnalysis]     = useState<FormAnalysis | null>(null);
-  const [error, setError]           = useState<string | null>(null);
+  const inputRef                = useRef<HTMLInputElement>(null);
+  const fileRef                 = useRef<File | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState('video/mp4');
+  const [isVideo, setIsVideo]   = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState('Uploading…');
+  const [analysis, setAnalysis] = useState<FormAnalysis | null>(null);
+  const [error, setError]       = useState<string | null>(null);
 
   const handleFile = (file: File) => {
     setAnalysis(null);
@@ -39,14 +40,10 @@ export default function FormAnalyzer() {
     const type = file.type || 'video/mp4';
     setMimeType(type);
     setIsVideo(type.startsWith('video/'));
+    fileRef.current = file;
 
-    const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target?.result as string;
-      setMediaUrl(dataUrl);
-      setMediaBase64(dataUrl.split(',')[1]);
-    };
-    reader.readAsDataURL(file);
+    // Only generate a preview URL (no base64 conversion)
+    setMediaUrl(URL.createObjectURL(file));
   };
 
   const onDrop = (e: React.DragEvent) => {
@@ -56,15 +53,29 @@ export default function FormAnalyzer() {
   };
 
   const analyse = async () => {
-    if (!mediaBase64 || loading) return;
+    if (!fileRef.current || loading) return;
     setLoading(true);
     setError(null);
     setAnalysis(null);
+
     try {
+      // Step 1: upload file as binary FormData (no base64 overhead)
+      setLoadingMsg('Uploading…');
+      const formData = new FormData();
+      formData.append('file', fileRef.current);
+      const uploadRes = await fetch('/api/gemini/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed');
+
+      // Step 2: analyse using the file URI (tiny JSON payload)
+      setLoadingMsg('Analysing form…');
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'analyze_form_video', context: { mediaBase64, mimeType } }),
+        body: JSON.stringify({
+          mode: 'analyze_form_video',
+          context: { fileUri: uploadData.fileUri, mimeType: uploadData.mimeType },
+        }),
       });
       const data = await res.json();
       if (data.analysis) {
@@ -80,8 +91,9 @@ export default function FormAnalyzer() {
   };
 
   const reset = () => {
+    if (mediaUrl) URL.revokeObjectURL(mediaUrl);
     setMediaUrl(null);
-    setMediaBase64(null);
+    fileRef.current = null;
     setAnalysis(null);
     setError(null);
   };
@@ -178,7 +190,7 @@ export default function FormAnalyzer() {
                       <span className="animate-bounce [animation-delay:150ms]">·</span>
                       <span className="animate-bounce [animation-delay:300ms]">·</span>
                     </span>
-                    Analysing form…
+                    {loadingMsg}
                   </>
                 ) : (
                   '🔍 Analyse Form'
@@ -199,7 +211,7 @@ export default function FormAnalyzer() {
           <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 flex gap-3 items-start">
             <span className="text-base shrink-0">⚠️</span>
             <div>
-              <p className="text-red-400 text-sm font-semibold">File too big</p>
+              <p className="text-red-400 text-sm font-semibold">Upload error</p>
               <p className="text-red-300 text-xs mt-0.5">{error}</p>
             </div>
           </div>
@@ -220,7 +232,7 @@ export default function FormAnalyzer() {
             {/* Positives */}
             {analysis.positives.length > 0 && (
               <div className="rounded-xl bg-ql-surface2 border border-ql px-4 py-3 flex flex-col gap-2">
-                <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">✅ What you're doing well</p>
+                <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">✅ What you&apos;re doing well</p>
                 <ul className="flex flex-col gap-1">
                   {analysis.positives.map((p, i) => (
                     <li key={i} className="text-ql text-xs flex gap-2">

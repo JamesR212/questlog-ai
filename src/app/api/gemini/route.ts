@@ -307,10 +307,20 @@ Rules:
     // ── Lift verification for leaderboard ───────────────────────────────────
     if (mode === 'verify_lift') {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const mediaBase64    = context.mediaBase64 ?? '';
-      const mimeType       = context.mimeType    ?? 'video/mp4';
-      const claimedExercise = context.exercise   ?? '';
-      const claimedWeight  = context.weight      ?? 0;
+      const mimeType        = context.mimeType  ?? 'video/mp4';
+      const claimedExercise = context.exercise  ?? '';
+      const claimedWeight   = context.weight    ?? 0;
+
+      // Accept pre-uploaded fileUri (from /api/gemini/upload) or fall back to base64
+      let fileUri: string;
+      let fileName: string | null = null;
+      if (context.fileUri) {
+        fileUri = context.fileUri;
+      } else {
+        const uploaded = await uploadToFileAPI(context.mediaBase64 ?? '', mimeType, apiKey);
+        fileUri = uploaded.uri;
+        fileName = uploaded.name;
+      }
 
       const prompt = `You are a certified powerlifting judge and strength coach verifying a 1-rep max lift submission for a public leaderboard.
 
@@ -334,12 +344,12 @@ Rules:
 - rejectionReason: be specific (e.g. "Video too dark to verify", "Multiple reps performed", "Exercise does not match claimed lift") — null if verified
 - A blurry or very unclear video should be rejected with low confidence`;
 
-      const { uri: fileUri, name: fileName } = await uploadToFileAPI(mediaBase64, mimeType, apiKey);
       const result = await model.generateContent([
         { fileData: { mimeType, fileUri } },
         prompt,
       ]);
-      deleteFileFromAPI(fileName, apiKey);
+      if (fileName) deleteFileFromAPI(fileName, apiKey);
+      else if (context.fileUri) deleteFileFromAPI(context.fileUri.split('/').pop()!, apiKey);
       let text = result.response.text().trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const verification = JSON.parse(text);
@@ -349,8 +359,19 @@ Rules:
     // ── Form video / photo analysis ─────────────────────────────────────────
     if (mode === 'analyze_form_video') {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const mediaBase64 = context.mediaBase64 ?? '';
-      const mimeType    = context.mimeType ?? 'video/mp4';
+      const mimeType = context.mimeType ?? 'video/mp4';
+
+      // Accept pre-uploaded fileUri (from /api/gemini/upload) or fall back to base64
+      let fileUri: string;
+      let fileName: string | null = null;
+      if (context.fileUri) {
+        fileUri = context.fileUri;
+      } else {
+        const uploaded = await uploadToFileAPI(context.mediaBase64 ?? '', mimeType, apiKey);
+        fileUri = uploaded.uri;
+        fileName = uploaded.name;
+      }
+
       const prompt = `You are a certified personal trainer and biomechanics expert. Analyse this gym exercise video or photo and assess the athlete's form.
 
 Return ONLY a raw JSON object (no markdown, no code fences) in this exact shape:
@@ -370,12 +391,11 @@ Rules:
 - Keep each point concise (max 12 words per item)
 - safetyNote must always be present and relevant`;
 
-      const { uri: fileUri, name: fileName } = await uploadToFileAPI(mediaBase64, mimeType, apiKey);
       const result = await model.generateContent([
         { fileData: { mimeType, fileUri } },
         prompt,
       ]);
-      deleteFileFromAPI(fileName, apiKey);
+      if (fileName) deleteFileFromAPI(fileName, apiKey);
       let text = result.response.text().trim();
       text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const analysis = JSON.parse(text);
