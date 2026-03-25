@@ -1071,6 +1071,30 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
         <h2 style={{ fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>One app.<br />Infinite gains.</h2>
       </div>
 
+      {/* Pagination dots — above phones */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+        {FEATURES.map((_, i) => {
+          const isActive = i === activeIdx;
+          const dotColor = FEAT_COLORS[i % FEAT_COLORS.length];
+          return (
+            <button
+              key={i}
+              onClick={() => selectFeature(i + N_FEAT)}
+              style={{
+                width: isActive ? 22 : 7,
+                height: 7,
+                borderRadius: 4,
+                background: isActive ? dotColor : 'rgba(255,255,255,0.25)',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                transition: `width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease`,
+              }}
+            />
+          );
+        })}
+      </div>
+
       {/* Horizontal scrollable phone cards */}
       <div
         ref={scrollRef}
@@ -1146,34 +1170,10 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
         })}
       </div>
 
-      {/* Pagination dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 20 }}>
-        {FEATURES.map((_, i) => {
-          const isActive = i === activeIdx;
-          const dotColor = FEAT_COLORS[i % FEAT_COLORS.length];
-          return (
-            <button
-              key={i}
-              onClick={() => selectFeature(i + N_FEAT)}
-              style={{
-                width: isActive ? 22 : 7,
-                height: 7,
-                borderRadius: 4,
-                background: isActive ? dotColor : 'rgba(255,255,255,0.25)',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                transition: `width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease`,
-              }}
-            />
-          );
-        })}
-      </div>
-
       {/* Detail panel */}
       <div style={{
         maxWidth: 620,
-        margin: '24px auto 0',
+        margin: '12px auto 0',
         padding: isMobile ? '0 24px' : '0 48px',
         textAlign: 'center',
         opacity: phoneVisible ? 1 : 0,
