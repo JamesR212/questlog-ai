@@ -2000,11 +2000,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       {/* ── 4. Sticky features ──────────────────────────────────────── */}
       <StickyFeatures onGetStarted={onGetStarted} />
 
-      {/* ── 4.5 Analytics timelapse ─────────────────────────────────── */}
-      <AnalyticsSection onGetStarted={onGetStarted} />
-
-      {/* ── 4.7 Customise your way ───────────────────────────────────── */}
+      {/* ── 4.5 Customise your way ───────────────────────────────────── */}
       <CustomiseSection onGetStarted={onGetStarted} />
+
+      {/* ── 4.7 Analytics timelapse ─────────────────────────────────── */}
+      <AnalyticsSection onGetStarted={onGetStarted} />
 
       {/* ── 5. AI section — sticky scroll ───────────────────────────── */}
       <section ref={aiRef} style={{ background: '#050508' }}>
