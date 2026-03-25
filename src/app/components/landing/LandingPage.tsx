@@ -841,7 +841,7 @@ const FEATURES = [
     icon: '🥗',
     title: 'AI Nutrition',
     subtitle: 'Photo-log your meals in seconds',
-    desc: 'Snap a photo, get instant calorie and macro analysis. AI-generated meal plans tailored to your goals. Can also generate tasty low-fat recipes for whatever you\'re hungry for.',
+    desc: 'Snap a photo or describe a meal — AI breaks down calories and macros instantly. Get AI food suggestions and gym form feedback to train and eat smarter.',
     color: '#16a34a',
   },
   {
@@ -1761,7 +1761,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const aiFeatures = [
     { icon: '📸', title: 'Meal Photo Analysis', desc: 'Snap your plate — AI identifies food and calculates calories and macros instantly.' },
     { icon: '🏋️', title: 'AI Gym Plan Generation', desc: 'Get a personalised workout plan built around your equipment, goals, and schedule.' },
-    { icon: '🥗', title: 'AI Meal Plan Generation', desc: 'Receive a weekly meal plan matched to your calorie targets and preferences.' },
+    { icon: '💪', title: 'AI Gym Form Support', desc: 'Record your reps and get real-time AI feedback on your technique to train safer and smarter.' },
+    { icon: '🔬', title: 'AI Meal Macros Identifier', desc: 'Describe any meal and AI breaks down the exact calories, protein, carbs and fat instantly.' },
     { icon: '💧', title: 'AI Hydration Recommendation', desc: 'Your daily water goal calculated from your body stats, activity, and climate.' },
     { icon: '🤖', title: 'AI Support', desc: 'Chat with an AI coach that knows every aspect of your health journey.' },
     { icon: '🍎', title: 'AI Food Suggestions', desc: 'Stuck on what to eat? AI suggests meals that fit your remaining macros.' },
@@ -2025,7 +2026,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
 
               <h3 style={{ fontSize: isMobile ? 'clamp(18px, 2.25vw, 28px)' : 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
-                6 AI features,<br />one subscription
+                7 AI features,<br />one subscription
               </h3>
 
               <p style={{ fontSize: isMobile ? 11 : 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
