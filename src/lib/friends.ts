@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  query, where, limit, deleteField,
+  query, where, limit, deleteField, orderBy, addDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -237,4 +237,37 @@ export async function hasSentRequest(fromId: string, toId: string): Promise<bool
   } catch {
     return false;
   }
+}
+
+// ── Messaging ───────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  from: string;
+  text: string;
+  createdAt: string;
+}
+
+function convoId(a: string, b: string): string {
+  return [a, b].sort().join('_');
+}
+
+export async function getMessages(userId: string, friendId: string): Promise<ChatMessage[]> {
+  try {
+    const cid = convoId(userId, friendId);
+    const snap = await getDocs(
+      query(collection(db, 'conversations', cid, 'messages'), orderBy('createdAt'))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
+  } catch (e) {
+    console.error('[friends] getMessages error:', e);
+    return [];
+  }
+}
+
+export async function sendMessage(userId: string, friendId: string, text: string): Promise<ChatMessage> {
+  const cid = convoId(userId, friendId);
+  const payload = { from: userId, text: text.trim(), createdAt: new Date().toISOString() };
+  const ref = await addDoc(collection(db, 'conversations', cid, 'messages'), payload);
+  return { id: ref.id, ...payload };
 }
