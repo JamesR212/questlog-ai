@@ -1548,11 +1548,11 @@ function MuscleRadarChart({ sessions, color, mode }: { sessions: { exercises: Gy
   return (
     <svg viewBox="0 0 200 215" className="w-full max-w-xs mx-auto">
       {[0.25, 0.5, 0.75, 1].map(s => (
-        <path key={s} d={hexPath(s)} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="0.9" />
+        <path key={s} d={hexPath(s)} fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="0.9" />
       ))}
       {MUSCLE_KEYS.map(k => {
         const end = toXY(MUSCLE_ANGLES[k], R);
-        return <line key={k} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke="rgba(255,255,255,0.28)" strokeWidth="0.9" />;
+        return <line key={k} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke="rgba(255,255,255,0.7)" strokeWidth="0.9" />;
       })}
       <path d={valuePath()} fill={color} fillOpacity="0.22" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
       {MUSCLE_KEYS.map(k => {
