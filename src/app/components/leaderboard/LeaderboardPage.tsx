@@ -539,11 +539,15 @@ export default function LeaderboardPage({ userId, displayName }: { userId: strin
               { userId: 'seed_steps_4', displayName: 'Priya Sharma',  value: 18430, lat: 53.8008, lng: -1.5491 },
               { userId: 'seed_steps_5', displayName: 'Callum Ross',   value: 14720, lat: 55.8642, lng: -4.2518 },
             ];
-            for (const e of fakeEntries) {
-              const { lat, lng } = fuzzLocation(e.lat, e.lng);
-              await submitEntry({ userId: e.userId, displayName: e.displayName, category: 'steps_day', value: e.value, unit: 'steps', verificationStatus: 'synced', verificationNote: 'Synced from fitness tracker', lat, lng, locationFuzzed: true, date: today });
+            try {
+              for (const e of fakeEntries) {
+                const { lat, lng } = fuzzLocation(e.lat, e.lng);
+                await submitEntry({ userId: e.userId, displayName: e.displayName, category: 'steps_day', value: e.value, unit: 'steps', verificationStatus: 'synced', verificationNote: 'Synced from fitness tracker', lat, lng, locationFuzzed: true, date: today });
+              }
+              alert('✅ Seeded! Switch away and back to reload.');
+            } catch (err: unknown) {
+              alert('❌ Error: ' + (err instanceof Error ? err.message : String(err)));
             }
-            alert('Seeded! Reload the leaderboard.');
           }}
           className="w-full py-2 rounded-xl bg-ql-surface2 border border-ql text-ql-3 text-xs"
         >🌱 Seed test data (dev only)</button>
