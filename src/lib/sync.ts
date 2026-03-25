@@ -4,7 +4,7 @@ import { db } from './firebase';
 // Keys that should NOT be synced (device-specific)
 const EXCLUDE_KEYS = new Set([
   'activeSection', 'showLevelUp', 'levelUpMessage',
-  'trainingTab', 'googleFitTokens', 'fitbitTokens',
+  'trainingTab', 'googleFitTokens',
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

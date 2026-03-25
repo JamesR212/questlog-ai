@@ -212,7 +212,7 @@ function SubmitSheet({ category, userId, displayName, userLat, userLng, onClose,
             ) : (
               <div className="bg-ql-surface2 rounded-2xl border border-ql p-4 text-center">
                 <p className="text-ql-3 text-sm">No verified data found</p>
-                <p className="text-ql-3 text-xs mt-1">{category.id === 'steps_day' ? 'Connect Google Fit or Fitbit in Settings.' : 'Record a GPS activity in Training → Track first.'}</p>
+                <p className="text-ql-3 text-xs mt-1">{category.id === 'steps_day' ? 'Connect Google Fit in Settings → Training.' : 'Record a GPS activity in Training → Track first.'}</p>
               </div>
             )}
             {autoValue && (

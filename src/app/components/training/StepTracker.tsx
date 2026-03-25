@@ -176,8 +176,8 @@ export function StepBars({ dates, stepsByDate, goal }: { dates: string[]; stepsB
 // ── Main component ────────────────────────────────────────────────────────────
 export default function StepTracker({ belowStats }: { belowStats?: React.ReactNode } = {}) {
   const {
-    stepLog, stepGoal, googleFitTokens, fitbitTokens,
-    logSteps, setStepGoal, setGoogleFitTokens, setFitbitTokens, deleteStep,
+    stepLog, stepGoal, googleFitTokens,
+    logSteps, setStepGoal, setGoogleFitTokens, deleteStep,
   } = useGameStore();
 
   const today   = toDateStr(new Date());
@@ -194,9 +194,6 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
   const [syncing,         setSyncing]         = useState(false);
   const [syncError,       setSyncError]       = useState('');
   const [connecting,      setConnecting]      = useState(false);
-  const [fitbitSyncing,   setFitbitSyncing]   = useState(false);
-  const [fitbitError,     setFitbitError]     = useState('');
-  const [fitbitConnecting, setFitbitConnecting] = useState(false);
   const [editingId,  setEditingId]  = useState<string | null>(null);
   const [editVal,    setEditVal]    = useState('');
 
@@ -219,85 +216,6 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
       window.history.replaceState({}, '', clean.toString());
     }
   }, [setGoogleFitTokens]);
-
-  // ── Pick up Fitbit tokens from OAuth redirect ──────────────────────────────
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const access  = params.get('fitbit_access');
-    const refresh = params.get('fitbit_refresh');
-    const expiry  = params.get('fitbit_expiry');
-    if (access && refresh && expiry) {
-      setFitbitTokens({ accessToken: access, refreshToken: refresh, expiresAt: Number(expiry) });
-      const clean = new URL(window.location.href);
-      clean.searchParams.delete('fitbit_access');
-      clean.searchParams.delete('fitbit_refresh');
-      clean.searchParams.delete('fitbit_expiry');
-      window.history.replaceState({}, '', clean.toString());
-    }
-  }, [setFitbitTokens]);
-
-  // ── Connect Fitbit ─────────────────────────────────────────────────────────
-  const connectFitbit = async () => {
-    setFitbitConnecting(true);
-    try {
-      const res  = await fetch('/api/health/fitbit/auth');
-      const data = await res.json() as { url?: string; error?: string };
-      if (data.url) window.location.href = data.url;
-      else setFitbitError(data.error ?? 'Setup required — add FITBIT_CLIENT_ID to environment.');
-    } finally {
-      setFitbitConnecting(false);
-    }
-  };
-
-  // ── Sync from Fitbit ───────────────────────────────────────────────────────
-  const syncFitbit = useCallback(async () => {
-    if (!fitbitTokens) return;
-    setFitbitSyncing(true);
-    setFitbitError('');
-    try {
-      const endDate   = dates[dates.length - 1];
-      const startDate = dates[0];
-      const res = await fetch('/api/health/fitbit/steps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accessToken:  fitbitTokens.accessToken,
-          refreshToken: fitbitTokens.refreshToken,
-          expiresAt:    fitbitTokens.expiresAt,
-          startDate,
-          endDate,
-        }),
-      });
-      const data = await res.json() as {
-        results?: { date: string; steps: number }[];
-        error?: string;
-        newAccessToken?: string;
-        newRefreshToken?: string;
-        newExpiresAt?: number;
-      };
-      if (data.error === 'token_expired') {
-        setFitbitTokens(null);
-        setFitbitError('Session expired — reconnect Fitbit.');
-        return;
-      }
-      if (data.error) { setFitbitError(data.error); return; }
-      for (const { date, steps } of data.results ?? []) {
-        if (steps > 0) logSteps(date, steps, 'google_fit'); // reuse source tag for now
-      }
-      if (data.newAccessToken && data.newExpiresAt) {
-        setFitbitTokens({
-          accessToken:  data.newAccessToken,
-          refreshToken: data.newRefreshToken ?? fitbitTokens.refreshToken,
-          expiresAt:    data.newExpiresAt,
-        });
-      }
-    } catch (e) {
-      setFitbitError(String(e));
-    } finally {
-      setFitbitSyncing(false);
-    }
-  }, [fitbitTokens, dates, logSteps, setFitbitTokens]);
 
   // ── Connect Google Fit ─────────────────────────────────────────────────────
   const connectGoogleFit = async () => {
@@ -653,45 +571,6 @@ NEXTAUTH_URL=http://localhost:3000`}
             </div>
           </details>
         )}
-      </div>
-
-      {/* ── Fitbit ── */}
-      <div className="bg-ql-surface rounded-2xl border border-ql p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-base">⌚</span>
-          <p className="text-ql text-sm font-semibold">Fitbit Sync</p>
-          <span className="text-[10px] bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full font-medium ml-auto">Fitbit</span>
-        </div>
-        <p className="text-ql-3 text-[11px] mb-3">
-          Auto-import your daily steps from Fitbit trackers and smartwatches.
-        </p>
-
-        {!fitbitTokens ? (
-          <button
-            onClick={connectFitbit}
-            disabled={fitbitConnecting}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
-          >
-            {fitbitConnecting ? 'Opening…' : '🔗 Connect Fitbit'}
-          </button>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-green-400 text-xs font-medium">
-              <span>✅</span>
-              <span>Fitbit connected</span>
-              <button onClick={() => setFitbitTokens(null)} className="ml-auto text-ql-3 underline text-[10px]">Disconnect</button>
-            </div>
-            <button
-              onClick={syncFitbit}
-              disabled={fitbitSyncing}
-              className="w-full py-2.5 bg-ql-accent hover:bg-ql-accent-h disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
-            >
-              {fitbitSyncing ? '⟳ Syncing…' : '⟳ Sync Last 7 Days'}
-            </button>
-          </div>
-        )}
-
-        {fitbitError && <p className="text-red-400 text-[11px] mt-2">{fitbitError}</p>}
       </div>
 
       {/* ── Apple Health note ── */}
