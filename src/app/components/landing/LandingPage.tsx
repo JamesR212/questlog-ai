@@ -1149,7 +1149,10 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
                   transform: `scale(${phoneScale})`,
                   transformOrigin: 'top left',
                 }}>
-                  {i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
+                  {i === 0
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src="/theme-dark.jpg" alt="GAINN dark theme" style={{ width: phoneW, height: phoneH, objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+                    : i === 1 ? <CustomisePhone /> : <Phone feature={i} />}
                 </div>
               </div>
 
@@ -1192,80 +1195,29 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
 // ─── Theme Showcase ───────────────────────────────────────────────────────────
 
 const THEME_PHONES = [
-  { label: 'Dark',  bg: '#13131f', surface: '#1e1e2e', surface2: '#252535', accent: '#7c3aed', tx: '#f0f0f8', tx2: '#a1a1bb', tx3: '#6b6b8a', border: 'rgba(255,255,255,0.08)' },
-  { label: 'Light', bg: '#f5f5f7', surface: '#ffffff', surface2: '#ebebef', accent: '#6d28d9', tx: '#1a1a2e', tx2: '#4a4a6a', tx3: '#8a8aaa', border: 'rgba(0,0,0,0.08)' },
-  { label: 'Pink',  bg: '#fce4f0', surface: '#fff0f7', surface2: '#fbd5e8', accent: '#db2777', tx: '#1a0a12', tx2: '#6b3050', tx3: '#9b6080', border: 'rgba(219,39,119,0.15)' },
-  { label: 'Blue',  bg: '#dbeafe', surface: '#eff6ff', surface2: '#dbeafe', accent: '#2563eb', tx: '#0a1a3a', tx2: '#304070', tx3: '#6080a0', border: 'rgba(37,99,235,0.15)' },
-  { label: 'Green', bg: '#dcfce7', surface: '#f0fdf4', surface2: '#dcfce7', accent: '#16a34a', tx: '#0a1a12', tx2: '#205030', tx3: '#408060', border: 'rgba(22,163,74,0.15)' },
+  { label: 'Dark',  accent: '#7c3aed', img: '/theme-dark.jpg'  },
+  { label: 'Light', accent: '#6d28d9', img: '/theme-light.jpg' },
+  { label: 'Pink',  accent: '#db2777', img: '/theme-pink.jpg'  },
+  { label: 'Blue',  accent: '#2563eb', img: '/theme-blue.jpg'  },
+  { label: 'Green', accent: '#16a34a', img: '/theme-green.jpg' },
 ];
 
 function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
-  const r = 11; const circ = 2 * Math.PI * r;
   return (
-    <div style={{ width: 130, background: t.bg, borderRadius: 26, border: `2px solid ${t.border}`, overflow: 'hidden', boxShadow: `0 24px 60px rgba(0,0,0,0.35)`, boxSizing: 'border-box' as const }}>
-      {/* Status bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px 4px', fontSize: 6, color: t.tx3, fontWeight: 600 }}>
-        <span>20:55</span><span>48%</span>
-      </div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 10px 6px', borderBottom: `1px solid ${t.border}` }}>
-        <span style={{ fontSize: 11, fontWeight: 900 }}>
-          <span style={{ color: t.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: t.tx }}>NN</span>
-        </span>
-        <span style={{ fontSize: 5.5, color: t.tx3 }}>Mon 23 Mar</span>
-      </div>
-      {/* Greeting */}
-      <div style={{ padding: '6px 10px 4px' }}>
-        <div style={{ fontSize: 5.5, color: t.tx2 }}>Good evening, James</div>
-        <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: -0.5 }}>
-          <span style={{ color: t.tx }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: t.tx }}>NN</span>
-        </div>
-      </div>
-      {/* Two cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: '0 8px 6px' }}>
-        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: '6px' }}>
-          <div style={{ fontSize: 11, marginBottom: 2 }}>🔥</div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: t.tx }}>1</div>
-          <div style={{ fontSize: 5, color: t.tx3 }}>day in a row</div>
-        </div>
-        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'relative', width: 30, height: 30 }}>
-            <svg width="30" height="30" viewBox="0 0 30 30" style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
-              <circle cx="15" cy="15" r={r} fill="none" stroke={t.surface2} strokeWidth="3"/>
-              <circle cx="15" cy="15" r={r} fill="none" stroke={t.accent} strokeWidth="3" strokeDasharray={String(circ)} strokeDashoffset={String(circ * 0.92)} strokeLinecap="round"/>
-            </svg>
-          </div>
-          <div style={{ fontSize: 6, color: '#16a34a', fontWeight: 700, marginTop: 2 }}>8%</div>
-          <div style={{ fontSize: 4.5, color: t.tx3 }}>savings</div>
-        </div>
-      </div>
-      {/* Weekly snapshot */}
-      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, margin: '0 8px 6px', padding: '6px' }}>
-        <div style={{ fontSize: 6, fontWeight: 700, color: t.tx, marginBottom: 4 }}>Weekly Snapshot</div>
-        <div style={{ display: 'flex', gap: 1.5, marginBottom: 3 }}>
-          {['M','T','W','T','F','S','S'].map((d,i) => <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 4, color: i === 0 ? t.accent : t.tx3, fontWeight: i === 0 ? 700 : 400 }}>{d}</div>)}
-        </div>
-        {[
-          { e:'🌙', cells:[1,0,0,0,0,0,0] },
-          { e:'👟', cells:[1,0,0,0,0,0,0] },
-          { e:'🥗', cells:[1,0,0,0,0,0,0] },
-        ].map((row, ri) => (
-          <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 2 }}>
-            <span style={{ fontSize: 7, width: 10, flexShrink: 0 }}>{row.e}</span>
-            {row.cells.map((v, ci) => <div key={ci} style={{ flex: 1, height: 7, borderRadius: 2, background: v ? t.accent : t.surface2 }}/>)}
-          </div>
-        ))}
-      </div>
-      {/* Nav */}
-      <div style={{ background: t.surface, borderTop: `2px solid ${t.accent}`, padding: '5px 4px 8px', display: 'flex', justifyContent: 'space-around' }}>
-        {['🏠','🥗','📅','💰','💪'].map((icon, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <div style={{ fontSize: 11, ...(i === 0 ? { background: `${t.accent}22`, borderRadius: 7, padding: '2px 4px' } : {}) }}>{icon}</div>
-            <div style={{ fontSize: 5, color: i === 0 ? t.accent : t.tx3, fontWeight: i === 0 ? 700 : 400 }}>{['Home','Food','Cal','Finance','Training'][i]}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={t.img}
+      alt={`GAINN ${t.label} theme`}
+      style={{
+        width: 130,
+        height: 200,
+        borderRadius: 26,
+        objectFit: 'cover',
+        objectPosition: 'top',
+        display: 'block',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+      }}
+    />
   );
 }
 
@@ -1935,9 +1887,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'start', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: isMobile ? 8 : 48 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/gym-plan.jpg"
-              alt="AI-generated gym plan with muscular load radar chart"
-              style={{ maxHeight: '76vh', width: '100%', borderRadius: 20, display: 'block', objectFit: 'contain' as const }}
+              src="/theme-dark.jpg"
+              alt="GAINN app dark theme dashboard"
+              style={{ maxHeight: '76vh', width: 'auto', borderRadius: 24, display: 'block', objectFit: 'contain' as const, margin: '0 auto' }}
             />
           </div>
 
