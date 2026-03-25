@@ -14,13 +14,15 @@ export async function POST(req: NextRequest) {
     const f = formData.get('file');
     if (!f || typeof f === 'string') return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     file = f as File;
-  } catch {
-    return NextResponse.json({ error: 'File too large or invalid — keep clips under 25 MB' }, { status: 413 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `FormData parse failed: ${msg}` }, { status: 413 });
   }
 
   // Normalise MIME types — Gemini accepts video/mov not video/quicktime
   const rawType = file.type || 'video/mp4';
   const mimeType = rawType === 'video/quicktime' ? 'video/mov' : rawType;
+  const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
   const bytes = await file.arrayBuffer();
   const boundary = 'boundary' + Date.now();
   const metadata = JSON.stringify({ file: { display_name: file.name || 'media' } });
@@ -53,7 +55,10 @@ export async function POST(req: NextRequest) {
 
   if (!uploadRes.ok) {
     const err = await uploadRes.text();
-    return NextResponse.json({ error: `Upload failed: ${err}` }, { status: 500 });
+    return NextResponse.json({
+      error: `Gemini rejected upload (${uploadRes.status}): ${err}`,
+      debug: { fileSizeMB, mimeType, rawType },
+    }, { status: 500 });
   }
 
   let fileData = (await uploadRes.json()).file;

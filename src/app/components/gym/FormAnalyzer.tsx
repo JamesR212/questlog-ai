@@ -65,7 +65,10 @@ export default function FormAnalyzer() {
       formData.append('file', fileRef.current);
       const uploadRes = await fetch('/api/gemini/upload', { method: 'POST', body: formData });
       const uploadData = await uploadRes.json();
-      if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed');
+      if (!uploadData.fileUri) {
+        const detail = uploadData.debug ? ` [${JSON.stringify(uploadData.debug)}]` : '';
+        throw new Error((uploadData.error ?? 'Upload failed') + detail);
+      }
 
       // Step 2: analyse using the file URI (tiny JSON payload)
       setLoadingMsg('Analysing form…');
