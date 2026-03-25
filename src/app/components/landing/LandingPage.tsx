@@ -1629,17 +1629,17 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
   return (
     <section style={{ background: '#07070d', padding: isMobile ? '64px 16px' : '120px 24px', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 40 : 80, alignItems: 'start' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? 16 : 80, alignItems: 'start' }}>
 
         {/* Left: text */}
         <div ref={headRef}>
           <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase' as const, marginBottom: 16, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(20px)', transition: `all 0.6s ${AE}` }}>
             Customise Your Way
           </div>
-          <h2 style={{ fontSize: isMobile ? 'clamp(30px, 7vw, 44px)' : 'clamp(36px, 4.5vw, 60px)', fontWeight: 900, color: '#fff', lineHeight: 1.06, marginBottom: 20, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.08s` }}>
+          <h2 style={{ fontSize: isMobile ? 'clamp(18px, 5vw, 28px)' : 'clamp(36px, 4.5vw, 60px)', fontWeight: 900, color: '#fff', lineHeight: 1.06, marginBottom: isMobile ? 10 : 20, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(24px)', transition: `all 0.7s ${AE} 0.08s` }}>
             Your app.<br />Your rules.
           </h2>
-          <p style={{ fontSize: isMobile ? 15 : 18, color: '#9ca3af', lineHeight: 1.75, marginBottom: 32, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(20px)', transition: `all 0.7s ${AE} 0.16s` }}>
+          <p style={{ fontSize: isMobile ? 11 : 18, color: '#9ca3af', lineHeight: 1.6, marginBottom: isMobile ? 12 : 32, opacity: headVisible ? 1 : 0, transform: headVisible ? 'translateY(0)' : 'translateY(20px)', transition: `all 0.7s ${AE} 0.16s` }}>
             Only want to track diet and water? Done. Gym and finance your thing? Easy. Want everything? Go for it. You decide exactly what you see — everything else disappears cleanly.
           </p>
           {[
@@ -1666,7 +1666,7 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
         {/* Right: animated sections list */}
         <div ref={phoneRef} style={{ opacity: phoneVisible ? 1 : 0, transform: phoneVisible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.95)', transition: `all 0.8s ${AE} 0.2s` }}>
-          <div style={{ transform: 'scale(0.77)', transformOrigin: 'top left', width: '130%', maxWidth: 340 }}>
+          <div style={{ transform: isMobile ? 'scale(0.6)' : 'scale(0.77)', transformOrigin: 'top left', width: isMobile ? '167%' : '130%', maxWidth: isMobile ? 260 : 340 }}>
             {/* Header */}
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Sections</div>
