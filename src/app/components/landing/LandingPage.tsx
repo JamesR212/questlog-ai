@@ -1255,8 +1255,8 @@ function ThemeShowcaseSection() {
   const delays      = [180,    90,   0,  90,  180];
 
   // Mobile: tighter spacing + stronger depth effect, +7% size, +2% spacing
-  const mobileXPos    = [-117, -60, 0, 60, 117];
-  const mobileScales  = [0.663, 0.835, 1.07, 0.835, 0.663];
+  const mobileXPos    = [-119, -61, 0, 61, 119];
+  const mobileScales  = [0.690, 0.868, 1.113, 0.868, 0.690];
   const mobileYOffset = [28,    14,   0,  14,   28];
 
   return (
