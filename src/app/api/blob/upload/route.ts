@@ -10,7 +10,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       request: req,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ['video/*', 'image/*'],
-        maximumSizeInBytes: 25 * 1024 * 1024, // 25 MB
+        maximumSizeInBytes: 30 * 1024 * 1024, // 30 MB
       }),
       onUploadCompleted: async () => {
         // Nothing to do — we delete the blob after Gemini analysis
