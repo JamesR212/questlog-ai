@@ -2346,7 +2346,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
         <h2 style={{ fontSize: 'clamp(40px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, marginBottom: 24 }}>
           Ready to<br />
-          <span style={{ color: '#16a34a' }}>gain?</span>
+          <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#16a34a' }}>?</span>
         </h2>
         <p style={{ fontSize: 18, color: '#a1a1aa', marginBottom: 48, maxWidth: 400 }}>
           Join thousands levelling up their health, fitness, and finances — all in one app.
