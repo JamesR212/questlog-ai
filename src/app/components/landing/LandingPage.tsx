@@ -1207,7 +1207,7 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
     <div style={{
       width: 130,
       background: '#0d0d14',
-      borderRadius: 22,
+      borderRadius: 20,
       border: '2px solid rgba(255,255,255,0.12)',
       boxShadow: '0 0 0 1px rgba(0,0,0,0.6), 0 32px 64px rgba(0,0,0,0.55)',
       position: 'relative',
