@@ -1248,14 +1248,16 @@ function ThemeShowcaseSection() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const xPos    = [-300, -150,   0, 150, 300];
-  const scales  = [0.946, 1.023, 1.1, 1.023, 0.946];
-  const zIdx    = [1,       2,   4,   2,    1];
-  const yOffset = [12,      6,   0,   6,   12];
-  const delays  = [180,    90,   0,  90,  180];
+  const xPos        = [-300, -150,   0, 150, 300];
+  const scales      = [0.946, 1.023, 1.1, 1.023, 0.946];
+  const zIdx        = [1,       2,   4,   2,    1];
+  const yOffset     = [12,      6,   0,   6,   12];
+  const delays      = [180,    90,   0,  90,  180];
 
-  // On mobile, shrink xPos and scales by ~40%
-  const m = isMobile ? 0.607 : 1;
+  // Mobile: tighter spacing + stronger depth effect
+  const mobileXPos    = [-115, -58, 0, 58, 115];
+  const mobileScales  = [0.62,  0.78, 1.0, 0.78, 0.62];
+  const mobileYOffset = [28,    14,   0,  14,   28];
 
   return (
     <section style={{ padding: '120px 24px 60px', background: '#050508', textAlign: 'center' }}>
@@ -1280,7 +1282,9 @@ function ThemeShowcaseSection() {
               position: 'absolute',
               zIndex: zIdx[i],
               transform: visible
-                ? `translateX(${xPos[i] * m}px) translateY(${yOffset[i] * m}px) scale(${scales[i] * m})`
+                ? isMobile
+                  ? `translateX(${mobileXPos[i]}px) translateY(${mobileYOffset[i]}px) scale(${mobileScales[i]})`
+                  : `translateX(${xPos[i]}px) translateY(${yOffset[i]}px) scale(${scales[i]})`
                 : `translateX(0px) translateY(30px) scale(0.65)`,
               opacity: visible ? 1 : 0,
               transition: `transform 1.6s ${AE} ${delays[i]}ms, opacity 1.1s ${AE} ${delays[i]}ms`,
