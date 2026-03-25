@@ -1753,7 +1753,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   ];
 
   const aiFeatures = [
-    { icon: '📸', title: 'Meal Photo Analysis', desc: 'Snap your plate — AI identifies food and calculates calories and macros instantly.' },
+    { icon: '🍽️', title: 'AI Food Intake Suggestions', desc: 'Tell AI what you\'ve eaten and get instant calorie and macro breakdowns with smarter food choices.' },
     { icon: '🏋️', title: 'AI Gym Plan Generation', desc: 'Get a personalised workout plan built around your equipment, goals, and schedule.' },
     { icon: '💪', title: 'AI Gym Form Support', desc: 'Record your reps and get real-time AI feedback on your technique to train safer and smarter.' },
     { icon: '🔬', title: 'AI Meal Macros Identifier', desc: 'Describe any meal and AI breaks down the exact calories, protein, carbs and fat instantly.' },
