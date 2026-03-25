@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { GymPlan, GymExercise } from '@/types';
 import AIAdvisor from '../shared/AIAdvisor';
+import FormAnalyzer from './FormAnalyzer';
 import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -639,6 +640,7 @@ export default function GymFitness() {
         />
       )}
 
+      <FormAnalyzer />
       <AIAdvisor section="gym" />
     </div>
   );

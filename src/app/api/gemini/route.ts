@@ -249,6 +249,80 @@ Rules:
       return NextResponse.json({ food });
     }
 
+    // ── Lift verification for leaderboard ───────────────────────────────────
+    if (mode === 'verify_lift') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const mediaBase64    = context.mediaBase64 ?? '';
+      const mimeType       = context.mimeType    ?? 'video/mp4';
+      const claimedExercise = context.exercise   ?? '';
+      const claimedWeight  = context.weight      ?? 0;
+
+      const prompt = `You are a certified powerlifting judge and strength coach verifying a 1-rep max lift submission for a public leaderboard.
+
+The user claims this video shows: ${claimedExercise} for ${claimedWeight}kg (1 rep max).
+
+Analyse the video/photo and return ONLY a raw JSON object (no markdown, no code fences):
+{
+  "verified": true or false,
+  "exerciseMatch": true or false,
+  "looksLikeMaxEffort": true or false,
+  "confidence": "high" | "medium" | "low",
+  "notes": "1-2 sentences on what you saw",
+  "rejectionReason": "specific reason if rejected, or null if verified"
+}
+
+Rules:
+- verified = true only if: correct exercise, appears to be a single rep, some effort visible, video clear enough to judge
+- exerciseMatch: does what is visible match "${claimedExercise}"?
+- looksLikeMaxEffort: visible struggle, slow tempo, grind — not a warm-up speed rep
+- confidence: how clearly is the lift visible (lighting, angle, framing)
+- rejectionReason: be specific (e.g. "Video too dark to verify", "Multiple reps performed", "Exercise does not match claimed lift") — null if verified
+- A blurry or very unclear video should be rejected with low confidence`;
+
+      const result = await model.generateContent([
+        { inlineData: { mimeType, data: mediaBase64 } },
+        prompt,
+      ]);
+      let text = result.response.text().trim();
+      text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const verification = JSON.parse(text);
+      return NextResponse.json({ verification });
+    }
+
+    // ── Form video / photo analysis ─────────────────────────────────────────
+    if (mode === 'analyze_form_video') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const mediaBase64 = context.mediaBase64 ?? '';
+      const mimeType    = context.mimeType ?? 'video/mp4';
+      const prompt = `You are a certified personal trainer and biomechanics expert. Analyse this gym exercise video or photo and assess the athlete's form.
+
+Return ONLY a raw JSON object (no markdown, no code fences) in this exact shape:
+{
+  "exercise": "Name of the exercise being performed",
+  "rating": "Good" | "Fair" | "Needs Work",
+  "positives": ["What they are doing well — list 1-3 specific things"],
+  "issues": ["Specific form issues observed — list up to 4, or empty array if none"],
+  "corrections": ["Actionable cue for each issue — same length as issues array"],
+  "safetyNote": "One sentence safety reminder relevant to this exercise and any issues found"
+}
+
+Rules:
+- Be specific and use exercise coaching language (e.g. "knees tracking over toes", "neutral spine", "hip hinge")
+- If the media is too blurry or unclear to assess, set rating to "Needs Work" and issues to ["Video/photo quality too low for accurate analysis — try a clearer, well-lit clip"]
+- If no clear exercise is visible, set exercise to "Unknown exercise"
+- Keep each point concise (max 12 words per item)
+- safetyNote must always be present and relevant`;
+
+      const result = await model.generateContent([
+        { inlineData: { mimeType, data: mediaBase64 } },
+        prompt,
+      ]);
+      let text = result.response.text().trim();
+      text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const analysis = JSON.parse(text);
+      return NextResponse.json({ analysis });
+    }
+
     // ── Standard chat mode ───────────────────────────────────────────────────
     const systemPrompt = SECTION_PROMPTS[section] ?? SECTION_PROMPTS.dashboard;
     const model = genAI.getGenerativeModel({

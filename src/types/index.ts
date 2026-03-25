@@ -97,7 +97,7 @@ export interface SleepEntry {
   onTime: boolean;
 }
 
-export type ActiveSection = 'dashboard' | 'calendar' | 'vices' | 'habits' | 'gym' | 'nutrition' | 'settings' | 'training' | 'social';
+export type ActiveSection = 'dashboard' | 'calendar' | 'vices' | 'habits' | 'gym' | 'nutrition' | 'settings' | 'training' | 'social' | 'leaderboard';
 
 export interface NutritionGoal {
   calories: number;

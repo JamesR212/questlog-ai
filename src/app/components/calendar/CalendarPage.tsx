@@ -783,7 +783,9 @@ export default function CalendarPage() {
       )}
 
       {/* ── Sleep & wake log for selected day ── */}
-      <SleepWakeCard date={selected} />
+      <div className="mt-4">
+        <SleepWakeCard date={selected} />
+      </div>
 
       {/* ── Steps / Nutrition / Hydration for selected day ── */}
       {(() => {

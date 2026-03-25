@@ -15,10 +15,10 @@
   --ql-tx:           #f0f0f8;
   --ql-tx-2:         #8888aa;
   --ql-tx-3:         #555570;
-  --ql-accent:       #7c3aed;
-  --ql-accent-h:     #6d28d9;
-  --ql-accent-tx:    #a78bfa;
-  --ql-accent-bd:    rgba(124, 58, 237, 0.35);
+  --ql-accent:       #2d6a27;
+  --ql-accent-h:     #245520;
+  --ql-accent-tx:    #86efac;
+  --ql-accent-bd:    rgba(45, 106, 39, 0.35);
   --ql-input:        #1a1a2e;
   --ql-input-bd:     rgba(255,255,255,0.08);
   --ql-nav-active:   #1e1e35;
@@ -37,10 +37,10 @@
   --ql-tx:           #1d1d1f;
   --ql-tx-2:         #6e6e73;
   --ql-tx-3:         #a1a1aa;
-  --ql-accent:       #7c3aed;
-  --ql-accent-h:     #6d28d9;
-  --ql-accent-tx:    #7c3aed;
-  --ql-accent-bd:    rgba(124, 58, 237, 0.20);
+  --ql-accent:       #2d6a27;
+  --ql-accent-h:     #245520;
+  --ql-accent-tx:    #2d6a27;
+  --ql-accent-bd:    rgba(45, 106, 39, 0.20);
   --ql-input:        #f5f5f7;
   --ql-input-bd:     rgba(0,0,0,0.08);
   --ql-nav-active:   #ededef;
@@ -49,69 +49,69 @@
 }
 
 [data-theme="pink"] {
-  --ql-bg:           #fdf2f7;
-  --ql-hdr:          rgba(253, 242, 247, 0.90);
-  --ql-surface:      #ffffff;
-  --ql-surface-2:    #fef0f6;
-  --ql-surface-3:    #fce4f0;
-  --ql-border:       rgba(236, 72, 153, 0.12);
-  --ql-border-2:     rgba(236, 72, 153, 0.06);
-  --ql-tx:           #3b0a20;
-  --ql-tx-2:         #9d174d;
-  --ql-tx-3:         #a03070;
-  --ql-accent:       #db2777;
-  --ql-accent-h:     #be185d;
-  --ql-accent-tx:    #db2777;
-  --ql-accent-bd:    rgba(219, 39, 119, 0.20);
-  --ql-input:        #fef0f6;
-  --ql-input-bd:     rgba(219, 39, 119, 0.15);
-  --ql-nav-active:   #fce4f0;
-  --ql-shadow:       0 2px 20px rgba(219,39,119,0.08), 0 1px 4px rgba(0,0,0,0.03);
-  --ql-shadow-sm:    0 1px 4px rgba(219,39,119,0.06);
+  --ql-bg:           #fce9f1;
+  --ql-hdr:          rgba(252, 233, 241, 0.92);
+  --ql-surface:      #fff4f8;
+  --ql-surface-2:    #f8dcea;
+  --ql-surface-3:    #f0cedf;
+  --ql-border:       rgba(210, 60, 120, 0.12);
+  --ql-border-2:     rgba(210, 60, 120, 0.06);
+  --ql-tx:           #2a0d1a;
+  --ql-tx-2:         #5c2238;
+  --ql-tx-3:         #8a4860;
+  --ql-accent:       #d6306a;
+  --ql-accent-h:     #bc2258;
+  --ql-accent-tx:    #d6306a;
+  --ql-accent-bd:    rgba(214, 48, 106, 0.22);
+  --ql-input:        #f8dcea;
+  --ql-input-bd:     rgba(214, 48, 106, 0.15);
+  --ql-nav-active:   #f0cedf;
+  --ql-shadow:       0 2px 20px rgba(214,48,106,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --ql-shadow-sm:    0 1px 4px rgba(214,48,106,0.06);
 }
 
 [data-theme="blue"] {
-  --ql-bg:           #f0f6ff;
-  --ql-hdr:          rgba(240, 246, 255, 0.90);
-  --ql-surface:      #ffffff;
-  --ql-surface-2:    #f0f6ff;
-  --ql-surface-3:    #dbeafe;
-  --ql-border:       rgba(59, 130, 246, 0.12);
-  --ql-border-2:     rgba(59, 130, 246, 0.06);
-  --ql-tx:           #0f2a5e;
-  --ql-tx-2:         #2563eb;
-  --ql-tx-3:         #2d5ca8;
-  --ql-accent:       #2563eb;
-  --ql-accent-h:     #1d4ed8;
-  --ql-accent-tx:    #2563eb;
-  --ql-accent-bd:    rgba(37, 99, 235, 0.20);
-  --ql-input:        #f0f6ff;
-  --ql-input-bd:     rgba(37, 99, 235, 0.15);
-  --ql-nav-active:   #dbeafe;
-  --ql-shadow:       0 2px 20px rgba(37,99,235,0.08), 0 1px 4px rgba(0,0,0,0.03);
-  --ql-shadow-sm:    0 1px 4px rgba(37,99,235,0.06);
+  --ql-bg:           #112240;
+  --ql-hdr:          rgba(15, 30, 56, 0.95);
+  --ql-surface:      #1a3050;
+  --ql-surface-2:    #223a60;
+  --ql-surface-3:    #2a4470;
+  --ql-border:       rgba(255, 255, 255, 0.08);
+  --ql-border-2:     rgba(255, 255, 255, 0.04);
+  --ql-tx:           #f9fbff;
+  --ql-tx-2:         #a8bfd6;
+  --ql-tx-3:         #6e8faa;
+  --ql-accent:       #1d58d4;
+  --ql-accent-h:     #1648b8;
+  --ql-accent-tx:    #60a5fa;
+  --ql-accent-bd:    rgba(29, 88, 212, 0.30);
+  --ql-input:        #1a2d47;
+  --ql-input-bd:     rgba(255, 255, 255, 0.09);
+  --ql-nav-active:   #1a2d47;
+  --ql-shadow:       0 2px 20px rgba(0,0,0,0.50);
+  --ql-shadow-sm:    0 1px 6px rgba(0,0,0,0.38);
 }
 
 [data-theme="green"] {
-  --ql-bg:           #f0fdf5;
-  --ql-hdr:          rgba(240, 253, 245, 0.90);
-  --ql-surface:      #ffffff;
-  --ql-surface-2:    #f0fdf5;
-  --ql-surface-3:    #dcfce7;
-  --ql-border:       rgba(22, 163, 74, 0.12);
-  --ql-border-2:     rgba(22, 163, 74, 0.06);
-  --ql-tx:           #052e16;
-  --ql-tx-2:         #166534;
-  --ql-tx-3:         #3a7d44;
-  --ql-accent:       #16a34a;
-  --ql-accent-h:     #15803d;
-  --ql-accent-tx:    #16a34a;
-  --ql-accent-bd:    rgba(22, 163, 74, 0.20);
-  --ql-input:        #f0fdf5;
-  --ql-input-bd:     rgba(22, 163, 74, 0.15);
-  --ql-nav-active:   #dcfce7;
-  --ql-shadow:       0 2px 20px rgba(22,163,74,0.08), 0 1px 4px rgba(0,0,0,0.03);
-  --ql-shadow-sm:    0 1px 4px rgba(22,163,74,0.06);
+  --ql-bg:           #142318;
+  --ql-hdr:          rgba(18, 32, 22, 0.94);
+  --ql-surface:      #243d30;
+  --ql-surface-2:    #2e4d3c;
+  --ql-surface-3:    #385c48;
+  --ql-border:       rgba(255, 255, 255, 0.08);
+  --ql-border-2:     rgba(255, 255, 255, 0.04);
+  --ql-tx:           #f2faf4;
+  --ql-tx-2:         #aad4b6;
+  --ql-tx-3:         #6fa882;
+  --ql-accent:       #27a24a;
+  --ql-accent-h:     #1e8a3c;
+  --ql-accent-tx:    #34c45c;
+  --ql-accent-bd:    rgba(39, 162, 74, 0.30);
+  --ql-input:        #2a4438;
+  --ql-input-bd:     rgba(255, 255, 255, 0.09);
+  --ql-nav-active:   #2a4438;
+  --ql-shadow:       0 2px 20px rgba(0,0,0,0.45);
+  --ql-shadow-sm:    0 1px 6px rgba(0,0,0,0.35);
 }
 
 /* ── Base ─────────────────────────────────────────────────────── */
@@ -174,6 +174,25 @@ select option { background: var(--ql-surface-2); }
 
 .levelup-anim { animation: levelup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .pulse-gold   { animation: pulse-gold 2.5s ease infinite; }
+
+/* ── Number input spinners ────────────────────────────────────── */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  filter: invert(0);
+}
+
+[data-theme="blue"] input[type="number"]::-webkit-inner-spin-button,
+[data-theme="blue"] input[type="number"]::-webkit-outer-spin-button,
+[data-theme="green"] input[type="number"]::-webkit-inner-spin-button,
+[data-theme="green"] input[type="number"]::-webkit-outer-spin-button,
+[data-theme="dark"] input[type="number"]::-webkit-inner-spin-button,
+[data-theme="dark"] input[type="number"]::-webkit-outer-spin-button,
+[data-theme="pink"] input[type="number"]::-webkit-inner-spin-button,
+[data-theme="pink"] input[type="number"]::-webkit-outer-spin-button {
+  filter: invert(1);
+}
 
 /* ── Scrollbar ────────────────────────────────────────────────── */
 

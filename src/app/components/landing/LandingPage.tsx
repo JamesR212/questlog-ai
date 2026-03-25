@@ -744,9 +744,9 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 6 — AI Advisor (real chat)
+    // 6 — AI Support (real chat)
     <div key="ai" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>AI Advisor</div>
+      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>AI Support</div>
       <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44`, padding: '7px 9px' }), display: 'flex', gap: 6, alignItems: 'center' }}>
         <span style={{ fontSize: 16 }}>🤖</span>
         <div>
@@ -867,7 +867,7 @@ const FEATURES = [
   },
   {
     icon: '🤖',
-    title: 'AI Personal Advisor',
+    title: 'AI Support',
     subtitle: 'Your always-on coach',
     desc: 'Chat with an AI that knows your habits, workouts, nutrition, and goals. Personalised advice, any time.',
     color: '#16a34a',
@@ -1579,8 +1579,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { ref: pricingRef, visible: pricingVisible } = useFadeIn();
   const { ref: ctaRef, visible: ctaVisible } = useFadeIn();
 
-  const [particles] = useState(() =>
-    Array.from({ length: 60 }, (_, i) => ({
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; opacity: number; duration: number; delay: number }[]>([]);
+  useEffect(() => {
+    setParticles(Array.from({ length: 60 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -1588,8 +1589,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       opacity: Math.random() * 0.5 + 0.1,
       duration: Math.random() * 8 + 4,
       delay: Math.random() * 6,
-    }))
-  );
+    })));
+  }, []);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -1626,7 +1627,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     { icon: '🏋️', title: 'AI Gym Plan Generation', desc: 'Get a personalised workout plan built around your equipment, goals, and schedule.' },
     { icon: '🥗', title: 'AI Meal Plan Generation', desc: 'Receive a weekly meal plan matched to your calorie targets and preferences.' },
     { icon: '💧', title: 'AI Hydration Recommendation', desc: 'Your daily water goal calculated from your body stats, activity, and climate.' },
-    { icon: '🤖', title: 'AI Personal Advisor', desc: 'Chat with an AI coach that knows every aspect of your health journey.' },
+    { icon: '🤖', title: 'AI Support', desc: 'Chat with an AI coach that knows every aspect of your health journey.' },
     { icon: '🍎', title: 'AI Food Suggestions', desc: 'Stuck on what to eat? AI suggests meals that fit your remaining macros.' },
   ];
 

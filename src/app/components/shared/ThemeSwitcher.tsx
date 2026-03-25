@@ -6,9 +6,9 @@ import type { Theme } from '@/types';
 const THEMES: { id: Theme; bg: string; ring: string; label: string }[] = [
   { id: 'dark',  bg: '#13131f', ring: '#7c3aed', label: 'Dark' },
   { id: 'white', bg: '#f5f5f7', ring: '#a1a1aa', label: 'Light' },
-  { id: 'pink',  bg: '#fce4f0', ring: '#db2777', label: 'Pink' },
-  { id: 'blue',  bg: '#dbeafe', ring: '#2563eb', label: 'Blue' },
-  { id: 'green', bg: '#dcfce7', ring: '#16a34a', label: 'Green' },
+  { id: 'pink',  bg: '#fce9f1', ring: '#d6306a', label: 'Pink' },
+  { id: 'blue',  bg: '#0b1524', ring: '#3b82f6', label: 'Blue' },
+  { id: 'green', bg: '#1a3028', ring: '#4ade80', label: 'Green' },
 ];
 
 export default function ThemeSwitcher() {

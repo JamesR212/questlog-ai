@@ -8,6 +8,7 @@ import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
 import StepTracker, { StepBars, getLast7Days, dayLabel, StepsChart, buildDailyBars, buildWeeklyBars, buildMonthlyBars, StepBar, StepPeriod } from './StepTracker';
 import ActivityTracker from '../tracking/ActivityTracker';
 import HabitEmoji from '../shared/HabitEmoji';
+import FormAnalyzer from '../gym/FormAnalyzer';
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -2502,6 +2503,9 @@ export default function TrainingHub() {
           )}
         </>
       )}
+
+      {/* ── Form Analyzer (plans tab) ── */}
+      {activeTab === 'plans' && <FormAnalyzer />}
 
       {/* ── Steps tab ── */}
       {activeTab === 'steps' && (

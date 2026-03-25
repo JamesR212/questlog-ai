@@ -42,7 +42,7 @@ export default function AIAdvisor({ section }: AIAdvisorProps) {
     <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-ql">
         <span className="text-base">🔮</span>
-        <span className="text-sm font-semibold text-ql">AI Advisor</span>
+        <span className="text-sm font-semibold text-ql">AI Support</span>
         <div className="ml-auto flex gap-1">
           <div className="w-1.5 h-1.5 rounded-full bg-ql-accent" />
           <div className="w-1.5 h-1.5 rounded-full bg-ql-surface3" />
