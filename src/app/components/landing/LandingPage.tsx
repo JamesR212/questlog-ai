@@ -1805,7 +1805,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(22,163,74,0.3); } 50% { box-shadow: 0 0 40px rgba(22,163,74,0.6); } }
           @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes cellPop { 0% { transform: scale(0.2); opacity:0; } 65% { transform: scale(1.25); } 100% { transform: scale(1); opacity:1; } }
-          @media (max-width: 767px) { .ai-bg-img { object-position: 30% center !important; } }
+          @media (max-width: 767px) { .ai-bg-img { object-position: 40% center !important; } }
         `}</style>
 
         {/* Logo */}
@@ -2008,6 +2008,31 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   'Personalised using your height, weight, age, and goals',
                   'Muscular load radar shows exactly what you\'re training',
                   'Adjusts week by week as you log sessions',
+                ].map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <span style={{ color: '#16a34a', fontWeight: 800, fontSize: isMobile ? 11 : 15, marginTop: 2, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: isMobile ? 11 : 15, color: '#a1a1aa' }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Panel 1.5 — AI Form Review */}
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
+              <div style={{ fontSize: isMobile ? 8 : 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>AI Form Check</div>
+              <h3 style={{ fontSize: isMobile ? 'clamp(19px, 2.4vw, 31px)' : 'clamp(26px, 3.2vw, 42px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 20 }}>
+                Your coach,<br />in your pocket
+              </h3>
+              <p style={{ fontSize: isMobile ? 12 : 16, color: '#9ca3af', lineHeight: 1.85, marginBottom: 32 }}>
+                Upload a photo or short video of your exercise and GAINN's AI analyses your form in seconds — spotting what you're doing well and exactly what to fix before injury strikes.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  'Photo analysis — snap your position and get instant feedback',
+                  'Video review — upload a clip and AI breaks down every rep',
+                  'Highlights strengths and flags form risks clearly',
+                  'Covers compound lifts, cardio form, stretches and more',
+                  'AI guidance note included — not professional medical advice',
                 ].map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <span style={{ color: '#16a34a', fontWeight: 800, fontSize: isMobile ? 11 : 15, marginTop: 2, flexShrink: 0 }}>✓</span>
