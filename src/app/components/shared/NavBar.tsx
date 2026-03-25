@@ -12,7 +12,7 @@ const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysSh
 ];
 
 export default function NavBar() {
-  const { activeSection, setActiveSection, stats, competitionMode, hiddenSections } = useGameStore();
+  const { activeSection, setActiveSection, stats, competitionMode, financialMode, hiddenSections } = useGameStore();
   const xpPct = Math.min(100, (stats.xp / stats.xpToNext) * 100);
 
   const visibleItems = NAV_ITEMS.filter(item =>
@@ -41,12 +41,12 @@ export default function NavBar() {
               }`}
             >
               <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : ''}`}>
-                {item.icon}
+                {item.section === 'vices' && !financialMode ? '🚫' : item.icon}
               </span>
               <span className={`text-[10px] font-medium transition-colors duration-200 ${
                 active ? 'text-ql-accent' : 'text-ql-3'
               }`}>
-                {item.label}
+                {item.section === 'vices' && !financialMode ? 'Vices' : item.label}
               </span>
             </button>
           );

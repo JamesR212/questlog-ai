@@ -2504,8 +2504,8 @@ export default function TrainingHub() {
         </>
       )}
 
-      {/* ── Form Analyzer (plans tab) ── */}
-      {activeTab === 'plans' && <FormAnalyzer />}
+      {/* ── Form Analyzer (habits + plans tabs) ── */}
+      {(activeTab === 'habits' || activeTab === 'plans') && <FormAnalyzer />}
 
       {/* ── Steps tab ── */}
       {activeTab === 'steps' && (

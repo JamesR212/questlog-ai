@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { HabitDef } from '@/types';
 import HabitEmoji from '../shared/HabitEmoji';
+import FormAnalyzer from '../gym/FormAnalyzer';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -562,6 +563,8 @@ export default function HabitTracker() {
           </div>
         </div>
       )}
+
+      <FormAnalyzer />
 
       {showAdd && (
         <AddHabitSheet onClose={() => setShowAdd(false)} onSave={def => addHabit(def)} />
