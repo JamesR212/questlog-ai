@@ -1805,7 +1805,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(22,163,74,0.3); } 50% { box-shadow: 0 0 40px rgba(22,163,74,0.6); } }
           @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes cellPop { 0% { transform: scale(0.2); opacity:0; } 65% { transform: scale(1.25); } 100% { transform: scale(1); opacity:1; } }
-          @media (max-width: 767px) { .ai-bg-img { object-position: 40% center !important; } }
+          @media (max-width: 767px) { .ai-bg-img { object-position: 72% center !important; } }
         `}</style>
 
         {/* Logo */}
