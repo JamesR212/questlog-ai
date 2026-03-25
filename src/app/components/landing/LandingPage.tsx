@@ -1924,8 +1924,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'start', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: isMobile ? 8 : 48 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/theme-dark.jpg"
-              alt="GAINN app dark theme dashboard"
+              src="/gym-ai.jpg"
+              alt="GAINN AI form check in action"
               style={{ maxHeight: '76vh', width: 'auto', borderRadius: 24, display: 'block', objectFit: 'contain' as const, margin: '0 auto' }}
             />
           </div>
