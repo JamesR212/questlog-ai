@@ -1805,6 +1805,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(22,163,74,0.3); } 50% { box-shadow: 0 0 40px rgba(22,163,74,0.6); } }
           @keyframes fade-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes cellPop { 0% { transform: scale(0.2); opacity:0; } 65% { transform: scale(1.25); } 100% { transform: scale(1); opacity:1; } }
+          @media (max-width: 767px) { .ai-bg-img { object-position: 30% center !important; } }
         `}</style>
 
         {/* Logo */}
@@ -1969,7 +1970,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         {/* Sticky background image */}
         <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', zIndex: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ai-bg.png" alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+          <img src="/ai-bg.png" alt="" aria-hidden="true" className="ai-bg-img" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           {/* Dark overlay so text stays readable */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(5,5,8,0.82) 0%, rgba(5,5,8,0.55) 60%, rgba(5,5,8,0.35) 100%)' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(5,5,8,0.4) 0%, transparent 20%, transparent 80%, rgba(5,5,8,0.9) 100%)' }} />
@@ -2142,7 +2143,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>The hidden cost</div>
-            <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>Why pay for 6 apps?</h2>
+            <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>Why pay for 7 apps?</h2>
             <p style={{ fontSize: 17, color: '#71717a' }}>This is what the piecemeal approach costs you every month</p>
           </div>
 
