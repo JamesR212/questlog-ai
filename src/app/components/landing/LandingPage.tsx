@@ -1206,7 +1206,7 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
   return (
     <div style={{
       width: 130,
-      height: 260,
+      height: 298,
       background: '#0d0d14',
       borderRadius: 28,
       border: '2px solid rgba(255,255,255,0.12)',
@@ -1229,12 +1229,12 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
         <span style={{ fontSize: 6, color: '#fff', fontWeight: 600 }}>9:41</span>
         <span style={{ fontSize: 6, color: '#fff' }}>●●●</span>
       </div>
-      {/* Screenshot */}
+      {/* Screenshot — fill remaining height exactly */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={t.img}
         alt={`GAINN ${t.label} theme`}
-        style={{ width: '100%', height: 242, objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+        style={{ width: '100%', height: 280, objectFit: 'contain', objectPosition: 'top', display: 'block' }}
       />
     </div>
   );
