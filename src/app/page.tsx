@@ -45,6 +45,7 @@ export default function Home() {
   const [syncing, setSyncing]         = useState(false);
   const [cloudReady, setCloudReady]   = useState(false);
   const [showAuth, setShowAuth]       = useState(false);
+  const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
   const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
   const hydratedUid                   = useRef<string | null>(null);
 
@@ -153,8 +154,8 @@ export default function Home() {
       <>
         <ThemeApplier />
         {showAuth
-          ? <AuthScreen />
-          : <LandingPage onGetStarted={() => setShowAuth(true)} />
+          ? <AuthScreen initialMode={authMode} />
+          : <LandingPage onGetStarted={() => { setAuthMode('signup'); setShowAuth(true); }} />
         }
       </>
     );

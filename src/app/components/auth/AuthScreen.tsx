@@ -11,8 +11,8 @@ import { auth } from '@/lib/firebase';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
-export default function AuthScreen() {
-  const [mode, setMode]         = useState<Mode>('login');
+export default function AuthScreen({ initialMode = 'login' }: { initialMode?: Mode }) {
+  const [mode, setMode]         = useState<Mode>(initialMode);
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
