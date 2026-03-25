@@ -2069,9 +2069,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           background: '#07070d',
           padding: '120px 24px',
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Background image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/leaderboard-bg.png" alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.18, pointerEvents: 'none' }} />
+        {/* Overlay to keep content readable */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,13,0.5) 0%, rgba(7,7,13,0.3) 50%, rgba(7,7,13,0.7) 100%)', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
