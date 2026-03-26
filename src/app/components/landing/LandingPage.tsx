@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
+  onLogin: () => void;
 }
 
 // ─── useFadeIn hook ───────────────────────────────────────────────────────────
@@ -1744,7 +1745,7 @@ function CustomiseSection({ onGetStarted }: { onGetStarted: () => void }) {
 
 // ─── Main LandingPage ─────────────────────────────────────────────────────────
 
-export default function LandingPage({ onGetStarted }: LandingPageProps) {
+export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const { ref: socialRef, visible: socialVisible } = useFadeIn();
   const { ref: replaceRef, visible: replaceVisible } = useFadeIn();
   const { ref: aiRef, visible: aiVisible } = useFadeIn();
@@ -1896,7 +1897,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             Get Started
           </button>
           <button
-            onClick={onGetStarted}
+            onClick={onLogin}
             style={{
               padding: '16px 36px',
               background: 'transparent',

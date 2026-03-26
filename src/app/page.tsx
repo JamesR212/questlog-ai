@@ -155,7 +155,10 @@ export default function Home() {
         <ThemeApplier />
         {showAuth
           ? <AuthScreen initialMode={authMode} />
-          : <LandingPage onGetStarted={() => { setAuthMode('signup'); setShowAuth(true); }} />
+          : <LandingPage
+              onGetStarted={() => { setAuthMode('signup'); setShowAuth(true); }}
+              onLogin={() => { setAuthMode('login'); setShowAuth(true); }}
+            />
         }
       </>
     );
