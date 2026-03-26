@@ -28,6 +28,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('bp6',  'Charlotte Evans',  'bench_press', 44, 'kg', 'ai_verified', 55.861, -4.248),  // Glasgow
     mk('bp7',  'Harry Wilson',     'bench_press', 79, 'kg', 'ai_verified', 55.958, -3.192),  // Edinburgh
     mk('bp8',  'Grace Thompson',   'bench_press', 36, 'kg', 'ai_verified', 53.411, -2.984),  // Liverpool
+    mk('bp9',  'JamesW',           'bench_press', 62, 'kg', 'ai_verified', 53.629, -1.660),  // Wakefield
+    mk('bp10', 'rachel',           'bench_press', 33, 'kg', 'ai_verified', 51.382, -2.362),  // Bath
+    mk('bp11', 'spiderman7',       'bench_press', 75, 'kg', 'ai_verified', 52.913, -1.184),  // Derby
+    mk('bp12', 'pJ07',             'bench_press', 48, 'kg', 'ai_verified', 53.043, -2.992),  // Warrington
+    mk('bp13', 'DanT92',           'bench_press', 57, 'kg', 'ai_verified', 51.880, -0.420),  // Luton
   ],
 
   deadlift: [
@@ -39,6 +44,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('dl6',  'Chloe Martin',     'deadlift', 48,  'kg', 'ai_verified', 51.754, -1.255),  // Oxford
     mk('dl7',  'Ryan Clarke',      'deadlift', 78,  'kg', 'ai_verified', 52.207, 0.124),   // Cambridge
     mk('dl8',  'Zoe Campbell',     'deadlift', 58,  'kg', 'ai_verified', 50.913, -1.402),  // Southampton
+    mk('dl9',  'mikelifts',        'deadlift', 92,  'kg', 'ai_verified', 53.800, -3.048),  // Preston
+    mk('dl10', 'kirsty_k',         'deadlift', 52,  'kg', 'ai_verified', 51.621, -3.944),  // Swansea
+    mk('dl11', 'spiderman7',       'deadlift', 84,  'kg', 'ai_verified', 52.913, -1.184),  // Derby
+    mk('dl12', 'JamesW',           'deadlift', 98,  'kg', 'ai_verified', 53.629, -1.660),  // Wakefield
+    mk('dl13', 'b3nfit',           'deadlift', 67,  'kg', 'ai_verified', 51.509, -0.118),  // London E
   ],
 
   squat: [
@@ -50,6 +60,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('sq6',  'Amelia White',     'squat', 44,  'kg', 'ai_verified', 52.957, -1.154),  // Nottingham
     mk('sq7',  'George Harris',    'squat', 84,  'kg', 'ai_verified', 52.639, -1.136),  // Leicester
     mk('sq8',  'Chloe Martin',     'squat', 57,  'kg', 'ai_verified', 51.754, -1.255),  // Oxford
+    mk('sq9',  'pJ07',             'squat', 70,  'kg', 'ai_verified', 53.043, -2.992),  // Warrington
+    mk('sq10', 'rachel',           'squat', 46,  'kg', 'ai_verified', 51.382, -2.362),  // Bath
+    mk('sq11', 'TommoUK',          'squat', 88,  'kg', 'ai_verified', 54.601, -5.930),  // Belfast
+    mk('sq12', 'DanT92',           'squat', 63,  'kg', 'ai_verified', 51.880, -0.420),  // Luton
+    mk('sq13', 'mikelifts',        'squat', 79,  'kg', 'ai_verified', 53.800, -3.048),  // Preston
   ],
 
   curl: [
@@ -61,6 +76,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('cu6',  'Ryan Clarke',      'curl', 20, 'kg', 'ai_verified', 52.207, 0.124),   // Cambridge
     mk('cu7',  'Zoe Campbell',     'curl', 12, 'kg', 'ai_verified', 50.913, -1.402),  // Southampton
     mk('cu8',  'Olivia Brown',     'curl', 14, 'kg', 'ai_verified', 54.981, -1.615),  // Newcastle
+    mk('cu9',  'spiderman7',       'curl', 19, 'kg', 'ai_verified', 52.913, -1.184),  // Derby
+    mk('cu10', 'kirsty_k',         'curl',  8, 'kg', 'ai_verified', 51.621, -3.944),  // Swansea
+    mk('cu11', 'JamesW',           'curl', 17, 'kg', 'ai_verified', 53.629, -1.660),  // Wakefield
+    mk('cu12', 'b3nfit',           'curl', 15, 'kg', 'ai_verified', 51.509, -0.118),  // London E
+    mk('cu13', 'pJ07',             'curl', 21, 'kg', 'ai_verified', 53.043, -2.992),  // Warrington
   ],
 
   lat_pulldown: [
@@ -72,6 +92,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('lp6',  'Chloe Martin',     'lat_pulldown', 47, 'kg', 'ai_verified', 51.754, -1.255),  // Oxford
     mk('lp7',  'Ryan Clarke',      'lat_pulldown', 68, 'kg', 'ai_verified', 52.207, 0.124),   // Cambridge
     mk('lp8',  'Amelia White',     'lat_pulldown', 52, 'kg', 'ai_verified', 52.957, -1.154),  // Nottingham
+    mk('lp9',  'DanT92',           'lat_pulldown', 61, 'kg', 'ai_verified', 51.880, -0.420),  // Luton
+    mk('lp10', 'TommoUK',          'lat_pulldown', 70, 'kg', 'ai_verified', 54.601, -5.930),  // Belfast
+    mk('lp11', 'rachel',           'lat_pulldown', 38, 'kg', 'ai_verified', 51.382, -2.362),  // Bath
+    mk('lp12', 'mikelifts',        'lat_pulldown', 64, 'kg', 'ai_verified', 53.800, -3.048),  // Preston
+    mk('lp13', 'pJ07',             'lat_pulldown', 55, 'kg', 'ai_verified', 53.043, -2.992),  // Warrington
   ],
 
   cable_row: [
@@ -83,6 +108,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('cr6',  'Zoe Campbell',     'cable_row', 45, 'kg', 'ai_verified', 50.913, -1.402),  // Southampton
     mk('cr7',  'Oliver Hughes',    'cable_row', 58, 'kg', 'ai_verified', 51.458, -2.588),  // Bristol
     mk('cr8',  'Olivia Brown',     'cable_row', 50, 'kg', 'ai_verified', 54.981, -1.615),  // Newcastle
+    mk('cr9',  'spiderman7',       'cable_row', 60, 'kg', 'ai_verified', 52.913, -1.184),  // Derby
+    mk('cr10', 'kirsty_k',         'cable_row', 36, 'kg', 'ai_verified', 51.621, -3.944),  // Swansea
+    mk('cr11', 'b3nfit',           'cable_row', 55, 'kg', 'ai_verified', 51.509, -0.118),  // London E
+    mk('cr12', 'TommoUK',          'cable_row', 68, 'kg', 'ai_verified', 54.601, -5.930),  // Belfast
+    mk('cr13', 'DanT92',           'cable_row', 48, 'kg', 'ai_verified', 51.880, -0.420),  // Luton
   ],
 
   longest_run: [
@@ -94,6 +124,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('lr6',  'Ryan Clarke',      'longest_run', 5.9, 'km', 'gps', 52.207, 0.124),   // Cambridge
     mk('lr7',  'Chloe Martin',     'longest_run', 7.3, 'km', 'gps', 51.754, -1.255),  // Oxford
     mk('lr8',  'Liam Morris',      'longest_run', 4.1, 'km', 'gps', 53.385, -1.468),  // Sheffield
+    mk('lr9',  'JamesW',           'longest_run', 5.6, 'km', 'gps', 53.629, -1.660),  // Wakefield
+    mk('lr10', 'rachel',           'longest_run', 4.8, 'km', 'gps', 51.382, -2.362),  // Bath
+    mk('lr11', 'DanT92',           'longest_run', 6.2, 'km', 'gps', 51.880, -0.420),  // Luton
+    mk('lr12', 'kirsty_k',         'longest_run', 3.5, 'km', 'gps', 51.621, -3.944),  // Swansea
+    mk('lr13', 'TommoUK',          'longest_run', 7.0, 'km', 'gps', 54.601, -5.930),  // Belfast
   ],
 
   steps_day: [
@@ -111,6 +146,11 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('sd10', 'Olivia Brown',     'steps_day',  6780, 'steps', 'synced', 54.981, -1.615),  // Newcastle
     mk('sd11', 'Zoe Campbell',     'steps_day',  6420, 'steps', 'synced', 50.913, -1.402),  // Southampton
     mk('sd12', 'James Cooper',     'steps_day',  5930, 'steps', 'synced', 52.491, -1.885),  // Birmingham
+    mk('sd13', 'spiderman7',       'steps_day', 11840, 'steps', 'synced', 52.913, -1.184),  // Derby
+    mk('sd14', 'pJ07',             'steps_day',  8670, 'steps', 'synced', 53.043, -2.992),  // Warrington
+    mk('sd15', 'b3nfit',           'steps_day',  9120, 'steps', 'synced', 51.509, -0.118),  // London E
+    mk('sd16', 'mikelifts',        'steps_day',  7430, 'steps', 'synced', 53.800, -3.048),  // Preston
+    mk('sd17', 'rachel',           'steps_day', 10250, 'steps', 'synced', 51.382, -2.362),  // Bath
   ],
 
   floors: [
@@ -122,5 +162,10 @@ export const DEMO_ENTRIES: Record<LeaderboardCategory, LeaderboardEntry[]> = {
     mk('fl6',  'Emma Davies',      'floors',  6,  'floors', 'gps', 53.798, -1.553),  // Leeds
     mk('fl7',  'Ryan Clarke',      'floors',  8,  'floors', 'gps', 52.207, 0.124),   // Cambridge
     mk('fl8',  'Liam Morris',      'floors', 14,  'floors', 'gps', 53.385, -1.468),  // Sheffield (very hilly)
+    mk('fl9',  'JamesW',           'floors',  7,  'floors', 'gps', 53.629, -1.660),  // Wakefield
+    mk('fl10', 'DanT92',           'floors',  9,  'floors', 'gps', 51.880, -0.420),  // Luton
+    mk('fl11', 'spiderman7',       'floors',  6,  'floors', 'gps', 52.913, -1.184),  // Derby
+    mk('fl12', 'TommoUK',          'floors', 10,  'floors', 'gps', 54.601, -5.930),  // Belfast
+    mk('fl13', 'kirsty_k',         'floors',  5,  'floors', 'gps', 51.621, -3.944),  // Swansea
   ],
 };
