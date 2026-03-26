@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Resend } from 'resend';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 const genAI  = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const REPORT_EVERY = 10;
-
-function getAdminDb() {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-    initializeApp({ credential: cert(serviceAccount) });
-  }
-  return getFirestore();
-}
 
 export async function POST(req: NextRequest) {
   const { message, userId, userName } = await req.json() as {
