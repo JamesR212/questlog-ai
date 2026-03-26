@@ -1,51 +1,22 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getStorage } from 'firebase-admin/storage';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60;
-
-function getAdminStorage() {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-    initializeApp({
-      credential: cert(serviceAccount),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-  }
-  return getStorage().bucket();
-}
-
-async function deleteFirebaseFile(storagePath: string) {
-  try {
-    const bucket = getAdminStorage();
-    await bucket.file(storagePath).delete();
-  } catch {
-    // best-effort — don't fail the request
-  }
-}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
 
-  const { blobUrl, mimeType: rawType, storagePath } = await req.json();
+  const { blobUrl, mimeType: rawType } = await req.json();
   if (!blobUrl) return NextResponse.json({ error: 'No blobUrl provided' }, { status: 400 });
 
-  // Normalise MIME types — Gemini accepts video/mov not video/quicktime
   const mimeType = rawType === 'video/quicktime' ? 'video/mov' : (rawType || 'video/mp4');
 
-  // Download file from Firebase Storage (server→server, no payload limit)
   const blobRes = await fetch(blobUrl);
   if (!blobRes.ok) {
-    if (storagePath) await deleteFirebaseFile(storagePath);
     return NextResponse.json({ error: `Failed to fetch file: ${blobRes.status}` }, { status: 500 });
   }
   const bytes = await blobRes.arrayBuffer();
 
-  // Delete from Firebase Storage immediately after downloading
-  if (storagePath) await deleteFirebaseFile(storagePath);
-
-  // Initiate resumable upload session with Gemini
   const initRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
     {
@@ -69,7 +40,6 @@ export async function POST(req: NextRequest) {
   const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
   if (!uploadUrl) return NextResponse.json({ error: 'No upload URL from Gemini' }, { status: 500 });
 
-  // Upload file bytes to Gemini
   const uploadRes = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
@@ -87,7 +57,6 @@ export async function POST(req: NextRequest) {
 
   let fileData = (await uploadRes.json()).file;
 
-  // Poll until Gemini finishes processing
   let attempts = 0;
   while (fileData.state === 'PROCESSING' && attempts < 15) {
     await new Promise(r => setTimeout(r, 2000));

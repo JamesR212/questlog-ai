@@ -1,8 +1,6 @@
 'use client';
 
-import { getDownloadURL, ref, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { useRef, useState } from 'react';
-import { storage } from '@/lib/firebase';
 
 interface FormAnalysis {
   exercise: string;
@@ -61,42 +59,46 @@ export default function FormAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Step 1: upload directly to Firebase Storage (no payload limits)
-      setLoadingMsg('Uploading file… (1/3)');
-      const ext      = fileRef.current.name.split('.').pop() ?? 'bin';
-      const path     = `form-analysis/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const fileRef2 = ref(storage, path);
+      // Steps 1-2: chunk file and stream directly into Gemini resumable upload
+      const CHUNK = 3 * 1024 * 1024; // 3 MB — safely under Vercel's 4.5 MB payload limit
+      const file  = fileRef.current;
+      const total = file.size;
+      const chunks = Math.ceil(total / CHUNK);
+      let uploadUrl = '';
+      let uploadData: { fileUri?: string; mimeType?: string; uploadUrl?: string; error?: string } = {};
 
-      const fileUrl = await new Promise<string>((resolve, reject) => {
-        const task = uploadBytesResumable(fileRef2, fileRef.current!);
-        const timer = setTimeout(() => { task.cancel(); reject(new Error('Upload timed out — check your connection')); }, 120_000);
-        task.on('state_changed', null,
-          (err) => { clearTimeout(timer); reject(err); },
-          async () => {
-            clearTimeout(timer);
-            try { resolve(await getDownloadURL(task.snapshot.ref)); }
-            catch (e) { reject(e); }
-          }
-        );
-      });
+      for (let i = 0; i < chunks; i++) {
+        const isLast = i === chunks - 1;
+        const start  = i * CHUNK;
+        const blob   = file.slice(start, start + CHUNK);
+        const mb     = Math.round(Math.min((i + 1) * CHUNK, total) / (1024 * 1024));
+        const totalMb = Math.round(total / (1024 * 1024));
+        setLoadingMsg(`Uploading… ${mb} / ${totalMb} MB (${i + 1}/${chunks})`);
 
-      // Step 2: tell our server to pull from Firebase Storage and forward to Gemini
-      setLoadingMsg('Sending to AI… (2/3)');
-      const geminiRes = await fetch('/api/gemini/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blobUrl: fileUrl, mimeType: fileRef.current.type, storagePath: path }),
-      });
-      const rawText = await geminiRes.text();
-      let uploadData: Record<string, unknown>;
-      try { uploadData = JSON.parse(rawText); }
-      catch { throw new Error(`HTTP ${geminiRes.status} — ${rawText.slice(0, 200)}`); }
-      if (!uploadData.fileUri) {
-        throw new Error(uploadData.error as string ?? 'Upload failed');
+        const res = await fetch('/api/gemini/upload-chunk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'x-upload-offset': String(start),
+            'x-total-size':    String(total),
+            'x-is-last':       isLast ? '1' : '0',
+            'x-mime-type':     file.type || 'video/mp4',
+            'x-upload-url':    uploadUrl,
+          },
+          body: blob,
+        });
+
+        const text = await res.text();
+        try { uploadData = JSON.parse(text); }
+        catch { throw new Error(`Chunk ${i + 1} failed (${res.status}): ${text.slice(0, 200)}`); }
+        if (!res.ok) throw new Error(uploadData.error ?? `Chunk ${i + 1} failed`);
+        if (uploadData.uploadUrl) uploadUrl = uploadData.uploadUrl;
       }
 
+      if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed — no file URI');
+
       // Step 3: analyse using the file URI
-      setLoadingMsg('Analysing form… (3/3)');
+      setLoadingMsg('Analysing form… (2/2)');
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
