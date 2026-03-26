@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Resend } from 'resend';
-import { db } from '@/lib/firebase';
-import {
-  collection, addDoc, serverTimestamp,
-  getCountFromServer, getDocs, orderBy, query, limit,
-} from 'firebase/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const genAI  = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-const REPORT_EVERY = 10; // send digest after every Nth submission
+const REPORT_EVERY = 10;
+
+function getAdminDb() {
+  if (!getApps().length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+    initializeApp({ credential: cert(serviceAccount) });
+  }
+  return getFirestore();
+}
 
 export async function POST(req: NextRequest) {
   const { message, userId, userName } = await req.json() as {
@@ -34,22 +39,23 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
     const result = await model.generateContent(`${systemPrompt}\n\nUser (${userName || 'a user'}) says: "${message}"`);
     const aiReply = result.response.text() ?? 'Thanks so much for sharing that — we really appreciate it!';
 
-    // Save to Firestore
-    await addDoc(collection(db, 'communityFeedback'), {
+    const db = getAdminDb();
+
+    // Save feedback
+    await db.collection('communityFeedback').add({
       userId,
       userName: userName || 'Anonymous',
       message,
       aiReply,
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
-    // Count total submissions — fire email digest every REPORT_EVERY
-    const snap   = await getCountFromServer(collection(db, 'communityFeedback'));
-    const total  = snap.data().count;
+    // Count total and trigger digest every REPORT_EVERY submissions
+    const countSnap = await db.collection('communityFeedback').count().get();
+    const total = countSnap.data().count;
 
     if (total % REPORT_EVERY === 0) {
-      // Fire-and-forget — don't block the response
-      sendDigest(total).catch(e => console.error('[feedback digest] error:', e));
+      sendDigest(db, total).catch(e => console.error('[feedback digest] error:', e));
     }
 
     return NextResponse.json({ reply: aiReply });
@@ -59,22 +65,20 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
   }
 }
 
-async function sendDigest(total: number) {
+async function sendDigest(db: FirebaseFirestore.Firestore, total: number) {
   const toEmail = process.env.FEEDBACK_EMAIL;
   if (!toEmail || !process.env.RESEND_API_KEY) return;
 
-  // Fetch the last REPORT_EVERY messages
-  const snap = await getDocs(
-    query(collection(db, 'communityFeedback'), orderBy('createdAt', 'desc'), limit(REPORT_EVERY))
-  );
+  const snap = await db.collection('communityFeedback')
+    .orderBy('createdAt', 'desc')
+    .limit(REPORT_EVERY)
+    .get();
 
-  const messages = snap.docs
-    .map(d => {
-      const data = d.data();
-      return `${data.userName}: "${data.message}"`;
-    })
-    .reverse() // chronological order
-    .join('\n');
+  const docs = snap.docs.reverse();
+  const messages = docs.map(d => {
+    const data = d.data();
+    return `${data.userName}: "${data.message}"`;
+  }).join('\n');
 
   const reportPrompt = `You are analysing the latest ${REPORT_EVERY} user feedback messages for GAINN, an AI life tracking app.
 
@@ -97,11 +101,10 @@ Bullet points. Ranked by how many people mentioned it.
 ## The real talk
 3–5 sentences. Straight gut-punch summary. What should the founder actually do right now based on this batch?`;
 
-  const model    = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const result   = await model.generateContent(reportPrompt);
-  const report   = result.response.text();
+  const model  = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const result = await model.generateContent(reportPrompt);
+  const report = result.response.text();
 
-  // Convert markdown to basic HTML for email
   const reportHtml = report
     .replace(/## (.+)/g, '<h2 style="margin-top:24px;color:#111">$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -122,7 +125,7 @@ Bullet points. Ranked by how many people mentioned it.
         <div style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb">
           <h2 style="margin-top:0;color:#111">Raw messages (last ${REPORT_EVERY})</h2>
           <div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:13px;line-height:1.7;border:1px solid #e5e7eb">
-            ${snap.docs.map(d => {
+            ${docs.map(d => {
               const data = d.data();
               return `<p style="margin:0 0 10px"><strong>${data.userName}</strong>: "${data.message}"</p>`;
             }).join('')}

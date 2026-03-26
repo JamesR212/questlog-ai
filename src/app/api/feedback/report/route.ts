@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+function getAdminDb() {
+  if (!getApps().length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+    initializeApp({ credential: cert(serviceAccount) });
+  }
+  return getFirestore();
+}
+
 export async function GET(req: NextRequest) {
-  const adminUid = process.env.NEXT_PUBLIC_ADMIN_UID;
+  const adminUid   = process.env.NEXT_PUBLIC_ADMIN_UID;
   const requestUid = req.nextUrl.searchParams.get('uid');
 
   if (!adminUid || requestUid !== adminUid) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 403 });
   }
 
-  // Fetch latest 100 feedback messages
-  const snap = await getDocs(
-    query(collection(db, 'communityFeedback'), orderBy('createdAt', 'desc'), limit(100))
-  );
+  const db   = getAdminDb();
+  const snap = await db.collection('communityFeedback')
+    .orderBy('createdAt', 'desc')
+    .limit(100)
+    .get();
 
   if (snap.empty) {
     return NextResponse.json({ report: 'No feedback yet.' });
