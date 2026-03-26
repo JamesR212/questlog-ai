@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { url: chunkUrl } = await put(
       `form-analysis-${uploadId}-chunk-${chunkIndex}`,
       chunk,
-      { access: 'public' }
+      { access: 'private' }
     );
 
     if (!isLast) {
