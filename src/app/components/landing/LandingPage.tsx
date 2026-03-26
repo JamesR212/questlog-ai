@@ -1788,13 +1788,14 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
   const easing = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
   const competitors = [
-    { name: 'Strava Premium', category: 'GPS & Fitness', price: '£8.99/mo' },
-    { name: 'MyFitnessPal', category: 'Nutrition Tracking', price: '£19.99/mo' },
-    { name: 'Notion', category: 'Productivity & Notes', price: '£16.50/mo' },
-    { name: 'Habitify', category: 'Habit Tracking', price: '£2.99/mo' },
-    { name: 'Sleep Cycle', category: 'Sleep Tracking', price: '£2.99/mo' },
-    { name: 'WaterMinder', category: 'Hydration', price: '£0.49/mo' },
-    { name: 'Spendee', category: 'Budget Tracking', price: '£2.99/mo' },
+    { name: 'Strava Premium',   category: 'GPS & Fitness',       price: '£8.99/mo'  },
+    { name: 'MyFitnessPal',     category: 'Nutrition Tracking',  price: '£19.99/mo' },
+    { name: 'Notion',           category: 'Productivity & Notes',price: '£16.50/mo' },
+    { name: 'Habitify',         category: 'Habit Tracking',      price: '£2.99/mo'  },
+    { name: 'Sleep Cycle',      category: 'Sleep Tracking',      price: '£2.99/mo'  },
+    { name: 'WaterMinder',      category: 'Hydration',           price: '£0.49/mo'  },
+    { name: 'Spendee',          category: 'Budget Tracking',     price: '£2.99/mo'  },
+    { name: 'Weight Watchers',  category: 'Weight Management',   price: '£18.95/mo' },
   ];
 
   const aiFeatures = [
@@ -1807,7 +1808,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
     { icon: '🍎', title: 'AI Food Suggestions', desc: 'Stuck on what to eat? AI suggests meals that fit your remaining macros.' },
   ];
 
-  const replacesApps = ['Strava', 'MyFitnessPal', 'Notion', 'Habitify', 'Sleep Cycle', 'Spendee', 'WaterMinder'];
+  const replacesApps = ['Strava', 'MyFitnessPal', 'Notion', 'Habitify', 'Sleep Cycle', 'Spendee', 'WaterMinder', 'Weight Watchers'];
 
   return (
     <div style={{ background: '#050508', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif', overflow: 'clip' }}>
@@ -2188,7 +2189,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>The hidden cost</div>
-            <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>Why pay for 7 apps?</h2>
+            <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 900, marginBottom: 16 }}>Why pay for 8 apps?</h2>
             <p style={{ fontSize: 17, color: '#71717a' }}>This is what the piecemeal approach costs you every month</p>
           </div>
 
@@ -2228,7 +2229,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
               transition: `all 0.5s ${easing} ${competitors.length * 0.07}s`,
             }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fca5a5' }}>TOTAL per month</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£54.94/mo</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#ef4444' }}>£73.89/mo</div>
             </div>
           </div>
 
@@ -2249,7 +2250,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
           >
             <div style={{ fontSize: 13, color: '#86efac', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>GAINN does ALL of this</div>
             <div style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 900, color: '#4ade80' }}>£2.99/mo</div>
-            <div style={{ fontSize: 15, color: '#86efac', marginTop: 8 }}>Save over £50 every month</div>
+            <div style={{ fontSize: 15, color: '#86efac', marginTop: 8 }}>Save over £70 every month</div>
           </div>
         </div>
       </section>
