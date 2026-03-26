@@ -62,8 +62,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (e) {
+  } catch (e: any) {
     console.error('[stripe portal] error:', e);
-    return NextResponse.json({ error: 'Failed to create portal session' }, { status: 500 });
+    const message = e?.message || String(e);
+    return NextResponse.json({ error: `Stripe error: ${message}` }, { status: 500 });
   }
 }
