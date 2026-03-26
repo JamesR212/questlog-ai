@@ -47,8 +47,12 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
     const total = countSnap.data().count;
     console.log(`[feedback] total count: ${total}, RESEND_API_KEY set: ${!!process.env.RESEND_API_KEY}, FEEDBACK_EMAIL: ${process.env.FEEDBACK_EMAIL || 'NOT SET'}`);
 
-    if (total % REPORT_EVERY === 0) {
-      console.log(`[feedback] triggering digest at count ${total}`);
+    // Trigger when we cross a multiple of REPORT_EVERY (handles skipped boundaries)
+    const prevTotal = total - 1;
+    const crossed = Math.floor(total / REPORT_EVERY) > Math.floor(prevTotal / REPORT_EVERY);
+    if (crossed) {
+      const milestone = Math.floor(total / REPORT_EVERY) * REPORT_EVERY;
+      console.log(`[feedback] triggering digest — crossed milestone ${milestone} at count ${total}`);
       sendDigest(db, total).catch(e => console.error('[feedback digest] error:', e));
     }
 
