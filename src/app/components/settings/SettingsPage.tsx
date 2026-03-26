@@ -110,6 +110,26 @@ export default function SettingsPage() {
     await signOut(auth);
   };
 
+  const [portalLoading, setPortalLoading] = useState(false);
+  const handleManageSubscription = async () => {
+    const { auth } = await import('@/lib/firebase');
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    setPortalLoading(true);
+    try {
+      const res  = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (e) {
+      console.error('[portal] error:', e);
+    }
+    setPortalLoading(false);
+  };
+
   const picRef = useRef<HTMLInputElement>(null);
 
   const [nameVal,      setNameVal]      = useState(userName);
@@ -450,6 +470,17 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-3">
         <p className="text-ql text-sm font-semibold">Account</p>
         <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
+          <button
+            onClick={handleManageSubscription}
+            disabled={portalLoading}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-ql-surface2 transition-colors border-b border-ql"
+          >
+            <div>
+              <span className="text-ql text-sm font-medium">Manage Subscription</span>
+              <p className="text-ql-3 text-[11px] mt-0.5">Cancel anytime — access continues until end of billing period</p>
+            </div>
+            <span className="text-ql-3 text-base">{portalLoading ? '…' : '→'}</span>
+          </button>
           <button
             onClick={handleSignOut}
             className="w-full flex items-center justify-between px-4 py-3.5 text-red-400 hover:bg-ql-surface2 transition-colors"
