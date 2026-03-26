@@ -573,7 +573,7 @@ export default function OnboardingFlow() {
                 Your voice matters to us
               </h2>
               <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-                We're building GAINN for you — and we genuinely want to hear about your experience. Whether it's something you love, something that could be better, or a feature you'd love to see, we want to know.
+                We're building GAINN for you — and we genuinely want to hear about your experience. Whether it's something you love, something that could be better, or a feature you'd like to see added, we want to know.
               </p>
               <p className="text-white/40 text-xs leading-relaxed max-w-xs">
                 Head to the <strong className="text-white/60">Community</strong> tab anytime to share feedback directly with our team.
