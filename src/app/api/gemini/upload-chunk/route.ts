@@ -34,10 +34,13 @@ export async function POST(req: NextRequest) {
     const allUrls = [...prevUrls, chunkUrl];
 
     // Download all chunks from Vercel Blob and concatenate
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN ?? '';
     const combined = new Uint8Array(totalSize);
     let writeOffset = 0;
     for (const url of allUrls) {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${blobToken}` },
+      });
       if (!res.ok) throw new Error(`Failed to fetch chunk from Blob: ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       combined.set(bytes, writeOffset);
