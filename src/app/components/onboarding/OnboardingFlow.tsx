@@ -227,7 +227,7 @@ export default function OnboardingFlow() {
             </div>
 
             <div className="mt-auto">
-              <button onClick={goNext} className="w-full py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">
+              <button onClick={goNext} className="w-full py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">
                 {goals.length === 0 ? 'Skip & Continue' : `Continue →`}
               </button>
             </div>
@@ -277,7 +277,7 @@ export default function OnboardingFlow() {
 
             <div className="mt-auto flex gap-3">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
-              <button onClick={goNext} className="flex-1 py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
             </div>
           </>
         )}
@@ -316,7 +316,7 @@ export default function OnboardingFlow() {
 
             <div className="mt-auto flex gap-3">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
-              <button onClick={goNext} className="flex-1 py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
             </div>
           </>
         )}
@@ -410,7 +410,7 @@ export default function OnboardingFlow() {
 
             <div className="mt-auto flex gap-3 pt-2">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
-              <button onClick={goNext} className="flex-1 py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
             </div>
           </>
         )}
@@ -509,7 +509,7 @@ export default function OnboardingFlow() {
 
             <div className="mt-4 flex gap-3">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
-              <button onClick={goNext} className="flex-1 py-4 bg-white text-[#08080f] font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
             </div>
           </>
         )}
@@ -601,9 +601,9 @@ export default function OnboardingFlow() {
                   disabled={countdown > 0}
                   className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all"
                   style={{
-                    background: countdown === 0 ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    background: countdown === 0 ? '#16a34a' : 'transparent',
                     color: countdown === 0 ? 'white' : 'rgba(255,255,255,0.2)',
-                    border: `2px solid ${countdown === 0 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                    border: `2px solid ${countdown === 0 ? '#16a34a' : 'rgba(255,255,255,0.1)'}`,
                     cursor: countdown === 0 ? 'pointer' : 'default',
                   }}
                 >
