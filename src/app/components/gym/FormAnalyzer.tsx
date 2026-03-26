@@ -81,7 +81,11 @@ export default function FormAnalyzer() {
       const params = new URLSearchParams({ pathname: fileRef.current.name || 'upload' });
       const putRes = await fetch(`https://vercel.com/api/blob/?${params}`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${clientToken}` },
+        headers: {
+          Authorization: `Bearer ${clientToken}`,
+          'x-api-version': '12',
+          'x-vercel-blob-access': 'public',
+        },
         body: fileRef.current,
       });
       if (!putRes.ok) {
