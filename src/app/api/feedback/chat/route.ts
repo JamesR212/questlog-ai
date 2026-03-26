@@ -110,7 +110,7 @@ Bullet points. Ranked by how many people mentioned it.
     .replace(/\n\n/g, '<br/><br/>');
 
   await resend.emails.send({
-    from:    'GAINN Feedback <feedback@gainn.app>',
+    from:    'GAINN Feedback <onboarding@resend.dev>',
     to:      toEmail,
     subject: `GAINN Feedback Digest — ${total} submissions total`,
     html: `
