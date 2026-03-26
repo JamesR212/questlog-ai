@@ -45,8 +45,10 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
     // Count total and trigger digest every REPORT_EVERY submissions
     const countSnap = await db.collection('communityFeedback').count().get();
     const total = countSnap.data().count;
+    console.log(`[feedback] total count: ${total}, RESEND_API_KEY set: ${!!process.env.RESEND_API_KEY}, FEEDBACK_EMAIL: ${process.env.FEEDBACK_EMAIL || 'NOT SET'}`);
 
     if (total % REPORT_EVERY === 0) {
+      console.log(`[feedback] triggering digest at count ${total}`);
       sendDigest(db, total).catch(e => console.error('[feedback digest] error:', e));
     }
 
@@ -59,7 +61,11 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
 
 async function sendDigest(db: FirebaseFirestore.Firestore, total: number) {
   const toEmail = process.env.FEEDBACK_EMAIL;
-  if (!toEmail || !process.env.RESEND_API_KEY) return;
+  if (!toEmail || !process.env.RESEND_API_KEY) {
+    console.error('[feedback digest] missing env vars — RESEND_API_KEY or FEEDBACK_EMAIL not set');
+    return;
+  }
+  console.log(`[feedback digest] sending to ${toEmail}`);
 
   const snap = await db.collection('communityFeedback')
     .orderBy('createdAt', 'desc')
