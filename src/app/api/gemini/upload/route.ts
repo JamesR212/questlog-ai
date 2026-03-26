@@ -1,25 +1,49 @@
-import { del } from '@vercel/blob';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getStorage } from 'firebase-admin/storage';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60;
+
+function getAdminStorage() {
+  if (!getApps().length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+    initializeApp({
+      credential: cert(serviceAccount),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+  }
+  return getStorage().bucket();
+}
+
+async function deleteFirebaseFile(storagePath: string) {
+  try {
+    const bucket = getAdminStorage();
+    await bucket.file(storagePath).delete();
+  } catch {
+    // best-effort — don't fail the request
+  }
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
 
-  const { blobUrl, mimeType: rawType } = await req.json();
+  const { blobUrl, mimeType: rawType, storagePath } = await req.json();
   if (!blobUrl) return NextResponse.json({ error: 'No blobUrl provided' }, { status: 400 });
 
   // Normalise MIME types — Gemini accepts video/mov not video/quicktime
   const mimeType = rawType === 'video/quicktime' ? 'video/mov' : (rawType || 'video/mp4');
 
-  // Download file from Vercel Blob (server→server, no payload limit)
+  // Download file from Firebase Storage (server→server, no payload limit)
   const blobRes = await fetch(blobUrl);
   if (!blobRes.ok) {
-    await del(blobUrl);
-    return NextResponse.json({ error: `Failed to fetch blob: ${blobRes.status}` }, { status: 500 });
+    if (storagePath) await deleteFirebaseFile(storagePath);
+    return NextResponse.json({ error: `Failed to fetch file: ${blobRes.status}` }, { status: 500 });
   }
   const bytes = await blobRes.arrayBuffer();
+
+  // Delete from Firebase Storage immediately after downloading
+  if (storagePath) await deleteFirebaseFile(storagePath);
 
   // Initiate resumable upload session with Gemini
   const initRes = await fetch(
@@ -36,8 +60,6 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ file: { display_name: 'upload' } }),
     }
   );
-
-  await del(blobUrl); // Delete blob regardless of Gemini outcome
 
   if (!initRes.ok) {
     const err = await initRes.text();

@@ -1,7 +1,8 @@
 'use client';
 
-import { upload } from '@vercel/blob/client';
+import { getDownloadURL, ref, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { useRef, useState } from 'react';
+import { storage } from '@/lib/firebase';
 
 interface FormAnalysis {
   exercise: string;
@@ -60,25 +61,31 @@ export default function FormAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
+      // Step 1: upload directly to Firebase Storage (no payload limits)
       setLoadingMsg('Uploading file… (1/3)');
-      const blob = await Promise.race([
-        upload(fileRef.current.name || 'upload', fileRef.current, {
-          access: 'public',
-          handleUploadUrl: '/api/blob/upload',
-          multipart: false,
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Upload timed out after 2 minutes — check your connection')), 120_000)
-        ),
-      ]);
+      const ext      = fileRef.current.name.split('.').pop() ?? 'bin';
+      const path     = `form-analysis/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const fileRef2 = ref(storage, path);
 
-      // Step 2: tell our server to pull from Blob and forward to Gemini
+      const fileUrl = await new Promise<string>((resolve, reject) => {
+        const task = uploadBytesResumable(fileRef2, fileRef.current!);
+        const timer = setTimeout(() => { task.cancel(); reject(new Error('Upload timed out — check your connection')); }, 120_000);
+        task.on('state_changed', null,
+          (err) => { clearTimeout(timer); reject(err); },
+          async () => {
+            clearTimeout(timer);
+            try { resolve(await getDownloadURL(task.snapshot.ref)); }
+            catch (e) { reject(e); }
+          }
+        );
+      });
+
+      // Step 2: tell our server to pull from Firebase Storage and forward to Gemini
       setLoadingMsg('Sending to AI… (2/3)');
       const geminiRes = await fetch('/api/gemini/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blobUrl: blob.url, mimeType: fileRef.current.type }),
+        body: JSON.stringify({ blobUrl: fileUrl, mimeType: fileRef.current.type, storagePath: path }),
       });
       const rawText = await geminiRes.text();
       let uploadData: Record<string, unknown>;
