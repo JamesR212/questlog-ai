@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { upload } from '@vercel/blob/client';
 
 interface FormAnalysis {
   exercise: string;
@@ -60,19 +59,36 @@ export default function FormAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
-      setLoadingMsg('Uploading file… (1/3)');
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Upload timed out — check your connection and try again')), 90000)
-      );
-      const blob = await Promise.race([
-        upload(fileRef.current.name || 'upload', fileRef.current, {
-          access: 'public',
-          handleUploadUrl: '/api/blob/upload',
-          multipart: false,
+      // Step 1a: get a client token from our server
+      setLoadingMsg('Getting upload token… (1/3)');
+      const tokenRes = await fetch('/api/blob/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'blob.generate-client-token',
+          payload: { pathname: fileRef.current.name || 'upload', clientPayload: null, multipart: false },
         }),
-        timeout,
-      ]);
+      });
+      if (!tokenRes.ok) {
+        const txt = await tokenRes.text();
+        throw new Error(`Token endpoint ${tokenRes.status}: ${txt.slice(0, 200)}`);
+      }
+      const { clientToken, error: tokenErr } = await tokenRes.json();
+      if (!clientToken) throw new Error(`No token returned: ${tokenErr ?? 'unknown'}`);
+
+      // Step 1b: PUT file directly to Vercel Blob API
+      setLoadingMsg('Uploading to storage… (1/3)');
+      const params = new URLSearchParams({ pathname: fileRef.current.name || 'upload' });
+      const putRes = await fetch(`https://vercel.com/api/blob/?${params}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${clientToken}` },
+        body: fileRef.current,
+      });
+      if (!putRes.ok) {
+        const txt = await putRes.text();
+        throw new Error(`Blob PUT ${putRes.status}: ${txt.slice(0, 300)}`);
+      }
+      const blob = await putRes.json();
 
       // Step 2: tell our server to pull from Blob and forward to Gemini
       setLoadingMsg('Sending to AI… (2/3)');
