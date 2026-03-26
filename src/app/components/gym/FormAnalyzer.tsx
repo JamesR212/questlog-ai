@@ -69,6 +69,7 @@ export default function FormAnalyzer() {
         upload(fileRef.current.name || 'upload', fileRef.current, {
           access: 'public',
           handleUploadUrl: '/api/blob/upload',
+          multipart: false,
         }),
         timeout,
       ]);
