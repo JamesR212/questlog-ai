@@ -7,12 +7,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Handle token generation request from @vercel/blob/client upload()
     if (body.type === 'blob.generate-client-token') {
-      const { pathname, callbackUrl, multipart } = body.payload;
+      const { pathname } = body.payload;
       const clientToken = await generateClientTokenFromReadWriteToken({
         token: process.env.BLOB_READ_WRITE_TOKEN!,
         pathname,
-        onUploadCompleted: { callbackUrl },
-        maximumSizeInBytes: 30 * 1024 * 1024,
+        maximumSizeInBytes: 35 * 1024 * 1024,
         allowedContentTypes: ['image/*', 'video/*'],
       });
       return NextResponse.json({ clientToken });

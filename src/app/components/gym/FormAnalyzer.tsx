@@ -33,8 +33,8 @@ export default function FormAnalyzer() {
     setAnalysis(null);
     setError(null);
 
-    if (file.size > 30 * 1024 * 1024) {
-      setError('File too large — please keep clips under 25 MB. Trim your video or reduce resolution in your phone settings.');
+    if (file.size > 35 * 1024 * 1024) {
+      setError('File too large — please keep clips under 35 MB. Trim your video or reduce resolution in your phone settings.');
       return;
     }
 
@@ -63,7 +63,7 @@ export default function FormAnalyzer() {
       // Step 1: upload directly to Vercel Blob (bypasses function payload limits)
       setLoadingMsg('Uploading file… (1/3)');
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Upload timed out — check your connection and try again')), 30000)
+        setTimeout(() => reject(new Error('Upload timed out — check your connection and try again')), 90000)
       );
       const blob = await Promise.race([
         upload(fileRef.current.name || 'upload', fileRef.current, {
