@@ -1258,7 +1258,7 @@ function ThemeShowcaseSection() {
   const yOffset     = [12,      6,   0,   6,   12];
   const delays      = [180,    90,   0,  90,  180];
 
-  const mobileXPos    = [-119, -61, 0, 61, 119];
+  const mobileXPos    = [-122, -63, 0, 63, 122];
   const mobileScales  = [0.690, 0.868, 1.113, 0.868, 0.690];
   const mobileYOffset = [28,    14,   0,  14,   28];
 
