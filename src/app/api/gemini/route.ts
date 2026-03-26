@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60;
+
 // ── Gemini File API upload (supports files up to 2GB) ─────────────────────────
 async function uploadToFileAPI(base64Data: string, mimeType: string, apiKey: string): Promise<{ uri: string; name: string }> {
   const bytes = Buffer.from(base64Data, 'base64');
@@ -361,11 +363,27 @@ Rules:
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const mimeType = context.mimeType ?? 'video/mp4';
 
-      // Accept pre-uploaded fileUri (from /api/gemini/upload) or fall back to base64
+      // Accept pre-uploaded fileUri (from /api/gemini/upload-chunk) or fall back to base64
       let fileUri: string;
       let fileName: string | null = null;
       if (context.fileUri) {
         fileUri = context.fileUri;
+        fileName = context.fileName ?? null;
+        // Poll until Gemini finishes processing the file (videos can take 30-60s)
+        if (fileName) {
+          let attempts = 0;
+          let state = 'PROCESSING';
+          while (state === 'PROCESSING' && attempts < 25) {
+            await new Promise(r => setTimeout(r, 2000));
+            const s = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`
+            );
+            const d = await s.json();
+            state = d.state ?? 'ACTIVE';
+            attempts++;
+          }
+          if (state === 'FAILED') throw new Error('Gemini file processing failed');
+        }
       } else {
         const uploaded = await uploadToFileAPI(context.mediaBase64 ?? '', mimeType, apiKey);
         fileUri = uploaded.uri;

@@ -87,23 +87,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Gemini upload failed: ${err}` }, { status: 500 });
     }
 
-    let fileData = (await uploadRes.json()).file;
+    const fileData = (await uploadRes.json()).file;
 
-    // Poll until Gemini finishes processing
-    let attempts = 0;
-    while (fileData?.state === 'PROCESSING' && attempts < 15) {
-      await new Promise(r => setTimeout(r, 2000));
-      const statusRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/${fileData.name}?key=${apiKey}`
-      );
-      fileData = await statusRes.json();
-      attempts++;
-    }
-
-    if (fileData?.state === 'FAILED') {
-      return NextResponse.json({ error: 'Gemini file processing failed' }, { status: 500 });
-    }
-
+    // Return immediately — polling happens in the analysis route
     return NextResponse.json({
       fileUri:  fileData.uri  as string,
       fileName: fileData.name as string,

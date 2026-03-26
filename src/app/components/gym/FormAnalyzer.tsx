@@ -66,7 +66,7 @@ export default function FormAnalyzer() {
       const chunks   = Math.ceil(total / CHUNK);
       const uploadId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
       const chunkUrls: string[] = [];
-      let uploadData: { fileUri?: string; mimeType?: string; chunkUrl?: string; error?: string } = {};
+      let uploadData: { fileUri?: string; fileName?: string; mimeType?: string; chunkUrl?: string; error?: string } = {};
 
       for (let i = 0; i < chunks; i++) {
         const isLast  = i === chunks - 1;
@@ -106,7 +106,7 @@ export default function FormAnalyzer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'analyze_form_video',
-          context: { fileUri: uploadData.fileUri, mimeType: uploadData.mimeType },
+          context: { fileUri: uploadData.fileUri, fileName: uploadData.fileName, mimeType: uploadData.mimeType },
         }),
       });
       const data = await res.json();
