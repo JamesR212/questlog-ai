@@ -52,7 +52,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'sections' | 'feedback';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'sections' | 'feedback' | 'terms';
 
 const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
   { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
@@ -90,6 +90,7 @@ export default function OnboardingFlow() {
   const [direction,         setDirection]         = useState<'forward' | 'back'>('forward');
   const [animating,         setAnimating]         = useState(false);
   const [countdown,         setCountdown]         = useState(5);
+  const [termsAccepted,     setTermsAccepted]     = useState(false);
 
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
@@ -100,6 +101,7 @@ export default function OnboardingFlow() {
     list.push('theme');
     list.push('sections');
     list.push('feedback');
+    list.push('terms');
     return list;
   }, [goals]);
 
@@ -512,6 +514,53 @@ export default function OnboardingFlow() {
           </>
         )}
 
+        {/* ── Terms & Disclaimer slide ── */}
+        {currentStep === 'terms' && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-5">
+            <div className="text-5xl">📋</div>
+            <h2 className="text-2xl font-black text-white leading-tight">Before you begin</h2>
+            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-5 text-left flex flex-col gap-3">
+              <p className="text-white/80 text-sm font-semibold">GAINN Disclaimer</p>
+              <p className="text-white/50 text-xs leading-relaxed">
+                GAINN provides AI-generated suggestions for fitness, nutrition, finance, and wellness. This content is for <strong className="text-white/70">informational purposes only</strong> and is <strong className="text-white/70">not a substitute</strong> for professional medical, dietary, financial, or fitness advice.
+              </p>
+              <p className="text-white/50 text-xs leading-relaxed">
+                AI features are powered by Google Gemini and other third-party services. GAINN is not responsible for the accuracy, completeness, or outcomes of any AI-generated content. Always consult a qualified professional before making decisions about your health or finances.
+              </p>
+              <p className="text-white/50 text-xs leading-relaxed">
+                By continuing, you agree that GAINN and its developers shall not be held liable for any loss, injury, or damage arising from your use of this app or its AI features.
+              </p>
+            </div>
+
+            {/* Checkbox */}
+            <button
+              onClick={() => setTermsAccepted(v => !v)}
+              className="flex items-center gap-3 max-w-sm w-full"
+            >
+              <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all ${termsAccepted ? 'bg-white border-white' : 'border-white/30 bg-transparent'}`}>
+                {termsAccepted && <span className="text-black text-xs font-black">✓</span>}
+              </div>
+              <span className="text-white/60 text-xs text-left leading-relaxed">
+                I understand and agree to these terms
+              </span>
+            </button>
+
+            <button
+              onClick={finish}
+              disabled={!termsAccepted}
+              className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all mt-1"
+              style={{
+                background: termsAccepted ? 'rgba(255,255,255,0.15)' : 'transparent',
+                color: termsAccepted ? 'white' : 'rgba(255,255,255,0.2)',
+                border: `2px solid ${termsAccepted ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                cursor: termsAccepted ? 'pointer' : 'default',
+              }}
+            >
+              Let&apos;s Go →
+            </button>
+          </div>
+        )}
+
         {/* ── Feedback slide ── */}
         {currentStep === 'feedback' && (() => {
           const r = 28;
@@ -548,7 +597,7 @@ export default function OnboardingFlow() {
                   <text x="36" y="42" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="18" fontWeight="bold">{countdown > 0 ? countdown : '✓'}</text>
                 </svg>
                 <button
-                  onClick={finish}
+                  onClick={goNext}
                   disabled={countdown > 0}
                   className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all"
                   style={{
