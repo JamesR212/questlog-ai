@@ -13,6 +13,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         pathname,
         maximumSizeInBytes: 35 * 1024 * 1024,
         allowedContentTypes: ['image/*', 'video/*'],
+        validUntil: Date.now() + 5 * 60 * 1000, // 5 minutes
       });
       return NextResponse.json({ clientToken });
     }
