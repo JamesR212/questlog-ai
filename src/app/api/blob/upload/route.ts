@@ -14,6 +14,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         onUploadCompleted: { callbackUrl },
         maximumSizeInBytes: 30 * 1024 * 1024,
         allowedContentTypes: ['image/*', 'video/*'],
+        multipart,
       });
       return NextResponse.json({ clientToken });
     }
