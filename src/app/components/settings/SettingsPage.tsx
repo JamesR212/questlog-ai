@@ -122,10 +122,13 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      console.log('[portal] response:', JSON.stringify(data));
+      if (data.url) window.location.href = data.url;
+      else alert(`Portal error: ${data.error || 'No URL returned'}`);
     } catch (e) {
       console.error('[portal] error:', e);
+      alert(`Portal error: ${e}`);
     }
     setPortalLoading(false);
   };

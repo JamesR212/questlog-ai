@@ -10,7 +10,7 @@ import type { User } from 'firebase/auth';
 import AuthScreen from './components/auth/AuthScreen';
 import LandingPage from './components/landing/LandingPage';
 import SubscriptionGate from './components/subscription/SubscriptionGate';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import NavBar from './components/shared/NavBar';
 import LevelUpModal from './components/shared/LevelUpModal';
@@ -86,14 +86,7 @@ export default function Home() {
           const res = await fetch(`/api/stripe/verify?session_id=${sessionId}`);
           const data = await res.json();
           if (data.userId === userId) {
-            await setDoc(doc(db, 'subscriptions', userId), {
-              status: data.status,
-              priceId: data.priceId,
-              currentPeriodEnd: data.currentPeriodEnd,
-              customerId: data.customerId,
-              subscriptionId: data.subscriptionId,
-              updatedAt: new Date().toISOString(),
-            });
+            // Firestore write is handled server-side in the verify route
             setSubscribed(true);
             return;
           }

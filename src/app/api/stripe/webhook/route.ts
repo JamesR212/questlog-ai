@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub        = event.data.object as Stripe.Subscription & { current_period_end: number };
