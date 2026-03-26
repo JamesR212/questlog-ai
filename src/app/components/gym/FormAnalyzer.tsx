@@ -32,8 +32,8 @@ export default function FormAnalyzer() {
     setAnalysis(null);
     setError(null);
 
-    if (file.size > 35 * 1024 * 1024) {
-      setError('File too large — please keep clips under 35 MB. Trim your video or reduce resolution in your phone settings.');
+    if (file.size > 25 * 1024 * 1024) {
+      setError('File too large — please keep clips under 25 MB. Trim your video or reduce resolution in your phone settings.');
       return;
     }
 
@@ -175,7 +175,7 @@ export default function FormAnalyzer() {
             <span className="text-4xl">📹</span>
             <div className="text-center">
               <p className="text-ql text-sm font-medium">Drop a video or photo here</p>
-              <p className="text-ql-3 text-xs mt-1">or tap to browse — max 25 MB, keep clips under 30 seconds</p>
+              <p className="text-ql-3 text-xs mt-1">or tap to browse — max 25 MB, keep clips under 8 seconds</p>
             </div>
             <div className="flex gap-2 mt-1">
               <button
