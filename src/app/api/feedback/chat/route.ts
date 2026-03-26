@@ -104,9 +104,11 @@ Bullet points. Ranked by how many people mentioned it.
 ## The real talk
 3–5 sentences. Straight gut-punch summary. What should the founder actually do right now based on this batch?`;
 
+  console.log(`[feedback digest] fetched ${docs.length} messages, calling Gemini...`);
   const model  = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const result = await model.generateContent(reportPrompt);
   const report = result.response.text();
+  console.log(`[feedback digest] Gemini done, sending email via Resend...`);
 
   const reportHtml = report
     .replace(/## (.+)/g, '<h2 style="margin-top:24px;color:#111">$1</h2>')
@@ -115,7 +117,7 @@ Bullet points. Ranked by how many people mentioned it.
     .replace(/(<li[\s\S]*?<\/li>)/g, '<ul style="padding-left:20px">$1</ul>')
     .replace(/\n\n/g, '<br/><br/>');
 
-  await resend.emails.send({
+  const emailResult = await resend.emails.send({
     from:    'GAINN Feedback <onboarding@resend.dev>',
     to:      toEmail,
     subject: `GAINN Feedback Digest — ${total} submissions total`,
@@ -140,4 +142,5 @@ Bullet points. Ranked by how many people mentioned it.
       </div>
     `,
   });
+  console.log(`[feedback digest] Resend result:`, JSON.stringify(emailResult));
 }
