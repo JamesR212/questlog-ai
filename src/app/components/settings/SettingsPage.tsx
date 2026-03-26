@@ -15,6 +15,8 @@ function kgToStLbs(kg: number): { st: number; lbs: number } {
 function stLbsToKg(st: number, lbs: number): number {
   return Math.round(((st * 14) + lbs) / 2.20462 * 10) / 10;
 }
+function kgToLbs(kg: number): number { return Math.round(kg * 2.20462); }
+function lbsToKg(lbs: number): number { return Math.round(lbs / 2.20462 * 10) / 10; }
 
 // ── Image resize helper ────────────────────────────────────────────────────────
 function resizeImageToBase64(file: File, size = 200): Promise<string> {
@@ -144,19 +146,25 @@ export default function SettingsPage() {
   const [heightVal,    setHeightVal]    = useState(String(characterAppearance.height ?? ''));
 
   // Weight displayed in chosen unit
+  // Weight displayed in chosen unit
   const initWeight = (() => {
     const kg = characterAppearance.startingWeight ?? 0;
     if (weightUnit === 'st_lbs') { const { st, lbs } = kgToStLbs(kg); return { st: String(st), lbs: String(lbs) }; }
+    if (weightUnit === 'lbs') return { singleLbs: String(kgToLbs(kg)) };
     return { kg: String(kg) };
   })();
-  const [weightKgVal,  setWeightKgVal]  = useState(initWeight.kg ?? '');
-  const [weightStVal,  setWeightStVal]  = useState(initWeight.st ?? '');
-  const [weightLbsVal, setWeightLbsVal] = useState(initWeight.lbs ?? '');
+  const [weightKgVal,     setWeightKgVal]     = useState(initWeight.kg ?? '');
+  const [weightStVal,     setWeightStVal]     = useState(initWeight.st ?? '');
+  const [weightLbsVal,    setWeightLbsVal]    = useState(initWeight.lbs ?? '');
+  const [weightSingleLbs, setWeightSingleLbs] = useState(initWeight.singleLbs ?? '');
 
   const saveWeight = () => {
     if (weightUnit === 'kg') {
       const v = parseFloat(weightKgVal);
       if (!isNaN(v) && v > 0) setCharacterAppearance({ ...characterAppearance, startingWeight: v });
+    } else if (weightUnit === 'lbs') {
+      const v = parseInt(weightSingleLbs);
+      if (!isNaN(v) && v > 0) setCharacterAppearance({ ...characterAppearance, startingWeight: lbsToKg(v) });
     } else {
       const st = parseInt(weightStVal); const lbs = parseInt(weightLbsVal);
       if (!isNaN(st) && !isNaN(lbs)) setCharacterAppearance({ ...characterAppearance, startingWeight: stLbsToKg(st, lbs) });
@@ -383,15 +391,16 @@ export default function SettingsPage() {
             <span className="text-ql-3 text-sm w-24 shrink-0">Weight unit</span>
             <div className="flex-1 flex justify-end">
               <div className="flex gap-1 bg-ql-surface2 rounded-lg p-0.5 border border-ql">
-                {(['kg', 'st_lbs'] as const).map(u => (
+                {(['kg', 'lbs', 'st_lbs'] as const).map(u => (
                   <button key={u} onClick={() => {
                     const kg = characterAppearance.startingWeight ?? 0;
                     if (u === 'st_lbs') { const { st, lbs } = kgToStLbs(kg); setWeightStVal(String(st)); setWeightLbsVal(String(lbs)); }
+                    else if (u === 'lbs') { setWeightSingleLbs(String(kgToLbs(kg))); }
                     else { setWeightKgVal(String(kg)); }
                     setWeightUnit(u);
                   }}
                     className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${weightUnit === u ? 'bg-ql-accent text-white' : 'text-ql-3'}`}>
-                    {u === 'kg' ? 'kg' : 'st & lbs'}
+                    {u === 'kg' ? 'kg' : u === 'lbs' ? 'lbs' : 'st & lbs'}
                   </button>
                 ))}
               </div>
@@ -434,8 +443,18 @@ export default function SettingsPage() {
                 onChange={e => setWeightKgVal(e.target.value)}
                 onBlur={saveWeight}
                 onKeyDown={e => { if (e.key === 'Enter') { saveWeight(); (e.target as HTMLInputElement).blur(); }}}
-                placeholder="80 kg"
+                placeholder="80"
                 className="flex-1 bg-transparent text-ql text-sm outline-none text-right" />
+            ) : weightUnit === 'lbs' ? (
+              <div className="flex-1 flex items-center justify-end gap-2">
+                <input type="number" value={weightSingleLbs}
+                  onChange={e => setWeightSingleLbs(e.target.value)}
+                  onBlur={saveWeight}
+                  onKeyDown={e => { if (e.key === 'Enter') { saveWeight(); (e.target as HTMLInputElement).blur(); }}}
+                  placeholder="176"
+                  className="flex-1 bg-transparent text-ql text-sm outline-none text-right" />
+                <span className="text-ql-3 text-xs">lbs</span>
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-end gap-2">
                 <input type="number" value={weightStVal}

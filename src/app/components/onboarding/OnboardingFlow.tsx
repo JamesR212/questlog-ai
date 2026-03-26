@@ -84,7 +84,7 @@ export default function OnboardingFlow() {
   const [weightVal,         setWeightVal]         = useState('75');
   const [ageVal,            setAgeVal]            = useState('25');
   const [activity,          setActivity]          = useState<ActivityLevel>('moderate');
-  const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lb'>('kg');
+  const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lbs'>('kg');
   const [selectedTheme,     setSelectedTheme]     = useState<Theme>('dark');
   const [disabledOnboarding, setDisabledOnboarding] = useState<string[]>([]);
   const [direction,         setDirection]         = useState<'forward' | 'back'>('forward');
@@ -141,7 +141,7 @@ export default function OnboardingFlow() {
     if (!goals.includes('save_money') && !goals.includes('quit_vices')) setFinancialMode(false);
     if (disabledOnboarding.length > 0) setDisabledSections(disabledOnboarding);
     const rawWeight = parseFloat(weightVal) || 75;
-    const weightKg  = weightUnit === 'lb' ? Math.round(rawWeight * 0.453592) : rawWeight;
+    const weightKg  = weightUnit === 'lbs' ? Math.round(rawWeight * 0.453592) : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
     setHasOnboarded();
   };
@@ -350,7 +350,7 @@ export default function OnboardingFlow() {
               <div className="flex items-center justify-between">
                 <label className="text-white/50 text-xs font-medium">Weight unit</label>
                 <div className="flex bg-white/8 rounded-xl overflow-hidden border border-white/10">
-                  {(['kg', 'lb'] as const).map(u => (
+                  {(['kg', 'lbs'] as const).map(u => (
                     <button key={u} onClick={() => setWeightUnit(u)}
                       className={`px-4 py-1.5 text-xs font-semibold transition-colors ${weightUnit === u ? 'bg-white/20 text-white' : 'text-white/40'}`}
                     >{u}</button>

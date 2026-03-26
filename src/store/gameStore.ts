@@ -52,7 +52,7 @@ interface GameStore {
   levelUpMessage: string;
   userName: string;
   profilePicUrl: string;
-  weightUnit: 'kg' | 'st_lbs';
+  weightUnit: 'kg' | 'st_lbs' | 'lbs';
   currencySymbol: string;
   hasOnboarded: boolean;
   accountCreatedDate: string | null;
@@ -89,7 +89,7 @@ interface GameStore {
   setSavingsGoal: (goal: number) => void;
   setUserName: (name: string) => void;
   setProfilePicUrl: (url: string) => void;
-  setWeightUnit: (unit: 'kg' | 'st_lbs') => void;
+  setWeightUnit: (unit: 'kg' | 'st_lbs' | 'lbs') => void;
   setCurrencySymbol: (symbol: string) => void;
   setHasOnboarded: () => void;
   setCompetitionMode: (on: boolean) => void;
