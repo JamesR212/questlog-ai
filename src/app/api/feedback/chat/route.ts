@@ -53,7 +53,8 @@ Never promise specific timelines. Never say "I'll pass this on" — say "our tea
     if (crossed) {
       const milestone = Math.floor(total / REPORT_EVERY) * REPORT_EVERY;
       console.log(`[feedback] triggering digest — crossed milestone ${milestone} at count ${total}`);
-      sendDigest(db, total).catch(e => console.error('[feedback digest] error:', e));
+      // Must await — Vercel kills the function as soon as response is sent
+      await sendDigest(db, total);
     }
 
     return NextResponse.json({ reply: aiReply });
