@@ -1199,14 +1199,17 @@ const THEME_PHONES = [
   { label: 'Green', accent: '#16a34a', img: '/theme-green.jpg' },
 ];
 
-function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
+function ThemePhoneMini({ t, active }: { t: typeof THEME_PHONES[0]; active?: boolean }) {
   return (
     <div style={{
       width: 130,
       background: '#0d0d14',
       borderRadius: 20,
-      border: '2px solid rgba(255,255,255,0.12)',
-      boxShadow: '0 0 0 1px rgba(0,0,0,0.6), 0 32px 64px rgba(0,0,0,0.55)',
+      border: active ? `2px solid ${t.accent}` : '2px solid rgba(255,255,255,0.12)',
+      boxShadow: active
+        ? `0 0 0 1px rgba(0,0,0,0.6), 0 32px 64px rgba(0,0,0,0.55), 0 0 0 3px ${t.accent}55`
+        : '0 0 0 1px rgba(0,0,0,0.6), 0 32px 64px rgba(0,0,0,0.55)',
+      transition: 'border-color 0.4s ease, box-shadow 0.4s ease',
       position: 'relative',
       overflow: 'hidden',
       flexShrink: 0,
@@ -1238,7 +1241,8 @@ function ThemePhoneMini({ t }: { t: typeof THEME_PHONES[0] }) {
 
 function ThemeShowcaseSection() {
   const { ref, visible } = useFadeIn(0.15);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile]   = useState(false);
+  const [activeIdx, setActiveIdx] = useState(2); // centre phone by default
   const AE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
   useEffect(() => {
@@ -1249,12 +1253,11 @@ function ThemeShowcaseSection() {
   }, []);
 
   const xPos        = [-300, -150,   0, 150, 300];
-  const scales      = [1.012, 1.095, 1.177, 1.095, 1.012]; // +7%
+  const scales      = [1.012, 1.095, 1.177, 1.095, 1.012];
   const zIdx        = [1,       2,   4,   2,    1];
   const yOffset     = [12,      6,   0,   6,   12];
   const delays      = [180,    90,   0,  90,  180];
 
-  // Mobile: tighter spacing + stronger depth effect, +7% size, +2% spacing
   const mobileXPos    = [-119, -61, 0, 61, 119];
   const mobileScales  = [0.690, 0.868, 1.113, 0.868, 0.690];
   const mobileYOffset = [28,    14,   0,  14,   28];
@@ -1273,46 +1276,82 @@ function ThemeShowcaseSection() {
         </p>
       </div>
 
+      {/* Pagination dots — above fan */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginBottom: 24 }}>
+        {THEME_PHONES.map((t, i) => {
+          const isActive = i === activeIdx;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(i)}
+              style={{
+                width: isActive ? 22 : 7,
+                height: 7,
+                borderRadius: 4,
+                background: isActive ? t.accent : 'rgba(255,255,255,0.25)',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                transition: `width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease`,
+              }}
+            />
+          );
+        })}
+      </div>
+
       {/* Fan */}
       <div style={{ position: 'relative', height: isMobile ? 370 : 460, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {THEME_PHONES.map((t, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              zIndex: zIdx[i],
-              transform: visible
-                ? isMobile
-                  ? `translateX(${mobileXPos[i]}px) translateY(${mobileYOffset[i]}px) scale(${mobileScales[i]})`
-                  : `translateX(${xPos[i]}px) translateY(${yOffset[i]}px) scale(${scales[i]})`
-                : `translateX(0px) translateY(30px) scale(0.65)`,
-              opacity: visible ? 1 : 0,
-              transition: `transform 1.6s ${AE} ${delays[i]}ms, opacity 1.1s ${AE} ${delays[i]}ms`,
-            }}
-          >
-            {/* Glow */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 24,
-              background: `radial-gradient(ellipse at 50% 55%, ${t.accent}70 0%, transparent 75%)`,
-              filter: 'blur(22px)',
-              zIndex: -1,
-              transform: 'scale(1.35) translateY(4%)',
-              pointerEvents: 'none',
-            }} />
-            <ThemePhoneMini t={t} />
-            <div style={{
-              marginTop: 10, fontSize: 11, fontWeight: 700,
-              color: t.label === 'Dark' ? '#fff' : t.accent,
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'translateY(0)' : 'translateY(8px)',
-              transition: `all 0.55s ${AE} ${delays[i] + 385}ms`,
-            }}>
-              {t.label}
-            </div>
-          </div>
-        ))}
+        {THEME_PHONES.map((t, i) => {
+          // Map each phone to its display position with activeIdx at centre (pos 2)
+          const pos = (i - activeIdx + 2 + 5) % 5;
+          const isCenter = pos === 2;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(i)}
+              style={{
+                position: 'absolute',
+                zIndex: zIdx[pos],
+                transform: visible
+                  ? isMobile
+                    ? `translateX(${mobileXPos[pos]}px) translateY(${mobileYOffset[pos]}px) scale(${mobileScales[pos]})`
+                    : `translateX(${xPos[pos]}px) translateY(${yOffset[pos]}px) scale(${scales[pos]})`
+                  : `translateX(0px) translateY(30px) scale(0.65)`,
+                opacity: visible ? (isCenter ? 1 : 0.85) : 0,
+                transition: visible
+                  ? `transform 0.65s ${AE}, opacity 0.4s ease`
+                  : `transform 1.6s ${AE} ${delays[pos]}ms, opacity 1.1s ${AE} ${delays[pos]}ms`,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: isCenter ? 'default' : 'pointer',
+              }}
+            >
+              {/* Glow */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 24,
+                background: `radial-gradient(ellipse at 50% 55%, ${t.accent}${isCenter ? '90' : '70'} 0%, transparent 75%)`,
+                filter: `blur(${isCenter ? 28 : 22}px)`,
+                zIndex: -1,
+                transform: 'scale(1.35) translateY(4%)',
+                pointerEvents: 'none',
+                transition: `all 0.65s ${AE}`,
+              }} />
+              <ThemePhoneMini t={t} active={isCenter} />
+              <div style={{
+                marginTop: 10, fontSize: 11, fontWeight: 700,
+                color: t.label === 'Dark' ? '#fff' : t.accent,
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateY(0)' : 'translateY(8px)',
+                transition: `all 0.55s ${AE} ${delays[pos] + 385}ms`,
+              }}>
+                {t.label}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
