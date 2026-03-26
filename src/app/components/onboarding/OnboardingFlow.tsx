@@ -84,7 +84,7 @@ export default function OnboardingFlow() {
   const [weightVal,         setWeightVal]         = useState('75');
   const [ageVal,            setAgeVal]            = useState('25');
   const [activity,          setActivity]          = useState<ActivityLevel>('moderate');
-  const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lbs'>('kg');
+  const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lbs' | 'st_lbs'>('kg');
   const [selectedTheme,     setSelectedTheme]     = useState<Theme>('dark');
   const [disabledOnboarding, setDisabledOnboarding] = useState<string[]>([]);
   const [direction,         setDirection]         = useState<'forward' | 'back'>('forward');
@@ -141,7 +141,9 @@ export default function OnboardingFlow() {
     if (!goals.includes('save_money') && !goals.includes('quit_vices')) setFinancialMode(false);
     if (disabledOnboarding.length > 0) setDisabledSections(disabledOnboarding);
     const rawWeight = parseFloat(weightVal) || 75;
-    const weightKg  = weightUnit === 'lbs' ? Math.round(rawWeight * 0.453592) : rawWeight;
+    const weightKg  = weightUnit === 'lbs' ? Math.round(rawWeight * 0.453592)
+                    : weightUnit === 'st_lbs' ? Math.round(rawWeight * 6.35029) // stone → kg
+                    : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
     setHasOnboarded();
   };
@@ -350,10 +352,10 @@ export default function OnboardingFlow() {
               <div className="flex items-center justify-between">
                 <label className="text-white/50 text-xs font-medium">Weight unit</label>
                 <div className="flex bg-white/8 rounded-xl overflow-hidden border border-white/10">
-                  {(['kg', 'lbs'] as const).map(u => (
+                  {(['kg', 'lbs', 'st_lbs'] as const).map(u => (
                     <button key={u} onClick={() => setWeightUnit(u)}
-                      className={`px-4 py-1.5 text-xs font-semibold transition-colors ${weightUnit === u ? 'bg-white/20 text-white' : 'text-white/40'}`}
-                    >{u}</button>
+                      className={`px-3 py-1.5 text-xs font-semibold transition-colors ${weightUnit === u ? 'bg-[#16a34a] text-white' : 'text-white/40'}`}
+                    >{u === 'st_lbs' ? 'st & lbs' : u}</button>
                   ))}
                 </div>
               </div>
@@ -362,7 +364,7 @@ export default function OnboardingFlow() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Height', unit: 'cm',          val: heightVal, set: setHeightVal, min: 140, max: 220 },
-                  { label: 'Weight', unit: weightUnit,     val: weightVal, set: setWeightVal, min: weightUnit === 'kg' ? 30 : 66, max: weightUnit === 'kg' ? 200 : 440 },
+                  { label: 'Weight', unit: weightUnit === 'st_lbs' ? 'st' : weightUnit, val: weightVal, set: setWeightVal, min: weightUnit === 'kg' ? 30 : weightUnit === 'lbs' ? 66 : 5, max: weightUnit === 'kg' ? 200 : weightUnit === 'lbs' ? 440 : 32 },
                   { label: 'Age',    unit: 'yr',           val: ageVal,    set: setAgeVal,    min: 13,  max: 90  },
                 ].map(({ label, unit, val, set, min, max }) => (
                   <div key={label} className="flex flex-col gap-1.5">
@@ -375,8 +377,8 @@ export default function OnboardingFlow() {
                           value={val}
                           onChange={e => set(e.target.value)}
                           onBlur={e => { const n = parseInt(e.target.value); set(String(isNaN(n) ? min : Math.min(max, Math.max(min, n)))); }}
-                          className="bg-transparent text-white text-xl font-bold tabular-nums text-center outline-none w-full"
-                          style={{ fontSize: 20, WebkitAppearance: 'none', appearance: 'none' }}
+                          className="bg-transparent text-white text-xl font-bold tabular-nums text-center outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          style={{ fontSize: 20 }}
                         />
                         <span className="text-white/40 text-[10px] block">{unit}</span>
                       </div>
