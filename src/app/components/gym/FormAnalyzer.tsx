@@ -140,7 +140,7 @@ export default function FormAnalyzer() {
       <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-ql">
         <span className="text-lg">🎥</span>
         <div>
-          <p className="text-ql text-sm font-semibold leading-tight">AI Form Check</p>
+          <p className="text-ql text-sm font-semibold leading-tight">AI Form Check <span className="text-[10px] font-normal text-ql-3 align-middle">BETA</span></p>
           <p className="text-ql-3 text-[11px]">Upload a clip or photo of your exercise</p>
         </div>
       </div>
