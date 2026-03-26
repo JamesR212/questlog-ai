@@ -339,10 +339,10 @@ export default function OnboardingFlow() {
                     placeholder="10000"
                     value={stepInput}
                     onChange={e => setStepInput(e.target.value)}
-                    className="flex-1 bg-transparent py-3.5 pr-4 text-white text-lg outline-none"
+                    className="flex-1 bg-transparent py-3.5 text-white text-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     style={{ colorScheme: 'dark' }}
                   />
-                  <span className="text-white/30 text-sm pr-4">steps</span>
+                  <span className="text-white/30 text-sm pr-4 shrink-0">steps</span>
                 </div>
               </div>
 
@@ -368,7 +368,7 @@ export default function OnboardingFlow() {
                   <div key={label} className="flex flex-col gap-1.5">
                     <label className="text-white/50 text-xs font-medium">{label}</label>
                     <div className="flex flex-col items-center bg-white/8 border border-white/10 rounded-2xl py-2 gap-1">
-                      <button onClick={() => set(String(Math.min(max, (parseInt(val) || 0) + 1)))} className="text-white/40 text-lg w-full text-center leading-none py-1">▲</button>
+                      <button onClick={() => set(String(Math.min(max, (parseInt(val) || 0) + 1)))} className="text-white text-lg w-full text-center leading-none py-1">▲</button>
                       <div className="text-center">
                         <input
                           type="number"
@@ -380,7 +380,7 @@ export default function OnboardingFlow() {
                         />
                         <span className="text-white/40 text-[10px] block">{unit}</span>
                       </div>
-                      <button onClick={() => set(String(Math.max(min, (parseInt(val) || 0) - 1)))} className="text-white/40 text-lg w-full text-center leading-none py-1">▼</button>
+                      <button onClick={() => set(String(Math.max(min, (parseInt(val) || 0) - 1)))} className="text-white text-lg w-full text-center leading-none py-1">▼</button>
                     </div>
                   </div>
                 ))}
