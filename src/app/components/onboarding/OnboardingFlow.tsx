@@ -85,6 +85,7 @@ export default function OnboardingFlow() {
   const [ageVal,            setAgeVal]            = useState('25');
   const [activity,          setActivity]          = useState<ActivityLevel>('moderate');
   const [weightUnit,        setWeightUnit]        = useState<'kg' | 'lbs' | 'st_lbs'>('kg');
+  const [weightLbsPart,     setWeightLbsPart]     = useState('0');
   const [selectedTheme,     setSelectedTheme]     = useState<Theme>('dark');
   const [disabledOnboarding, setDisabledOnboarding] = useState<string[]>([]);
   const [direction,         setDirection]         = useState<'forward' | 'back'>('forward');
@@ -142,7 +143,7 @@ export default function OnboardingFlow() {
     if (disabledOnboarding.length > 0) setDisabledSections(disabledOnboarding);
     const rawWeight = parseFloat(weightVal) || 75;
     const weightKg  = weightUnit === 'lbs' ? Math.round(rawWeight * 0.453592)
-                    : weightUnit === 'st_lbs' ? Math.round(rawWeight * 6.35029) // stone → kg
+                    : weightUnit === 'st_lbs' ? Math.round(((rawWeight * 14) + (parseInt(weightLbsPart) || 0)) / 2.20462 * 10) / 10
                     : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
     setHasOnboarded();
@@ -361,11 +362,12 @@ export default function OnboardingFlow() {
               </div>
 
               {/* Height / Weight / Age */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className={`grid gap-3 ${weightUnit === 'st_lbs' ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 {[
-                  { label: 'Height', unit: 'cm',          val: heightVal, set: setHeightVal, min: 140, max: 220 },
-                  { label: 'Weight', unit: weightUnit === 'st_lbs' ? 'st' : weightUnit, val: weightVal, set: setWeightVal, min: weightUnit === 'kg' ? 30 : weightUnit === 'lbs' ? 66 : 5, max: weightUnit === 'kg' ? 200 : weightUnit === 'lbs' ? 440 : 32 },
-                  { label: 'Age',    unit: 'yr',           val: ageVal,    set: setAgeVal,    min: 13,  max: 90  },
+                  { label: 'Height', unit: 'cm',  val: heightVal, set: setHeightVal, min: 140, max: 220 },
+                  { label: weightUnit === 'st_lbs' ? 'Stone' : 'Weight', unit: weightUnit === 'st_lbs' ? 'st' : weightUnit, val: weightVal, set: setWeightVal, min: weightUnit === 'kg' ? 30 : weightUnit === 'lbs' ? 66 : 5, max: weightUnit === 'kg' ? 200 : weightUnit === 'lbs' ? 440 : 32 },
+                  ...(weightUnit === 'st_lbs' ? [{ label: 'Pounds', unit: 'lbs', val: weightLbsPart, set: setWeightLbsPart, min: 0, max: 13 }] : []),
+                  { label: 'Age',    unit: 'yr',   val: ageVal,    set: setAgeVal,    min: 13,  max: 90  },
                 ].map(({ label, unit, val, set, min, max }) => (
                   <div key={label} className="flex flex-col gap-1.5">
                     <label className="text-white/50 text-xs font-medium">{label}</label>
@@ -501,7 +503,7 @@ export default function OnboardingFlow() {
                       <p className={`text-sm font-semibold ${isOff ? 'text-white/40 line-through' : 'text-white'}`}>{s.label}</p>
                       <p className="text-white/30 text-[10px]">{s.desc}</p>
                     </div>
-                    <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isOff ? 'bg-white/10' : 'bg-white/30'}`}>
+                    <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isOff ? 'bg-white/10' : 'bg-[#16a34a]'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOff ? 'translate-x-0.5 opacity-40' : 'translate-x-5'}`} />
                     </div>
                   </button>
