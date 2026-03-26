@@ -251,7 +251,7 @@ export default function OnboardingFlow() {
                     placeholder="500"
                     value={savingsInput}
                     onChange={e => setSavingsInput(e.target.value)}
-                    className="flex-1 bg-transparent py-4 pr-4 text-white text-lg outline-none"
+                    className="flex-1 bg-transparent py-4 pr-4 text-white text-lg outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     style={{ colorScheme: 'dark' }}
                   />
                 </div>
