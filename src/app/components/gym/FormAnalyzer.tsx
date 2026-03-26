@@ -59,31 +59,33 @@ export default function FormAnalyzer() {
     setAnalysis(null);
 
     try {
-      // Steps 1-2: chunk file and stream directly into Gemini resumable upload
-      const CHUNK = 3 * 1024 * 1024; // 3 MB — safely under Vercel's 4.5 MB payload limit
-      const file  = fileRef.current;
-      const total = file.size;
-      const chunks = Math.ceil(total / CHUNK);
-      let uploadUrl = '';
-      let uploadData: { fileUri?: string; mimeType?: string; uploadUrl?: string; error?: string } = {};
+      // Steps 1-2: chunk file → store each chunk in Vercel Blob → reassemble & send to Gemini
+      const CHUNK    = 3 * 1024 * 1024; // 3 MB — safely under Vercel's 4.5 MB payload limit
+      const file     = fileRef.current;
+      const total    = file.size;
+      const chunks   = Math.ceil(total / CHUNK);
+      const uploadId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      const chunkUrls: string[] = [];
+      let uploadData: { fileUri?: string; mimeType?: string; chunkUrl?: string; error?: string } = {};
 
       for (let i = 0; i < chunks; i++) {
-        const isLast = i === chunks - 1;
-        const start  = i * CHUNK;
-        const blob   = file.slice(start, start + CHUNK);
-        const mb     = Math.round(Math.min((i + 1) * CHUNK, total) / (1024 * 1024));
+        const isLast  = i === chunks - 1;
+        const start   = i * CHUNK;
+        const blob    = file.slice(start, start + CHUNK);
+        const mb      = Math.round(Math.min((i + 1) * CHUNK, total) / (1024 * 1024));
         const totalMb = Math.round(total / (1024 * 1024));
-        setLoadingMsg(`Uploading… ${mb} / ${totalMb} MB (${i + 1}/${chunks})`);
+        setLoadingMsg(`Uploading… ${mb} / ${totalMb} MB`);
 
         const res = await fetch('/api/gemini/upload-chunk', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/octet-stream',
-            'x-upload-offset': String(start),
-            'x-total-size':    String(total),
-            'x-is-last':       isLast ? '1' : '0',
-            'x-mime-type':     file.type || 'video/mp4',
-            'x-upload-url':    uploadUrl,
+            'Content-Type':   'application/octet-stream',
+            'x-chunk-index':  String(i),
+            'x-total-chunks': String(chunks),
+            'x-total-size':   String(total),
+            'x-mime-type':    file.type || 'video/mp4',
+            'x-upload-id':    uploadId,
+            'x-chunk-urls':   JSON.stringify(chunkUrls),
           },
           body: blob,
         });
@@ -92,7 +94,7 @@ export default function FormAnalyzer() {
         try { uploadData = JSON.parse(text); }
         catch { throw new Error(`Chunk ${i + 1} failed (${res.status}): ${text.slice(0, 200)}`); }
         if (!res.ok) throw new Error(uploadData.error ?? `Chunk ${i + 1} failed`);
-        if (uploadData.uploadUrl) uploadUrl = uploadData.uploadUrl;
+        if (uploadData.chunkUrl) chunkUrls.push(uploadData.chunkUrl);
       }
 
       if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed — no file URI');

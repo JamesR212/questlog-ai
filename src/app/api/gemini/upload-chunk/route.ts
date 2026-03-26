@@ -1,75 +1,90 @@
+import { put, del } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
 
-  const offset    = parseInt(req.headers.get('x-upload-offset')    ?? '0');
-  const totalSize = parseInt(req.headers.get('x-total-size')       ?? '0');
-  const isLast    = req.headers.get('x-is-last')                    === '1';
-  const rawType   = req.headers.get('x-mime-type')                  ?? 'video/mp4';
-  const sessionUrl = req.headers.get('x-upload-url')               ?? '';
+  const chunkIndex  = parseInt(req.headers.get('x-chunk-index')   ?? '0');
+  const totalChunks = parseInt(req.headers.get('x-total-chunks')  ?? '1');
+  const totalSize   = parseInt(req.headers.get('x-total-size')    ?? '0');
+  const rawType     = req.headers.get('x-mime-type')              ?? 'video/mp4';
+  const uploadId    = req.headers.get('x-upload-id')              ?? `tmp-${Date.now()}`;
+  const prevUrls: string[] = JSON.parse(req.headers.get('x-chunk-urls') ?? '[]');
+  const isLast      = chunkIndex === totalChunks - 1;
 
   const mimeType = rawType === 'video/quicktime' ? 'video/mov' : rawType;
   const chunk = await req.arrayBuffer();
 
-  let uploadUrl = sessionUrl;
+  // Store this chunk server-side in Vercel Blob (outgoing request — no payload limit)
+  const { url: chunkUrl } = await put(
+    `form-analysis/${uploadId}/chunk-${chunkIndex}`,
+    chunk,
+    { access: 'public', addRandomSuffix: false }
+  );
 
-  // First chunk — initiate the Gemini resumable session
-  if (!uploadUrl) {
-    const initRes = await fetch(
-      `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Upload-Protocol': 'resumable',
-          'X-Goog-Upload-Command': 'start',
-          'X-Goog-Upload-Header-Content-Length': String(totalSize),
-          'X-Goog-Upload-Header-Content-Type': mimeType,
-        },
-        body: JSON.stringify({ file: { display_name: 'upload' } }),
-      }
-    );
-    if (!initRes.ok) {
-      const err = await initRes.text();
-      return NextResponse.json({ error: `Gemini session init failed: ${err}` }, { status: 500 });
-    }
-    uploadUrl = initRes.headers.get('X-Goog-Upload-URL') ?? '';
-    if (!uploadUrl) return NextResponse.json({ error: 'No upload URL from Gemini' }, { status: 500 });
+  if (!isLast) {
+    return NextResponse.json({ chunkUrl });
   }
 
-  // Upload this chunk
-  const command = isLast ? 'upload, finalize' : 'upload';
+  // ── Final chunk: reassemble, upload to Gemini, clean up ──
+  const allUrls = [...prevUrls, chunkUrl];
+
+  // Download all chunks from Vercel Blob and concatenate
+  const combined = new Uint8Array(totalSize);
+  let writeOffset = 0;
+  for (const url of allUrls) {
+    const res = await fetch(url);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    combined.set(bytes, writeOffset);
+    writeOffset += bytes.length;
+  }
+
+  // Delete temp chunks (fire-and-forget)
+  Promise.all(allUrls.map(url => del(url))).catch(() => null);
+
+  // Initiate Gemini resumable upload
+  const initRes = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Upload-Protocol': 'resumable',
+        'X-Goog-Upload-Command': 'start',
+        'X-Goog-Upload-Header-Content-Length': String(combined.byteLength),
+        'X-Goog-Upload-Header-Content-Type': mimeType,
+      },
+      body: JSON.stringify({ file: { display_name: 'upload' } }),
+    }
+  );
+  if (!initRes.ok) {
+    const err = await initRes.text();
+    return NextResponse.json({ error: `Gemini session init failed: ${err}` }, { status: 500 });
+  }
+  const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
+  if (!uploadUrl) return NextResponse.json({ error: 'No upload URL from Gemini' }, { status: 500 });
+
+  // Upload assembled file to Gemini
   const uploadRes = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
-      'Content-Length': String(chunk.byteLength),
-      'X-Goog-Upload-Offset': String(offset),
-      'X-Goog-Upload-Command': command,
+      'Content-Length': String(combined.byteLength),
+      'X-Goog-Upload-Offset': '0',
+      'X-Goog-Upload-Command': 'upload, finalize',
     },
-    body: chunk,
+    body: combined,
   });
-
-  if (!isLast) {
-    // Intermediate chunk — return the session URL for next request
-    if (!uploadRes.ok && uploadRes.status !== 308) {
-      const err = await uploadRes.text();
-      return NextResponse.json({ error: `Chunk upload failed: ${err}` }, { status: 500 });
-    }
-    return NextResponse.json({ uploadUrl });
-  }
-
-  // Final chunk — wait for Gemini to finish processing
   if (!uploadRes.ok) {
     const err = await uploadRes.text();
-    return NextResponse.json({ error: `Final chunk upload failed: ${err}` }, { status: 500 });
+    return NextResponse.json({ error: `Gemini upload failed: ${err}` }, { status: 500 });
   }
 
   let fileData = (await uploadRes.json()).file;
 
+  // Poll until Gemini finishes processing
   let attempts = 0;
   while (fileData?.state === 'PROCESSING' && attempts < 15) {
     await new Promise(r => setTimeout(r, 2000));
