@@ -2371,17 +2371,7 @@ export default function TrainingHub() {
 
           {/* Create buttons */}
           <div className="grid grid-cols-2 gap-3 -mt-1">
-            <button
-              onClick={() => setShowQuiz(true)}
-              disabled={aiLoading}
-              className="flex flex-col items-center gap-2 bg-ql-accent/10 border border-ql-accent/40 rounded-2xl p-4 text-left active:scale-[0.97] transition-transform disabled:opacity-50"
-            >
-              <span className="text-2xl">{aiLoading ? '⚙️' : '✨'}</span>
-              <div>
-                <p className="text-ql text-sm font-semibold">{aiLoading ? 'Generating…' : 'AI Plan'}</p>
-                <p className="text-ql-3 text-[10px] mt-0.5 leading-snug">Answer a few questions, we'll build a tailored plan</p>
-              </div>
-            </button>
+            {/* AI Plan button hidden — use GAINN AI floating assistant instead */}
             <button
               onClick={() => setShowAddPlan(true)}
               className="flex flex-col items-center gap-2 bg-ql-surface2 border border-ql rounded-2xl p-4 text-left active:scale-[0.97] transition-transform"

@@ -38,7 +38,10 @@ export default function AIAdvisor({ section }: AIAdvisorProps) {
     }
   };
 
-  return (
+  return null;
+
+  // Hidden — functionality moved to GAINN AI floating assistant
+  return ( // eslint-disable-line no-unreachable
     <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-ql">
         <span className="text-base">🔮</span>

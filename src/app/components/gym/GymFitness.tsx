@@ -383,14 +383,7 @@ export default function GymFitness() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowQuiz(true)}
-            disabled={aiLoading}
-            className="px-3 py-2 bg-ql-surface2 border border-ql hover:border-ql-accent text-ql text-sm font-medium rounded-2xl transition-colors disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {aiLoading ? <span className="animate-spin">⚙️</span> : '⚡'}
-            {aiLoading ? 'Generating…' : 'AI Plan'}
-          </button>
+          {/* AI Plan button hidden — use GAINN AI floating assistant instead */}
           <button onClick={() => setShowAdd(true)}
             className="px-4 py-2 bg-ql-accent hover:bg-ql-accent-h text-white text-sm font-medium rounded-2xl transition-colors"
           >
