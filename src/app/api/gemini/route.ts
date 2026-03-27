@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message, section, context, mode } = await req.json();
+    const { message, section, context, mode, history: rawHistory = [] } = await req.json();
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -493,7 +493,15 @@ Rules:
 - If unsure of a value (e.g. calories), make a reasonable estimate and mention it
 - When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)`,
       });
-      const result = await model.generateContent(message);
+
+      // Build Gemini chat history from previous turns
+      const chatHistory = (rawHistory as { role: string; text: string }[]).map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }));
+
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessage(message);
       let raw = result.response.text().trim();
       raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       try {

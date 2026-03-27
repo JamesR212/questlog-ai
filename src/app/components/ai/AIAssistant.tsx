@@ -161,17 +161,26 @@ export default function AIAssistant() {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
+    // Capture history BEFORE adding the new user message
+    const historySnapshot = messages;
     setMessages(prev => [...prev, { role: 'user', text }]);
     setLoading(true);
     setLoadingLabel('Thinking…');
     try {
       const habitList = store.habitDefs.map(h => h.name).join(', ');
+      // Build conversation history for Gemini (skip initial greeting, keep last 20 turns)
+      const history = historySnapshot
+        .slice(1)  // skip the opening greeting
+        .slice(-20) // keep last 20 messages for context
+        .filter(m => !m.mediaUrl) // skip pure-media messages
+        .map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'assistant',
           message: text,
+          history,
           section: activeSection,
           context: {
             userContext: buildUserContext(store),
