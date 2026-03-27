@@ -153,9 +153,11 @@ TODAY'S NUTRITION & HYDRATION:
 TODAY'S ACTIVITY:
 - Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
 - Habits completed this week: ${recentHabits.length}
-- Gym sessions total: ${store.gymSessions.length} | Recent: ${recentGym || 'none'}
-- Gym experience: ${store.gymExperience || 'not set'}
-- Running experience: ${store.runExperience || 'not set'}
+- Gym sessions logged in app: ${store.gymSessions.length} | Recent plans: ${recentGym || 'none'}
+- Gym experience: ${store.gymExperience || 'not set'} (auto-progresses as sessions accumulate)
+- GPS runs logged in app: ${store.gpsActivities.filter((a: {type: string}) => a.type === 'run').length}
+- Running experience: ${store.runExperience || 'not set'} (auto-progresses as runs accumulate)
+- Use experience level to calibrate advice difficulty, exercise complexity, and expected recovery time. Brand new / Never run = very beginner-friendly language and simple progressions. 4+ years = technical, advanced programming language is appropriate.
 
 SLEEP:
 - ${sleepSummary}

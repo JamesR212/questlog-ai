@@ -305,6 +305,44 @@ function tryLevelUp(stats: CharacterStats, extra?: Partial<CharacterStats>): Cha
   return s;
 }
 
+// ── Experience auto-progression ────────────────────────────────────────────
+const GYM_EXP_LEVELS  = ['Brand new', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'];
+const RUN_EXP_LEVELS  = ['Never run', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'];
+// Thresholds: minimum sessions to reach each level index
+const GYM_THRESHOLDS  = [0, 5, 20, 50, 110, 200];
+const RUN_THRESHOLDS  = [0, 4, 15, 35, 80, 150];
+
+export function computeGymExpLevel(sessionCount: number): string {
+  let idx = 0;
+  for (let i = GYM_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (sessionCount >= GYM_THRESHOLDS[i]) { idx = i; break; }
+  }
+  return GYM_EXP_LEVELS[idx];
+}
+
+export function computeRunExpLevel(runCount: number): string {
+  let idx = 0;
+  for (let i = RUN_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (runCount >= RUN_THRESHOLDS[i]) { idx = i; break; }
+  }
+  return RUN_EXP_LEVELS[idx];
+}
+
+// Returns upgraded level only if higher than current; never downgrades
+function maybeProgressGymExp(current: string, newSessionCount: number): string {
+  const computed = computeGymExpLevel(newSessionCount);
+  const curIdx = GYM_EXP_LEVELS.indexOf(current);
+  const newIdx = GYM_EXP_LEVELS.indexOf(computed);
+  return newIdx > curIdx ? computed : current;
+}
+
+function maybeProgressRunExp(current: string, newRunCount: number): string {
+  const computed = computeRunExpLevel(newRunCount);
+  const curIdx = RUN_EXP_LEVELS.indexOf(current);
+  const newIdx = RUN_EXP_LEVELS.indexOf(computed);
+  return newIdx > curIdx ? computed : current;
+}
+
 const defaultStats: CharacterStats = {
   str: 10, con: 10, dex: 10, gold: 50, level: 1, xp: 0, xpToNext: 100,
 };
@@ -651,10 +689,13 @@ export const useGameStore = create<GameStore>()(
 
           const newHabitLog = [...state.habitLog, ...autoEntries];
 
+          const newGymSessions = [...state.gymSessions, session];
+          const updatedGymExp = maybeProgressGymExp(state.gymExperience, newGymSessions.length);
+
           if (newStats.level > state.stats.level) {
-            return { gymSessions: [...state.gymSessions, session], habitLog: newHabitLog, stats: newStats, showLevelUp: true, levelUpMessage: `Level ${newStats.level} Reached!` };
+            return { gymSessions: newGymSessions, habitLog: newHabitLog, stats: newStats, gymExperience: updatedGymExp, showLevelUp: true, levelUpMessage: `Level ${newStats.level} Reached!` };
           }
-          return { gymSessions: [...state.gymSessions, session], habitLog: newHabitLog, stats: newStats };
+          return { gymSessions: newGymSessions, habitLog: newHabitLog, stats: newStats, gymExperience: updatedGymExp };
         }),
 
       removeGymSession: (sessionId) =>
@@ -1025,10 +1066,15 @@ export const useGameStore = create<GameStore>()(
           secondaryValue: Math.round(a.duration / 60 * 10) / 10,
           notes: `${a.coords.length} GPS points`,
         };
+        const newGpsActivities = [a, ...state.gpsActivities];
+        const runCount = newGpsActivities.filter(g => g.type === 'run').length;
+        const updatedRunExp = maybeProgressRunExp(state.runExperience, runCount);
+
         return {
-          gpsActivities: [a, ...state.gpsActivities],
+          gpsActivities: newGpsActivities,
           performanceStats: newStats,
           performanceLog: [...state.performanceLog, entry],
+          runExperience: updatedRunExp,
         };
       }),
       deleteGpsActivity: (id) => set((state) => ({ gpsActivities: state.gpsActivities.filter(a => a.id !== id) })),
