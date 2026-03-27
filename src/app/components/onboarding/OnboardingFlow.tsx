@@ -33,7 +33,17 @@ const GOALS = [
   { id: 'quit_vices',     label: 'Cut Bad Habits',   emoji: '🚫', desc: 'Reduce vices & save money' },
   { id: 'wake_early',     label: 'Wake Earlier',     emoji: '🌅', desc: 'Build a morning routine' },
   { id: 'build_strength', label: 'Build Strength',   emoji: '💪', desc: 'Gym plans & body stats' },
+  { id: 'nutrition',      label: 'Eat Better',        emoji: '🥗', desc: 'Lose weight & track food' },
   { id: 'track_life',     label: 'Track Everything', emoji: '📊', desc: 'Full life dashboard' },
+];
+
+const NUTRITION_GOALS = [
+  { id: 'lose_weight',    label: 'Lose Weight',         emoji: '⚖️',  desc: 'Calorie tracking & targets' },
+  { id: 'eat_healthier',  label: 'Eat Healthier',       emoji: '🥦',  desc: 'Better food choices daily' },
+  { id: 'track_macros',   label: 'Track Macros',        emoji: '📊',  desc: 'Protein, carbs & fat goals' },
+  { id: 'drink_more',     label: 'Drink More Water',    emoji: '💧',  desc: 'Daily hydration tracking' },
+  { id: 'build_muscle',   label: 'Build Muscle',        emoji: '💪',  desc: 'High protein diet support' },
+  { id: 'meal_plan',      label: 'Plan My Meals',       emoji: '📋',  desc: 'Weekly meal planning' },
 ];
 
 const THEMES: { id: Theme; name: string; desc: string; bg: string; surface: string; accent: string; text: string }[] = [
@@ -52,7 +62,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'theme' | 'sections' | 'feedback' | 'terms';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'nutrition' | 'theme' | 'sections' | 'feedback' | 'terms';
 
 const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
   { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
@@ -92,6 +102,7 @@ export default function OnboardingFlow() {
   const [animating,         setAnimating]         = useState(false);
   const [countdown,         setCountdown]         = useState(5);
   const [termsAccepted,     setTermsAccepted]     = useState(false);
+  const [nutritionGoals,    setNutritionGoals]    = useState<string[]>([]);
 
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
@@ -99,6 +110,7 @@ export default function OnboardingFlow() {
     if (goals.includes('save_money')) list.push('money');
     if (goals.includes('wake_early')) list.push('sleep');
     if (goals.includes('get_fit') || goals.includes('build_strength') || goals.includes('track_life')) list.push('fitness');
+    if (goals.includes('nutrition')) list.push('nutrition');
     list.push('theme');
     list.push('sections');
     list.push('feedback');
@@ -413,6 +425,34 @@ export default function OnboardingFlow() {
             </div>
 
             <div className="mt-auto flex gap-3 pt-2">
+              <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
+              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+            </div>
+          </>
+        )}
+
+        {/* ── Nutrition ── */}
+        {currentStep === 'nutrition' && (
+          <>
+            <div className="text-5xl mb-6">🥗</div>
+            <h1 className="text-white text-3xl font-bold mb-2">Eating Goals</h1>
+            <p className="text-white/50 text-sm mb-8">What does eating better look like for you? Pick all that apply.</p>
+
+            <div className="grid grid-cols-2 gap-2 mb-8">
+              {NUTRITION_GOALS.map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => setNutritionGoals(prev => prev.includes(g.id) ? prev.filter(x => x !== g.id) : [...prev, g.id])}
+                  className={`flex flex-col gap-1 px-3 py-3 rounded-2xl border text-left transition-all ${nutritionGoals.includes(g.id) ? 'bg-white/15 border-white/30' : 'bg-white/5 border-white/8'}`}
+                >
+                  <span className="text-xl">{g.emoji}</span>
+                  <span className={`text-xs font-semibold ${nutritionGoals.includes(g.id) ? 'text-white' : 'text-white/60'}`}>{g.label}</span>
+                  <span className="text-white/30 text-[10px] leading-tight">{g.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-auto flex gap-3">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
               <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
             </div>
