@@ -632,7 +632,7 @@ export default function OnboardingFlow() {
               <div className="pt-4 flex gap-3">
                 <button onClick={goBack} className="px-5 py-4 font-medium rounded-2xl text-sm" style={{ background: backBg, color: backText }}>Back</button>
                 <button onClick={goNext} className="flex-1 py-4 font-bold rounded-2xl text-base hover:opacity-90 transition-opacity" style={{ background: btnBg, color: btnText }}>
-                  Start Quest →
+                  Continue →
                 </button>
               </div>
             </>
