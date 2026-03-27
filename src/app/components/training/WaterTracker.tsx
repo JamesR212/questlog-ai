@@ -125,14 +125,14 @@ export default function WaterTracker() {
       {/* Custom amount */}
       <div className="flex gap-2">
         <input
-          type="number" value={custom}
+          type="text" value={custom}
           onChange={e => setCustom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { addAmount(parseInt(custom)); setCustom(''); } }}
-          placeholder="Custom amount (ml)…"
+          onKeyDown={e => { if (e.key === 'Enter') { addAmount(parseInt(custom.replace(/[^0-9]/g, ''))); setCustom(''); } }}
+          placeholder="Custom amount e.g. 400 or 400ml…"
           className="flex-1 bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
         />
         <button
-          onClick={() => { addAmount(parseInt(custom)); setCustom(''); }}
+          onClick={() => { addAmount(parseInt(custom.replace(/[^0-9]/g, ''))); setCustom(''); }}
           className="px-4 py-2.5 bg-ql-accent text-white rounded-xl text-sm font-semibold"
         >
           Add
