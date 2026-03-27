@@ -590,8 +590,11 @@ Available actions:
 Log steps:
 { "type": "log_steps", "steps": 8000 }
 
-Log food/meal (always include micros with your best estimate — use null only if truly unknown):
+Log a single food/meal (always include micros with your best estimate — use null only if truly unknown):
 { "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "sugar": 3, "micros": { "vitA": 90, "vitC": 12, "vitD": 0.2, "vitE": 1.2, "vitK": 40, "vitB6": 0.6, "vitB12": 0.3, "folate": 60, "calcium": 45, "iron": 2.1, "magnesium": 38, "zinc": 1.8, "potassium": 420, "sodium": 380 } }
+
+Log multiple foods at once — IMPORTANT: if the user mentions more than one food item or meal in a single message (e.g. "I had eggs for breakfast, a sandwich for lunch and pasta for dinner"), you MUST use this action to log each as a separate entry. Never combine multiple foods into one log_food entry:
+{ "type": "log_food_multiple", "meals": [ { "name": "Scrambled eggs", "calories": 220, "protein": 18, "carbs": 2, "fat": 14, "sugar": 0, "micros": { "vitA": 90, "vitC": 0, "vitD": 1.1, "vitE": 1.0, "vitK": 0.4, "vitB6": 0.2, "vitB12": 0.9, "folate": 28, "calcium": 56, "iron": 1.8, "magnesium": 12, "zinc": 1.3, "potassium": 140, "sodium": 180 } }, { "name": "Tuna sandwich", "calories": 380, "protein": 28, "carbs": 40, "fat": 8, "sugar": 3, "micros": { "vitA": 10, "vitC": 2, "vitD": 0.5, "vitE": 0.8, "vitK": 5, "vitB6": 0.4, "vitB12": 1.2, "folate": 30, "calcium": 80, "iron": 2.5, "magnesium": 30, "zinc": 1.0, "potassium": 280, "sodium": 520 } } ] }
 
 Log water (ml):
 { "type": "log_water", "amount": 500 }

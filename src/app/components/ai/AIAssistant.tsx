@@ -204,6 +204,22 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       sugar:    Number(action.sugar    ?? 0),
       micros:   rawMicros ?? undefined,
     });
+  } else if (type === 'log_food_multiple') {
+    const meals = action.meals as Record<string, unknown>[];
+    if (Array.isArray(meals)) {
+      meals.forEach(m => {
+        const micros = m.micros as Record<string, number> | undefined;
+        store.logMeal({
+          name:     String(m.name     ?? 'Food'),
+          calories: Number(m.calories ?? 0),
+          protein:  Number(m.protein  ?? 0),
+          carbs:    Number(m.carbs    ?? 0),
+          fat:      Number(m.fat      ?? 0),
+          sugar:    Number(m.sugar    ?? 0),
+          micros:   micros ?? undefined,
+        });
+      });
+    }
   } else if (type === 'log_water') {
     store.addWaterEntry(today, Number(action.amount ?? 250));
   } else if (type === 'log_habit') {
