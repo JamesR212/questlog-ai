@@ -762,48 +762,68 @@ function Phone({ feature }: { feature: number }) {
         </div>
       </div>
 
-      {/* GAINN AI chat overlay */}
+      {/* GAINN AI chat overlay — covers most of screen */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'linear-gradient(to bottom, transparent 0%, rgba(13,13,20,0.94) 12%, #0d0d14 20%)',
-        paddingTop: 16,
+        background: 'linear-gradient(to bottom, transparent 0%, rgba(13,13,20,0.96) 8%, #0d0d14 15%)',
+        paddingTop: 14,
         display: 'flex', flexDirection: 'column',
       }}>
         {/* AI header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 9px 5px', borderBottom: `1px solid ${APP.border}`, marginBottom: 5 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 18, height: 18, borderRadius: 6, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 8px rgba(22,163,74,0.5)' }}>
-              <span style={{ fontSize: 10, color: '#fff', lineHeight: 1 }}>✦</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 4px', borderBottom: `1px solid ${APP.border}`, marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 16, height: 16, borderRadius: 5, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 6px rgba(22,163,74,0.5)' }}>
+              <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>✦</span>
             </div>
-            <span style={{ fontSize: 8, fontWeight: 700, color: APP.tx }}>GAINN AI</span>
+            <span style={{ fontSize: 7.5, fontWeight: 700, color: APP.tx }}>GAINN AI</span>
           </div>
           <span style={{ fontSize: 10, color: APP.tx3 }}>×</span>
         </div>
 
         {/* Messages */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 9px', marginBottom: 5 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 8px', marginBottom: 4 }}>
+          {/* User bubble */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ maxWidth: '78%', fontSize: 6.5, color: '#fff', lineHeight: 1.55, padding: '5px 8px', background: '#16a34a', borderRadius: '10px 10px 2px 10px', boxShadow: '0 2px 10px rgba(22,163,74,0.4)' }}>
+            <div style={{ maxWidth: '78%', fontSize: 6, color: '#fff', lineHeight: 1.5, padding: '4px 7px', background: '#16a34a', borderRadius: '9px 9px 2px 9px', boxShadow: '0 2px 8px rgba(22,163,74,0.4)' }}>
               Please make me a beginners 5k running plan
             </div>
           </div>
+          {/* AI text */}
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ maxWidth: '90%', fontSize: 6.5, color: APP.tx, lineHeight: 1.55, padding: '5px 8px', background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: '10px 10px 10px 2px' }}>
-              That&apos;s an excellent goal, Hero! To build you the most effective beginner 5k running plan, how many days a week can you realistically commit to running?
+            <div style={{ maxWidth: '92%', fontSize: 6, color: APP.tx, lineHeight: 1.5, padding: '4px 7px', background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: '9px 9px 9px 2px' }}>
+              That&apos;s an excellent goal, Hero! How many days a week can you commit to running?
+            </div>
+          </div>
+          {/* Generated plan card */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.18) 0%, rgba(22,163,74,0.06) 100%)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 8, padding: '5px 7px', boxShadow: '0 2px 10px rgba(22,163,74,0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 2 }}>
+              <span style={{ fontSize: 7 }}>✦</span>
+              <div>
+                <div style={{ fontSize: 5.5, fontWeight: 800, color: APP.tx }}>Beginner 5k Run Program</div>
+                <div style={{ fontSize: 4, color: '#16a34a', fontWeight: 600 }}>AI-Generated Plan — Review before saving</div>
+              </div>
+            </div>
+            {['Warm-up: Dynamic Stretches — 5 min', 'Main: Run 60s / Walk 90s × 8', 'Cool-down Walk — 5 min'].map((ex, i) => (
+              <div key={i} style={{ fontSize: 4.5, color: APP.tx3, paddingTop: 1.5, borderTop: `1px solid rgba(255,255,255,0.05)` }}>· {ex}</div>
+            ))}
+            <div style={{ fontSize: 4, color: APP.tx3, marginTop: 1 }}>+2 more exercises</div>
+            <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+              <div style={{ flex: 1, background: '#16a34a', borderRadius: 5, padding: '3px 0', fontSize: 5, fontWeight: 700, color: '#fff', textAlign: 'center' as const, boxShadow: '0 1px 5px rgba(22,163,74,0.35)' }}>Save to My Plans</div>
+              <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '3px 6px', fontSize: 5, color: APP.tx3 }}>Discard</div>
             </div>
           </div>
         </div>
 
         {/* Token badge + input bar */}
-        <div style={{ position: 'relative', padding: '0 9px 9px' }}>
-          <div style={{ position: 'absolute', right: 9, bottom: 36, width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 700, color: '#fff', zIndex: 2, boxShadow: '0 2px 8px rgba(22,163,74,0.45)' }}>3</div>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            {[{ icon: '🖼️' }, { icon: '📷' }].map((b, i) => (
-              <div key={i} style={{ width: 20, height: 20, borderRadius: 6, background: APP.surface2, border: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>{b.icon}</div>
+        <div style={{ position: 'relative', padding: '0 8px 8px' }}>
+          <div style={{ position: 'absolute', right: 8, bottom: 34, width: 16, height: 16, borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#fff', zIndex: 2, boxShadow: '0 2px 6px rgba(22,163,74,0.45)' }}>3</div>
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            {['🖼️','📷'].map((icon, i) => (
+              <div key={i} style={{ width: 18, height: 18, borderRadius: 5, background: APP.surface2, border: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, flexShrink: 0 }}>{icon}</div>
             ))}
-            <div style={{ flex: 1, background: APP.surface2, border: '1px solid #16a34a', borderRadius: 8, padding: '4px 7px', fontSize: 6.5, color: APP.tx3 }}>Ask anything…</div>
-            <div style={{ width: 20, height: 20, borderRadius: 6, background: APP.surface2, border: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>🎤</div>
-            <div style={{ width: 20, height: 20, borderRadius: 6, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0, boxShadow: '0 2px 6px rgba(22,163,74,0.4)' }}>↑</div>
+            <div style={{ flex: 1, background: APP.surface2, border: '1px solid #16a34a', borderRadius: 7, padding: '3px 6px', fontSize: 6, color: APP.tx3 }}>Ask anything…</div>
+            <div style={{ width: 18, height: 18, borderRadius: 5, background: APP.surface2, border: `1px solid ${APP.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, flexShrink: 0 }}>🎤</div>
+            <div style={{ width: 18, height: 18, borderRadius: 5, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, flexShrink: 0, boxShadow: '0 2px 5px rgba(22,163,74,0.4)' }}>↑</div>
           </div>
         </div>
       </div>
