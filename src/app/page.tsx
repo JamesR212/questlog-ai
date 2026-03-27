@@ -14,6 +14,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import NavBar from './components/shared/NavBar';
 import LevelUpModal from './components/shared/LevelUpModal';
+import AIAssistant from './components/ai/AIAssistant';
 import ThemeApplier from './components/shared/ThemeApplier';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import HomePage from './components/dashboard/HomePage';
@@ -242,6 +243,7 @@ export default function Home() {
 
       <NavBar />
       <LevelUpModal />
+      <AIAssistant />
     </div>
   );
 }

@@ -420,6 +420,28 @@ Rules:
       return NextResponse.json({ analysis });
     }
 
+    // ── Persistent AI assistant mode ────────────────────────────────────────
+    if (mode === 'assistant') {
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        systemInstruction: `You are GAINN's personal AI assistant — friendly, concise, and genuinely familiar with this user. You know their real data and speak to them personally by name.
+
+${context.userContext}
+
+${context.sectionContext}
+
+Rules:
+- Use their name naturally (not every message)
+- Reference their actual stats, streaks, and goals when relevant
+- Keep replies short — 2-4 sentences max unless they ask for detail
+- Be warm and direct, like a coach who knows them well
+- Never say "I don't have access to your data" — you do, it's above
+- If they ask to log something, acknowledge it clearly (actual logging happens in the app)`,
+      });
+      const result = await model.generateContent(message);
+      return NextResponse.json({ reply: result.response.text() });
+    }
+
     // ── Standard chat mode ───────────────────────────────────────────────────
     const systemPrompt = SECTION_PROMPTS[section] ?? SECTION_PROMPTS.dashboard;
     const model = genAI.getGenerativeModel({
