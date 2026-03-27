@@ -789,15 +789,9 @@ function Phone({ feature }: { feature: number }) {
             }}>Please generate me a beginners 5k running plan please</div>
           </div>
           {/* AI response */}
-          <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
-              width: 14, height: 14, borderRadius: 4, background: '#16a34a',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
-            }}>
-              <span style={{ fontSize: 8, color: '#fff', lineHeight: 1 }}>✦</span>
-            </div>
-            <div style={{
-              maxWidth: '82%', fontSize: 6.5, color: APP.tx, lineHeight: 1.55, padding: '5px 8px',
+              maxWidth: '90%', fontSize: 6.5, color: APP.tx, lineHeight: 1.55, padding: '5px 8px',
               background: APP.surface2,
               border: `1px solid ${APP.border}`,
               borderRadius: '10px 10px 10px 2px',
