@@ -287,7 +287,7 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
   };
 
   const rewardTier = todaySteps >= 15000 ? 3 : todaySteps >= 10000 ? 2 : todaySteps >= 5000 ? 1 : 0;
-  const REWARD_LABELS = ['', '+1 DEX +5 XP', '+2 DEX +1 CON +10 XP', '+3 DEX +2 CON +15 XP'];
+  const REWARD_LABELS = ['', '5k milestone', '10k milestone', '15k milestone'];
 
   // Detailed chart state
   const [period, setPeriod] = useState<StepPeriod>('W');
@@ -353,9 +353,9 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
         {/* Milestone chips */}
         <div className="flex gap-2 w-full">
           {[
-            { steps: 5000,  label: '5k',  reward: '+1 DEX' },
-            { steps: 10000, label: '10k', reward: '+2 DEX' },
-            { steps: 15000, label: '15k', reward: '+3 DEX' },
+            { steps: 5000,  label: '5k',  reward: '🏅' },
+            { steps: 10000, label: '10k', reward: '🏅🏅' },
+            { steps: 15000, label: '15k', reward: '🏅🏅🏅' },
           ].map(m => {
             const hit = todaySteps >= m.steps;
             return (

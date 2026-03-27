@@ -1002,7 +1002,7 @@ function MealDetailSheet({
             onClick={() => { onLog(); onClose(); }}
             className="flex-1 py-3 bg-ql-accent text-white text-sm font-semibold rounded-2xl"
           >
-            Log Meal +10 XP
+            Log Meal
           </button>
         </div>
       </div>
@@ -1764,7 +1764,7 @@ function PhotoFoodSheet({ onClose, onLogged }: { onClose: () => void; onLogged: 
 
               <button onClick={confirm}
                 className="w-full py-2.5 bg-ql-accent text-white text-sm font-semibold rounded-xl">
-                Log This +10 XP
+                Log This
               </button>
             </div>
           )}
@@ -1895,7 +1895,7 @@ function SmartFoodLog({ onLogged }: { onLogged: () => void }) {
             onClick={confirm}
             className="w-full py-2.5 bg-ql-accent text-white text-sm font-semibold rounded-xl"
           >
-            Log This +10 XP
+            Log This
           </button>
         </div>
       )}
@@ -2131,7 +2131,7 @@ export default function NutritionPlan() {
         {todayMeals.length === 0 ? (
           <div className="bg-ql-surface2 rounded-2xl border border-dashed border-ql p-4 text-center">
             <p className="text-ql-3 text-sm">No meals logged today</p>
-            <p className="text-ql-accent text-xs mt-1 font-medium">Type above to log with AI · earn +10 XP</p>
+            <p className="text-ql-accent text-xs mt-1 font-medium">Type above to log with AI · track your nutrition</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
