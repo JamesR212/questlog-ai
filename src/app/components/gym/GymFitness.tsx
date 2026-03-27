@@ -1210,38 +1210,65 @@ function RecoverySection() {
       <div className="flex gap-3 px-4 py-4">
         {/* SVG body diagram */}
         <div className="shrink-0">
-          <svg width="100" height="170" viewBox="0 0 100 170" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Body silhouette */}
-            <ellipse cx="50" cy="22" rx="16" ry="18" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            <rect x="28" y="38" width="44" height="68" rx="6" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            <rect x="12" y="40" width="18" height="52" rx="6" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            <rect x="70" y="40" width="18" height="52" rx="6" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            <rect x="30" y="104" width="16" height="52" rx="6" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            <rect x="54" y="104" width="16" height="52" rx="6" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
-            {/* Muscle overlays */}
-            {bodyRegions.filter(r => r.d).map(({ muscle, d }) => (
-              <path key={muscle} d={d}
-                fill={recoveryColor(recovery[muscle])}
-                opacity="0.55"
-              />
-            ))}
-            {/* Chest overlay */}
-            <rect x="30" y="42" width="40" height="26" rx="4" fill={recoveryColor(recovery.Chest)} opacity="0.55" />
-            {/* Abs overlay */}
-            <rect x="32" y="70" width="36" height="34" rx="4" fill={recoveryColor(recovery.Abs)} opacity="0.55" />
-            {/* Shoulder overlays */}
-            <rect x="14" y="40" width="16" height="22" rx="4" fill={recoveryColor(recovery.Shoulders)} opacity="0.55" />
-            <rect x="70" y="40" width="16" height="22" rx="4" fill={recoveryColor(recovery.Shoulders)} opacity="0.55" />
-            {/* Arm overlays */}
-            <rect x="14" y="64" width="16" height="26" rx="4" fill={recoveryColor(recovery.Arms)} opacity="0.55" />
-            <rect x="70" y="64" width="16" height="26" rx="4" fill={recoveryColor(recovery.Arms)} opacity="0.55" />
-            {/* Leg overlays */}
-            <rect x="30" y="106" width="16" height="46" rx="4" fill={recoveryColor(recovery.Legs)} opacity="0.55" />
-            <rect x="54" y="106" width="16" height="46" rx="4" fill={recoveryColor(recovery.Legs)} opacity="0.55" />
-            {/* Legend */}
-            <circle cx="10" cy="162" r="3" fill="#22c55e" />
-            <circle cx="25" cy="162" r="3" fill="#f59e0b" />
-            <circle cx="40" cy="162" r="3" fill="#ef4444" />
+          <svg width="100" height="174" viewBox="0 0 100 174" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* ── Silhouette base shapes ── */}
+            {/* Head */}
+            <circle cx="50" cy="20" r="15" fill="var(--ql-surface2)" stroke="var(--ql-border)" strokeWidth="1.2"/>
+            {/* Torso */}
+            <rect x="29" y="37" width="42" height="64" rx="9" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Left shoulder */}
+            <rect x="9"  y="36" width="22" height="26" rx="9" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Right shoulder */}
+            <rect x="69" y="36" width="22" height="26" rx="9" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Left upper arm */}
+            <rect x="11" y="60" width="18" height="28" rx="8" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Right upper arm */}
+            <rect x="71" y="60" width="18" height="28" rx="8" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Left forearm */}
+            <rect x="13" y="86" width="14" height="22" rx="7" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Right forearm */}
+            <rect x="73" y="86" width="14" height="22" rx="7" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Left thigh */}
+            <rect x="30" y="99" width="18" height="50" rx="8" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+            {/* Right thigh */}
+            <rect x="52" y="99" width="18" height="50" rx="8" fill="var(--ql-surface3)" stroke="var(--ql-border)" strokeWidth="1"/>
+
+            {/* ── Coloured muscle overlays ── */}
+            {/* Chest */}
+            <rect x="31" y="39" width="38" height="26" rx="7" fill={recoveryColor(recovery.Chest)} opacity="0.72"/>
+            <rect x="37" y="43" width="26" height="16" rx="5" fill="rgba(0,0,0,0.18)"/>
+            {/* Abs */}
+            <rect x="33" y="67" width="34" height="30" rx="7" fill={recoveryColor(recovery.Abs)} opacity="0.72"/>
+            <rect x="39" y="71" width="22" height="20" rx="4" fill="rgba(0,0,0,0.18)"/>
+            {/* Left shoulder */}
+            <rect x="10" y="37" width="20" height="24" rx="8" fill={recoveryColor(recovery.Shoulders)} opacity="0.72"/>
+            <rect x="13" y="41" width="13" height="14" rx="5" fill="rgba(0,0,0,0.18)"/>
+            {/* Right shoulder */}
+            <rect x="70" y="37" width="20" height="24" rx="8" fill={recoveryColor(recovery.Shoulders)} opacity="0.72"/>
+            <rect x="74" y="41" width="13" height="14" rx="5" fill="rgba(0,0,0,0.18)"/>
+            {/* Left upper arm */}
+            <rect x="12" y="61" width="16" height="26" rx="7" fill={recoveryColor(recovery.Arms)} opacity="0.72"/>
+            <rect x="15" y="65" width="9"  height="16" rx="4" fill="rgba(0,0,0,0.18)"/>
+            {/* Right upper arm */}
+            <rect x="72" y="61" width="16" height="26" rx="7" fill={recoveryColor(recovery.Arms)} opacity="0.72"/>
+            <rect x="76" y="65" width="9"  height="16" rx="4" fill="rgba(0,0,0,0.18)"/>
+            {/* Left forearm */}
+            <rect x="14" y="87" width="12" height="20" rx="6" fill={recoveryColor(recovery.Arms)} opacity="0.65"/>
+            <rect x="17" y="91" width="6"  height="11" rx="3" fill="rgba(0,0,0,0.15)"/>
+            {/* Right forearm */}
+            <rect x="74" y="87" width="12" height="20" rx="6" fill={recoveryColor(recovery.Arms)} opacity="0.65"/>
+            <rect x="77" y="91" width="6"  height="11" rx="3" fill="rgba(0,0,0,0.15)"/>
+            {/* Left thigh */}
+            <rect x="31" y="101" width="16" height="46" rx="7" fill={recoveryColor(recovery.Legs)} opacity="0.72"/>
+            <rect x="35" y="106" width="8"  height="32" rx="4" fill="rgba(0,0,0,0.18)"/>
+            {/* Right thigh */}
+            <rect x="53" y="101" width="16" height="46" rx="7" fill={recoveryColor(recovery.Legs)} opacity="0.72"/>
+            <rect x="57" y="106" width="8"  height="32" rx="4" fill="rgba(0,0,0,0.18)"/>
+
+            {/* ── Legend dots ── */}
+            <circle cx="10" cy="166" r="3.5" fill="#22c55e"/>
+            <circle cx="25" cy="166" r="3.5" fill="#f59e0b"/>
+            <circle cx="40" cy="166" r="3.5" fill="#ef4444"/>
           </svg>
           <div className="flex gap-2 text-[9px] text-ql-3 justify-center -mt-1">
             <span>Ready</span><span>Part.</span><span>Fatigued</span>
