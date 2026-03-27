@@ -784,10 +784,11 @@ export default function OnboardingFlow() {
             {/* Feature rows */}
             <div className="w-full max-w-xs flex flex-col gap-2.5 mb-8">
               {[
-                { icon: '💬', label: 'Any question',         delay: '0.65s' },
-                { icon: '📋', label: 'Log anything',         delay: '0.78s' },
-                { icon: '🗺️', label: 'Build a plan',         delay: '0.91s' },
-                { icon: '📊', label: 'Understand your data', delay: '1.04s' },
+                { icon: '💬', label: 'Any question',             delay: '0.65s' },
+                { icon: '🙋', label: 'Ask for help',             delay: '0.78s' },
+                { icon: '📊', label: 'Log your stats',           delay: '0.91s' },
+                { icon: '🗺️', label: 'Build your fitness plans', delay: '1.04s' },
+                { icon: '📈', label: 'Understand your data',     delay: '1.17s' },
               ].map(item => (
                 <div key={item.label} style={{ animation: `fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) ${item.delay} both` }}>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
