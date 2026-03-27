@@ -2126,20 +2126,7 @@ export default function NutritionPlan() {
           </div>
         </div>
 
-        {/* Smart AI log */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-ql-3 text-[10px] font-medium uppercase tracking-wider">⚡ AI Smart Log</p>
-            <button
-              onClick={() => setShowPhotoLog(true)}
-              className="flex items-center gap-1.5 px-3 py-1 bg-ql-surface2 border border-ql rounded-xl text-ql text-xs font-medium active:scale-[0.97] transition-transform"
-            >
-              📷 Photo
-            </button>
-          </div>
-          <SmartFoodLog onLogged={() => {}} />
-          <p className="text-ql-3 text-[10px] mt-1.5 px-1">💡 Tip: be specific! e.g. &quot;2 scrambled eggs on brown toast with butter&quot;</p>
-        </div>
+        {/* AI Smart Log hidden — use GAINN AI floating assistant instead */}
 
         {todayMeals.length === 0 ? (
           <div className="bg-ql-surface2 rounded-2xl border border-dashed border-ql p-4 text-center">
