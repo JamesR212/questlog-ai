@@ -31,6 +31,7 @@ import type {
   BudgetItem,
   SpendingEntry,
   PaycheckEntry,
+  WeightEntry,
 } from '@/types';
 
 interface GameStore {
@@ -79,6 +80,8 @@ interface GameStore {
   sleepLog: SleepEntry[];
   performanceStats: PerformanceStat[];
   performanceLog: PerformanceEntry[];
+  primaryGoals: string[];       // e.g. ["Build Muscle", "Lose Fat"]
+  weightLog: WeightEntry[];     // timestamped weight measurements
 
   trainingTab: 'habits' | 'plans' | 'performance' | 'steps';
   nutritionTab: 'food' | 'drink';
@@ -133,6 +136,8 @@ interface GameStore {
   setSavedGymPrefs: (prefs: Record<string, string>) => void;
   setSavedNutritionPrefs: (prefs: Record<string, string>) => void;
   setActivityLevel: (level: ActivityLevel) => void;
+  setPrimaryGoals: (goals: string[]) => void;
+  logWeight: (date: string, weight: number) => void;
   addToMealLibrary: (meal: Omit<SavedMealItem, 'id'>) => void;
   removeFromMealLibrary: (id: string) => void;
   addPerformanceStat: (stat: Omit<PerformanceStat, 'id'> & { id?: string }) => void;
@@ -356,6 +361,8 @@ const INITIAL_STATE = {
     { id: 'builtin-steps', name: 'Daily Steps', emoji: '👟', color: '#4a9eff', unit: 'steps', higherIsBetter: true, hasSecondary: false },
   ],
   performanceLog: [],
+  primaryGoals: [],
+  weightLog: [],
   unlockedOutfits: [],
   stepLog: [],
   stepGoal: 10000,
@@ -449,6 +456,8 @@ export const useGameStore = create<GameStore>()(
         { id: 'builtin-steps', name: 'Daily Steps', emoji: '👟', color: '#4a9eff', unit: 'steps', higherIsBetter: true, hasSecondary: false },
       ],
       performanceLog: [],
+      primaryGoals: [],
+      weightLog: [],
       unlockedOutfits: [],
       stepLog: [],
       stepGoal: 10000,
@@ -791,6 +800,13 @@ export const useGameStore = create<GameStore>()(
       setSavedNutritionPrefs: (prefs) => set({ savedNutritionPrefs: prefs }),
       setActivityLevel: (level) =>
         set((state) => ({ characterAppearance: { ...state.characterAppearance, activityLevel: level } })),
+
+      setPrimaryGoals: (goals) => set({ primaryGoals: goals }),
+      logWeight: (date, weight) =>
+        set((state) => {
+          const filtered = state.weightLog.filter(e => e.date !== date);
+          return { weightLog: [...filtered, { date, weight }].sort((a, b) => a.date.localeCompare(b.date)) };
+        }),
       addToMealLibrary: (meal) =>
         set((state) => ({ savedMealLibrary: [...state.savedMealLibrary, { ...meal, id: generateId() }] })),
       removeFromMealLibrary: (id) =>

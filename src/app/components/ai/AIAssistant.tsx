@@ -25,17 +25,43 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const recentGym     = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
 
+  // Weight progress
+  const sortedWeights = [...store.weightLog].sort((a, b) => a.date.localeCompare(b.date));
+  const firstWeight   = sortedWeights[0];
+  const latestWeight  = sortedWeights[sortedWeights.length - 1];
+  const startingWeight = store.characterAppearance.startingWeight ?? 0;
+  const currentWeight  = latestWeight?.weight ?? startingWeight;
+  const weightChange   = firstWeight ? (currentWeight - firstWeight.weight) : 0;
+  const weightChangeTxt = weightChange === 0 ? 'no change recorded'
+    : weightChange > 0 ? `+${weightChange.toFixed(1)}kg gained`
+    : `${weightChange.toFixed(1)}kg lost`;
+
+  // Time on app
+  const joinDate = store.accountCreatedDate;
+  const daysSinceJoin = joinDate
+    ? Math.floor((Date.now() - new Date(joinDate).getTime()) / 86400000)
+    : null;
+  const timeOnApp = daysSinceJoin != null
+    ? daysSinceJoin < 7 ? `${daysSinceJoin} days`
+      : daysSinceJoin < 30 ? `${Math.floor(daysSinceJoin / 7)} weeks`
+      : `${Math.floor(daysSinceJoin / 30)} months`
+    : 'unknown';
+
   return `User profile:
 - Name: ${store.userName || 'User'}
-- Age: ${store.characterAppearance.age ?? 'unknown'}, Height: ${store.characterAppearance.height ?? '?'}cm, Weight: ${store.characterAppearance.startingWeight ?? '?'}kg
+- Age: ${store.characterAppearance.age ?? 'unknown'}, Height: ${store.characterAppearance.height ?? '?'}cm
+- Current weight: ${currentWeight}kg | Starting weight: ${firstWeight?.weight ?? startingWeight}kg | Change: ${weightChangeTxt}
+- Weight history: ${sortedWeights.length > 0 ? sortedWeights.slice(-5).map(w => `${w.date}: ${w.weight}kg`).join(', ') : 'none yet'}
 - Activity level: ${store.characterAppearance.activityLevel ?? 'moderate'}
+- Goals: ${store.primaryGoals.length > 0 ? store.primaryGoals.join(', ') : 'not set'}
+- Time on GAINN: ${timeOnApp}
 - Level: ${store.stats.level}, XP: ${store.stats.xp}
 - Stats: STR ${store.stats.str}, CON ${store.stats.con}, DEX ${store.stats.dex}, GOLD ${store.stats.gold}
 - Step goal: ${store.stepGoal.toLocaleString()} — today: ${todaySteps.toLocaleString()} steps
 - Sleep recent: ${recentSleep || 'no data'}
 - Habits completed this week: ${recentHabits.length}
 - Today's calories logged: ${totalCalories} kcal
-- Recent gym sessions: ${recentGym || 'none'}
+- Gym sessions total: ${store.gymSessions.length} | Recent: ${recentGym || 'none'}
 - Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved so far: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
 - Login streak: ${store.loginStreak} days`;
 }
@@ -125,6 +151,13 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
   } else if (type === 'set_activity_level') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     store.setActivityLevel(String(action.level ?? 'moderate') as any);
+
+  } else if (type === 'log_weight') {
+    store.logWeight(today, Number(action.weight));
+
+  } else if (type === 'set_goals') {
+    const incoming = action.goals as string[];
+    if (Array.isArray(incoming)) store.setPrimaryGoals(incoming);
   }
 }
 

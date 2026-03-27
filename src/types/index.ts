@@ -239,6 +239,11 @@ export interface CharacterAppearance {
 
 export type Theme = 'dark' | 'white' | 'pink' | 'blue' | 'green';
 
+export interface WeightEntry {
+  date: string;   // YYYY-MM-DD
+  weight: number; // always kg
+}
+
 export interface StepEntry {
   id: string;
   date: string;       // YYYY-MM-DD

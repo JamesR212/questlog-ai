@@ -80,7 +80,7 @@ const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: stri
 ];
 
 export default function OnboardingFlow() {
-  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode, setDisabledSections } = useGameStore();
+  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode, setDisabledSections, setPrimaryGoals, logWeight } = useGameStore();
 
   const [stepIndex,         setStepIndex]         = useState(0);
   const [name,              setName]              = useState('');
@@ -158,6 +158,20 @@ export default function OnboardingFlow() {
                     : weightUnit === 'st_lbs' ? Math.round(((rawWeight * 14) + (parseInt(weightLbsPart) || 0)) / 2.20462 * 10) / 10
                     : rawWeight;
     setCharacterAppearance({ height: parseInt(heightVal) || 175, startingWeight: weightKg, age: parseInt(ageVal) || 25, activityLevel: activity });
+    // Map goal IDs to readable labels for AI context
+    const GOAL_LABELS: Record<string, string> = {
+      get_fit:        'Get Fitter',
+      build_strength: 'Build Muscle',
+      save_money:     'Save Money',
+      quit_vices:     'Cut Bad Habits',
+      wake_early:     'Sleep Better',
+      track_life:     'Track My Life',
+      nutrition:      'Eat Better',
+    };
+    setPrimaryGoals(goals.map(g => GOAL_LABELS[g] ?? g));
+    // Log starting weight as the first data point
+    const today = new Date().toISOString().slice(0, 10);
+    if (weightKg > 0) logWeight(today, weightKg);
     setHasOnboarded();
   };
 
