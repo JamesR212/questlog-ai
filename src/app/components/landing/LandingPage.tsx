@@ -772,14 +772,40 @@ function Phone({ feature }: { feature: number }) {
               boxShadow: '0 2px 8px rgba(22,163,74,0.35)',
             }}>Please generate me a beginners 5k running plan</div>
           </div>
-          {/* AI bubble */}
+          {/* AI text bubble */}
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
               maxWidth: '85%', fontSize: 6.5, color: APP.tx, lineHeight: 1.5, padding: '5px 7px',
               background: APP.surface2,
               border: `1px solid ${APP.border}`,
               borderRadius: '9px 9px 9px 2px',
-            }}>Absolutely! A beginner 5k plan is a great goal. How many days a week would you like to run?</div>
+            }}>Here&apos;s your Beginner 5k Foundation plan — ready to save! 🏃</div>
+          </div>
+          {/* Generated plan card */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(22,163,74,0.18) 0%, rgba(22,163,74,0.06) 100%)',
+            border: '1px solid rgba(22,163,74,0.35)',
+            borderRadius: 10, padding: '6px 8px',
+            boxShadow: '0 2px 12px rgba(22,163,74,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+              <span style={{ fontSize: 10 }}>✦</span>
+              <div>
+                <div style={{ fontSize: 6.5, fontWeight: 800, color: APP.tx }}>Beginner 5k Foundation</div>
+                <div style={{ fontSize: 5, color: '#16a34a' }}>AI-Generated Plan</div>
+              </div>
+            </div>
+            {[
+              'Warm-up Walk — 5 min',
+              'Run/Walk Intervals — 18 min',
+              'Cool-down Walk — 5 min',
+            ].map((ex, i) => (
+              <div key={i} style={{ fontSize: 5, color: APP.tx3, padding: '1.5px 0', borderTop: `1px solid rgba(255,255,255,0.05)` }}>· {ex}</div>
+            ))}
+            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+              <div style={{ flex: 1, background: '#16a34a', borderRadius: 6, padding: '3px 0', fontSize: 5.5, fontWeight: 700, color: '#fff', textAlign: 'center' as const }}>Save to My Plans</div>
+              <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 6, padding: '3px 6px', fontSize: 5.5, color: APP.tx3 }}>Discard</div>
+            </div>
           </div>
         </div>
         {/* Input bar */}
