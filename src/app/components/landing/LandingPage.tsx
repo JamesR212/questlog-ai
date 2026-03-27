@@ -2381,43 +2381,28 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'radial-gradient(ellipse 120% 80% at 50% 50%, rgba(124,58,237,0.14) 0%, #050508 65%)',
+          background: 'radial-gradient(ellipse 120% 80% at 50% 50%, rgba(22,163,74,0.10) 0%, #050508 65%)',
           padding: '100px 24px',
           textAlign: 'center',
           overflow: 'hidden',
         }}
       >
-        {/* Logo entrance */}
+        {/* Badge icon — drops in from above */}
         <div style={{
           opacity: aiShowcaseVisible ? 1 : 0,
-          transform: aiShowcaseVisible ? 'scale(1) translateY(0)' : 'scale(0.6) translateY(40px)',
+          transform: aiShowcaseVisible ? 'translateY(0) scale(1)' : 'translateY(-80px) scale(0.85)',
           transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0s',
-          marginBottom: 32,
+          marginBottom: 36,
         }}>
-          {/* Glow ring */}
           <div style={{
-            width: 120,
-            height: 120,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(124,58,237,0.35) 0%, rgba(124,58,237,0.08) 60%, transparent 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            width: 110, height: 110, borderRadius: 28,
+            background: '#16a34a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto',
-            boxShadow: '0 0 80px rgba(124,58,237,0.3), 0 0 160px rgba(124,58,237,0.1)',
-            animation: aiShowcaseVisible ? 'pulse-glow 4s ease-in-out infinite' : 'none',
+            boxShadow: '0 8px 60px rgba(22,163,74,0.5), 0 0 120px rgba(22,163,74,0.2)',
+            animation: aiShowcaseVisible ? 'glowPulse 3.5s ease-in-out 1.3s infinite' : 'none',
           }}>
-            <div style={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 34,
-              boxShadow: '0 8px 32px rgba(124,58,237,0.5)',
-            }}>✦</div>
+            <span style={{ fontSize: 48, color: '#fff', lineHeight: 1 }}>✦</span>
           </div>
         </div>
 
@@ -2425,10 +2410,10 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
         <div style={{
           opacity: aiShowcaseVisible ? 1 : 0,
           transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(24px)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
           marginBottom: 12,
         }}>
-          <div style={{ fontSize: 12, letterSpacing: 4, color: '#7c3aed', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, letterSpacing: 4, color: '#16a34a', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
             Meet Your AI
           </div>
           <h2 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.05, margin: 0 }}>
@@ -2441,7 +2426,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
         <div style={{
           opacity: aiShowcaseVisible ? 1 : 0,
           transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s',
           marginBottom: 64,
         }}>
           <p style={{ fontSize: 18, color: '#a1a1aa', maxWidth: 420, margin: '0 auto', lineHeight: 1.6 }}>
@@ -2480,8 +2465,8 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                 width: 44,
                 height: 44,
                 borderRadius: 12,
-                background: 'rgba(124,58,237,0.15)',
-                border: '1px solid rgba(124,58,237,0.3)',
+                background: 'rgba(22,163,74,0.15)',
+                border: '1px solid rgba(22,163,74,0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2493,9 +2478,9 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
             <div style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#7c3aed',
-              background: 'rgba(124,58,237,0.1)',
-              border: '1px solid rgba(124,58,237,0.25)',
+              color: '#16a34a',
+              background: 'rgba(22,163,74,0.1)',
+              border: '1px solid rgba(22,163,74,0.25)',
               borderRadius: 20,
               padding: '4px 12px',
               whiteSpace: 'nowrap',
@@ -2516,7 +2501,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
             color: '#fff',
             letterSpacing: '-0.5px',
           }}>
-            This is your <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#7c3aed' }}>.</span>
+            This is your <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#16a34a' }}>.</span>
           </p>
         </div>
       </section>

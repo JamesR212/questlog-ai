@@ -201,9 +201,14 @@ input[type="number"]::-webkit-outer-spin-button {
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-70px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.35), 0 0 80px rgba(124,58,237,0.15); }
-  50%       { box-shadow: 0 0 70px rgba(124,58,237,0.55), 0 0 140px rgba(124,58,237,0.25); }
+  0%, 100% { box-shadow: 0 0 40px rgba(22,163,74,0.4), 0 0 80px rgba(22,163,74,0.15); }
+  50%       { box-shadow: 0 0 70px rgba(22,163,74,0.6), 0 0 140px rgba(22,163,74,0.25); }
 }
 
 /* ── Range sliders ────────────────────────────────────────────── */
