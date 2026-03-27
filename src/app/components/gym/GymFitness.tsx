@@ -107,14 +107,17 @@ interface PlanSheetProps {
 }
 
 function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
-  const [name,      setName]      = useState(initial?.name      ?? '');
-  const [emoji,     setEmoji]     = useState(initial?.emoji     ?? '💪');
-  const [color,     setColor]     = useState(initial?.color     ?? '#ff3b30');
-  const [days,      setDays]      = useState<number[]>(initial?.scheduleDays ?? []);
-  const [time,      setTime]      = useState(initial?.scheduleTime    ?? '');
-  const [endTime,   setEndTime]   = useState(initial?.scheduleEndTime ?? '');
-  const [exercises, setExercises] = useState<GymExercise[]>(initial?.exercises ?? []);
-  const [newEx,     setNewEx]     = useState('');
+  const [name,        setName]        = useState(initial?.name      ?? '');
+  const [emoji,       setEmoji]       = useState(initial?.emoji     ?? '💪');
+  const [color,       setColor]       = useState(initial?.color     ?? '#ff3b30');
+  const [days,        setDays]        = useState<number[]>(initial?.scheduleDays ?? []);
+  const [dayTimes,    setDayTimes]    = useState<Record<string, string>>(initial?.dayTimes    ?? {});
+  const [dayEndTimes, setDayEndTimes] = useState<Record<string, string>>(initial?.dayEndTimes ?? {});
+  const [exercises,   setExercises]   = useState<GymExercise[]>(initial?.exercises ?? []);
+  const [newEx,       setNewEx]       = useState('');
+
+  const setDayTime    = (d: number, t: string) => setDayTimes(p    => { const n = {...p}; t ? (n[String(d)] = t) : delete n[String(d)]; return n; });
+  const setDayEndTime = (d: number, t: string) => setDayEndTimes(p => { const n = {...p}; t ? (n[String(d)] = t) : delete n[String(d)]; return n; });
 
   const toggleDay = (d: number) =>
     setDays(days.includes(d) ? days.filter(x => x !== d) : [...days, d].sort());
@@ -202,20 +205,28 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            <div className="flex flex-col gap-0.5">
-              <p className="text-ql-3 text-xs font-medium">Start time</p>
-              <input type="time" value={time} onChange={e => setTime(e.target.value)}
-                className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
-              />
+          {days.length > 0 && (
+            <div className="flex flex-col gap-2 mt-2">
+              {days.map(d => (
+                <div key={d} className="bg-ql-surface2 rounded-xl px-3 py-2.5 border border-ql flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-ql text-xs font-semibold">{['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d]}</span>
+                    {(dayTimes[String(d)] || dayEndTimes[String(d)]) && (
+                      <button onClick={() => { setDayTime(d, ''); setDayEndTime(d, ''); }} className="text-ql-3 text-xs px-1">× Clear</button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="time" value={dayTimes[String(d)] ?? ''} onChange={e => setDayTime(d, e.target.value)}
+                      className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+                    />
+                    <input type="time" value={dayEndTimes[String(d)] ?? ''} onChange={e => setDayEndTime(d, e.target.value)}
+                      className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-ql-3 text-xs font-medium">End time</p>
-              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Exercises */}
@@ -254,7 +265,8 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
         )}
         <button onClick={() => {
           if (!canSave) return;
-          onSave({ name: name.trim(), emoji, color, exercises, scheduleDays: days, scheduleTime: time, scheduleEndTime: endTime });
+          const firstDay = days[0] != null ? String(days[0]) : '';
+          onSave({ name: name.trim(), emoji, color, exercises, scheduleDays: days, scheduleTime: firstDay ? (dayTimes[firstDay] ?? '') : '', scheduleEndTime: firstDay ? (dayEndTimes[firstDay] ?? '') : '', dayTimes, dayEndTimes });
           onClose();
         }} disabled={!canSave}
           className="w-full py-3 bg-ql-accent hover:bg-ql-accent-h disabled:opacity-40 text-white font-semibold rounded-2xl text-sm transition-colors"
