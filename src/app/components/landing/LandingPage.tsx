@@ -2255,7 +2255,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
               </div>
             </div>
 
-            {/* Panel 2 — 7 AI features */}
+            {/* Panel 2 — 8 AI features */}
             <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
               {/* Gemini badge */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px 16px', marginBottom: 32, alignSelf: 'flex-start' }}>
@@ -2278,7 +2278,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
               </div>
 
               <h3 style={{ fontSize: isMobile ? 'clamp(18px, 2.25vw, 28px)' : 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
-                7 AI features,<br />one subscription
+                8 AI features,<br />one subscription
               </h3>
 
               <p style={{ fontSize: isMobile ? 11 : 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
