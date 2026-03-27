@@ -511,7 +511,7 @@ export default function AIAssistant() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 relative ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        className={`fixed z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
         style={{ background: '#16a34a', bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', right: '1rem' }}
         aria-label="Open AI assistant"
       >
