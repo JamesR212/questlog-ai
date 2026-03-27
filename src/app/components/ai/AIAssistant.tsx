@@ -258,9 +258,10 @@ export default function AIAssistant() {
   const [loading,     setLoading]     = useState(false);
   const [loadingLabel, setLoadingLabel] = useState('Thinking…');
   const [listening,   setListening]   = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef       = useRef<HTMLInputElement>(null);
-  const fileInputRef   = useRef<HTMLInputElement>(null);
+  const messagesEndRef  = useRef<HTMLDivElement>(null);
+  const inputRef        = useRef<HTMLInputElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const cameraInputRef  = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
@@ -539,11 +540,19 @@ export default function AIAssistant() {
       {/* Thin tap-to-close strip above the drawer — doesn't block the page scroll area */}
       {open && <div className="fixed left-0 right-0 z-40" style={{ bottom: '45vh', height: 40 }} onClick={() => setOpen(false)} />}
 
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*,video/*"
+        className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
       />
@@ -607,7 +616,7 @@ export default function AIAssistant() {
 
           {/* Input row */}
           <div className="shrink-0 px-4 pb-5 pt-2 flex gap-2 items-center">
-            {/* Upload button */}
+            {/* Upload from library */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
@@ -617,6 +626,19 @@ export default function AIAssistant() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </button>
+
+            {/* Take photo with camera */}
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={loading}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-ql-surface2 border border-ql text-ql-3 hover:text-ql transition-colors disabled:opacity-40"
+              title="Take a photo"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
 
