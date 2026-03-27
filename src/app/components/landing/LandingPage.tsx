@@ -712,106 +712,130 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 6 — AI Plan Generation (training + chat overlay)
+    // 6 — AI Plan Generation (training + full chat overlay)
     <div key="ai" style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Training page behind */}
+      {/* Training page — visible behind chat */}
       <div style={{ padding: '0 8px', paddingTop: 2 }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: APP.tx, marginBottom: 1 }}>Training</div>
-        <div style={{ fontSize: 5.5, color: APP.tx3, marginBottom: 5 }}>0/0 habits done · 0 sessions logged</div>
+        <div style={{ fontSize: 5, color: APP.tx3, marginBottom: 4 }}>0/0 habits done · 0 sessions logged</div>
+        <div style={{ fontSize: 6, fontWeight: 700, color: APP.tx, marginBottom: 3 }}>Today</div>
         {/* Plan card */}
-        <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 10, padding: '6px 7px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 12 }}>👟</span>
+        <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 9, padding: '5px 7px', marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 10 }}>👟</span>
               <div>
-                <div style={{ fontSize: 6.5, fontWeight: 800, color: APP.tx, lineHeight: 1.2 }}>Beginner 5k Foundation</div>
-                <div style={{ fontSize: 5, color: APP.tx3 }}>4 exercises · 7:00am – 8:00am</div>
+                <div style={{ fontSize: 6, fontWeight: 800, color: APP.tx, lineHeight: 1.2 }}>Beginner 5k Foundation</div>
+                <div style={{ fontSize: 4.5, color: APP.tx3 }}>4 exercises · 7:00am – 8:00am</div>
               </div>
             </div>
-            <div style={{ background: '#3b82f6', borderRadius: 6, padding: '3px 6px', fontSize: 5.5, fontWeight: 700, color: '#fff', flexShrink: 0 }}>Log Workout</div>
+            <div style={{ background: '#3b82f6', borderRadius: 5, padding: '2px 5px', fontSize: 5, fontWeight: 700, color: '#fff', flexShrink: 0 }}>Log Workout</div>
           </div>
           {[
-            'Warm-up Walk — 5 min',
-            'Easy Run / Walk Intervals — 20 min',
-            'Cool-down Walk — 5 min',
-          ].map((ex, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 2, borderTop: `1px solid ${APP.border}` }}>
-              <span style={{ fontSize: 5, color: APP.tx3 }}>{ex}</span>
-              <span style={{ fontSize: 5, color: APP.tx3, flexShrink: 0 }}>1×1 BW</span>
+            ['Warm-up Walk — 5 min','1×1 BW'],
+            ['Easy Run / Walk Intervals — 18 min','1×1 BW'],
+            ['Cool-down Walk — 5 min','1×1 BW'],
+          ].map(([ex, badge], i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 1.5, borderTop: `1px solid ${APP.border}` }}>
+              <span style={{ fontSize: 4.5, color: APP.tx3 }}>{ex}</span>
+              <span style={{ fontSize: 4.5, color: APP.tx3, flexShrink: 0 }}>{badge}</span>
             </div>
           ))}
-          <div style={{ fontSize: 5, color: APP.tx3, marginTop: 2 }}>+1 more</div>
+          <div style={{ fontSize: 4.5, color: APP.tx3, marginTop: 1.5 }}>+1 more</div>
+        </div>
+        {/* Habits row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 5, color: APP.tx3 }}>0 active habits</span>
+          <div style={{ background: '#16a34a', borderRadius: 6, padding: '2px 7px', fontSize: 5, fontWeight: 700, color: '#fff' }}>+ Habit</div>
         </div>
       </div>
 
-      {/* GAINN AI chat overlay — slides up from bottom */}
+      {/* GAINN AI chat — full overlay sliding up from bottom */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'linear-gradient(to bottom, rgba(13,13,20,0.0) 0%, rgba(13,13,20,0.97) 12%, #0d0d14 100%)',
-        paddingTop: 16,
+        background: 'linear-gradient(to bottom, transparent 0%, rgba(13,13,20,0.92) 14%, #0d0d14 22%)',
+        paddingTop: 18,
         display: 'flex', flexDirection: 'column',
       }}>
-        {/* AI header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', marginBottom: 5 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 16, height: 16, borderRadius: 5, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>✦</span>
+        {/* AI header bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 9px 6px',
+          borderBottom: `1px solid ${APP.border}`,
+          marginBottom: 6,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: 6, background: '#16a34a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 8px rgba(22,163,74,0.5)',
+            }}>
+              <span style={{ fontSize: 10, color: '#fff', lineHeight: 1 }}>✦</span>
             </div>
-            <span style={{ fontSize: 7.5, fontWeight: 700, color: APP.tx }}>GAINN AI</span>
+            <span style={{ fontSize: 8, fontWeight: 700, color: APP.tx }}>GAINN AI</span>
           </div>
-          <span style={{ fontSize: 9, color: APP.tx3 }}>×</span>
+          <span style={{ fontSize: 10, color: APP.tx3, lineHeight: 1 }}>×</span>
         </div>
-        {/* Messages */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 8px', marginBottom: 5 }}>
-          {/* User bubble */}
+
+        {/* Chat messages */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 9px', marginBottom: 6 }}>
+          {/* User */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{
-              maxWidth: '80%', fontSize: 6.5, color: '#fff', lineHeight: 1.5, padding: '5px 7px',
+              maxWidth: '78%', fontSize: 6.5, color: '#fff', lineHeight: 1.55, padding: '5px 8px',
               background: '#16a34a',
-              borderRadius: '9px 9px 2px 9px',
-              boxShadow: '0 2px 8px rgba(22,163,74,0.35)',
-            }}>Please generate me a beginners 5k running plan</div>
+              borderRadius: '10px 10px 2px 10px',
+              boxShadow: '0 2px 10px rgba(22,163,74,0.4)',
+            }}>Please generate me a beginners 5k running plan please</div>
           </div>
-          {/* AI text bubble */}
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          {/* AI response */}
+          <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 4 }}>
             <div style={{
-              maxWidth: '85%', fontSize: 6.5, color: APP.tx, lineHeight: 1.5, padding: '5px 7px',
+              width: 14, height: 14, borderRadius: 4, background: '#16a34a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+            }}>
+              <span style={{ fontSize: 8, color: '#fff', lineHeight: 1 }}>✦</span>
+            </div>
+            <div style={{
+              maxWidth: '82%', fontSize: 6.5, color: APP.tx, lineHeight: 1.55, padding: '5px 8px',
               background: APP.surface2,
               border: `1px solid ${APP.border}`,
-              borderRadius: '9px 9px 9px 2px',
-            }}>Here&apos;s your Beginner 5k Foundation plan — ready to save! 🏃</div>
+              borderRadius: '10px 10px 10px 2px',
+            }}>Absolutely, Hero! A beginner 5k running plan is a great goal. To build the best plan for you, how many days a week would you like to run?</div>
           </div>
           {/* Generated plan card */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(22,163,74,0.18) 0%, rgba(22,163,74,0.06) 100%)',
-            border: '1px solid rgba(22,163,74,0.35)',
-            borderRadius: 10, padding: '6px 8px',
-            boxShadow: '0 2px 12px rgba(22,163,74,0.15)',
+            background: 'linear-gradient(135deg, rgba(22,163,74,0.16) 0%, rgba(22,163,74,0.05) 100%)',
+            border: '1px solid rgba(22,163,74,0.4)',
+            borderRadius: 9, padding: '6px 8px',
+            boxShadow: '0 2px 14px rgba(22,163,74,0.18)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-              <span style={{ fontSize: 10 }}>✦</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+              <span style={{ fontSize: 8 }}>✦</span>
               <div>
-                <div style={{ fontSize: 6.5, fontWeight: 800, color: APP.tx }}>Beginner 5k Foundation</div>
-                <div style={{ fontSize: 5, color: '#16a34a' }}>AI-Generated Plan</div>
+                <div style={{ fontSize: 6, fontWeight: 800, color: APP.tx }}>Beginner 5k Foundation</div>
+                <div style={{ fontSize: 4.5, color: '#16a34a', fontWeight: 600 }}>AI-Generated Plan — Review before saving</div>
               </div>
             </div>
-            {[
-              'Warm-up Walk — 5 min',
-              'Run/Walk Intervals — 18 min',
-              'Cool-down Walk — 5 min',
-            ].map((ex, i) => (
-              <div key={i} style={{ fontSize: 5, color: APP.tx3, padding: '1.5px 0', borderTop: `1px solid rgba(255,255,255,0.05)` }}>· {ex}</div>
+            {['Warm-up Walk — 5 min','Run/Walk Intervals — 18 min','Cool-down Walk — 5 min'].map((ex, i) => (
+              <div key={i} style={{ fontSize: 5, color: APP.tx3, paddingTop: 1.5, borderTop: `1px solid rgba(255,255,255,0.05)` }}>· {ex}</div>
             ))}
-            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-              <div style={{ flex: 1, background: '#16a34a', borderRadius: 6, padding: '3px 0', fontSize: 5.5, fontWeight: 700, color: '#fff', textAlign: 'center' as const }}>Save to My Plans</div>
-              <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 6, padding: '3px 6px', fontSize: 5.5, color: APP.tx3 }}>Discard</div>
+            <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
+              <div style={{ flex: 1, background: '#16a34a', borderRadius: 5, padding: '3px 0', fontSize: 5.5, fontWeight: 700, color: '#fff', textAlign: 'center' as const, boxShadow: '0 1px 6px rgba(22,163,74,0.35)' }}>Save to My Plans</div>
+              <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '3px 7px', fontSize: 5.5, color: APP.tx3 }}>Discard</div>
             </div>
           </div>
         </div>
+
         {/* Input bar */}
-        <div style={{ display: 'flex', gap: 4, padding: '0 8px 8px', alignItems: 'center' }}>
-          <div style={{ flex: 1, background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 8, padding: '4px 7px', fontSize: 6.5, color: APP.tx3 }}>Ask anything…</div>
-          <div style={{ width: 22, height: 22, borderRadius: 7, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(22,163,74,0.4)' }}>↑</div>
+        <div style={{ display: 'flex', gap: 4, padding: '0 9px 9px', alignItems: 'center' }}>
+          <div style={{ flex: 1, background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 8, padding: '4px 8px', fontSize: 6.5, color: APP.tx3 }}>Ask anything…</div>
+          <div style={{
+            width: 22, height: 22, borderRadius: 7, background: '#16a34a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, color: '#fff', flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(22,163,74,0.45)',
+          }}>↑</div>
         </div>
       </div>
     </div>,
