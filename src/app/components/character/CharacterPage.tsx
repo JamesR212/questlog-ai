@@ -154,7 +154,7 @@ export default function CharacterPage() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-ql text-sm font-semibold">Wardrobe</p>
-            <p className="text-ql-3 text-[11px] mt-0.5">Tap to equip · Premium unlocked with 💰 100,000 gold</p>
+            <p className="text-ql-3 text-[11px] mt-0.5">Tap to equip</p>
           </div>
           <span />
         </div>
@@ -222,7 +222,7 @@ export default function CharacterPage() {
           {OUTFITS.filter(o => o.premium).map(o => {
             const owned      = unlockedOutfits.includes(o.id);
             const active     = (characterAppearance.outfit ?? 'default') === o.id;
-            const canBuy     = !owned && stats.gold >= 100000;
+            const canBuy     = !owned; // gold requirement hidden for now
             const isPreviewing = previewOutfit === o.id;
             return (
               <div

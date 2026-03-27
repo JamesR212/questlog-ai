@@ -310,30 +310,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div>
-              <p className="text-ql text-sm font-semibold">Visible Stats</p>
-              <p className="text-ql-3 text-xs mt-0.5">Choose which RPG stats appear on your dashboard</p>
-            </div>
-            <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
-              {TOGGLEABLE_STATS.map((s, i) => {
-                const hidden = hiddenStats.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => toggleHiddenStat(s.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_STATS.length - 1 ? 'border-b border-ql' : ''}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{s.icon}</span>
-                      <span className={`text-sm font-medium ${hidden ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
-                    </div>
-                    <Toggle on={!hidden} onToggle={() => toggleHiddenStat(s.id)} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </>
       )}
 

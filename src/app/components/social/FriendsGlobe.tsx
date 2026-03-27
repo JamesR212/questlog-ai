@@ -87,15 +87,8 @@ export default function FriendsGlobe({ friends, myLocation, myName }: Props) {
                 {f.display_name || f.username}
               </p>
               <p style={{ color: '#888', fontSize: 11, margin: 0 }}>
-                @{f.username} · Lv {f.level}
+                @{f.username}
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 6 }}>
-                {[['STR', f.str], ['CON', f.con], ['DEX', f.dex]].map(([k, v]) => (
-                  <span key={k as string} style={{ fontSize: 11 }}>
-                    <b>{k}</b> {v}
-                  </span>
-                ))}
-              </div>
             </div>
           </Popup>
         </Marker>
