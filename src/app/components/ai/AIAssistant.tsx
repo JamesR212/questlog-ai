@@ -233,7 +233,7 @@ export default function AIAssistant() {
           <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #4285f4, #34a853, #fbbc04, #ea4335)' }}>
+                style={{ background: 'linear-gradient(135deg, #000000, #16a34a, #000000)' }}>
                 ✦
               </div>
               <span className="text-ql text-sm font-semibold">GAINN AI</span>
@@ -318,7 +318,7 @@ export default function AIAssistant() {
       <button
         onClick={() => setOpen(o => !o)}
         className={`fixed bottom-20 right-4 z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 relative ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
-        style={{ background: 'linear-gradient(135deg, #4285f4 0%, #34a853 50%, #16a34a 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #000000 0%, #16a34a 50%, #000000 100%)' }}
         aria-label="Open AI assistant"
       >
         <span className="text-white text-lg">✦</span>
