@@ -180,6 +180,15 @@ export interface GymSession {
   date: string; // ISO
 }
 
+export interface BodyCompositionEntry {
+  id: string;
+  date: string;       // YYYY-MM-DD
+  bodyFatLow?: number;  // % lower bound estimate
+  bodyFatHigh?: number; // % upper bound estimate
+  build?: string;       // e.g. "athletic", "lean", "average"
+  notes: string;        // AI summary text
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;

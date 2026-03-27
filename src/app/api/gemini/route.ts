@@ -256,6 +256,42 @@ Rules:
       return NextResponse.json({ food });
     }
 
+    if (mode === 'analyze_body_composition') {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const imageBase64 = context.imageBase64 ?? '';
+      const mimeType    = context.mimeType ?? 'image/jpeg';
+      const prompt = `You are a certified sports scientist and body composition specialist. Analyse this photo and provide an honest, professional body composition assessment.
+
+Return ONLY a raw JSON object (no markdown, no code fences):
+{
+  "bodyFatLow": 15,
+  "bodyFatHigh": 19,
+  "build": "athletic",
+  "muscleDevelopment": "moderate",
+  "summary": "2-3 sentence honest assessment of what is visible",
+  "tips": "2-3 actionable, evidence-based observations about what this person could focus on to reach their goals",
+  "disclaimer": "This is an AI visual estimate only — not a medical or clinical measurement. Body fat estimates from photos carry ±3-5% error. For accurate measurements, use DEXA, hydrostatic weighing, or skinfold calipers with a qualified professional."
+}
+
+Rules:
+- bodyFatLow and bodyFatHigh are the estimated body fat percentage range (whole numbers)
+- build options: "lean", "athletic", "average", "bulking", "heavy"
+- muscleDevelopment options: "beginner", "moderate", "advanced", "elite"
+- summary: honest, kind, and professional — mention visible body parts, overall composition, and any notable features
+- tips: specific and actionable based on what's visible (e.g. "core definition suggests low visceral fat", "shoulder-to-waist ratio indicates good upper body development")
+- If the image is not a person or is unclear, return bodyFatLow: 0, bodyFatHigh: 0, build: "unknown", summary: "Could not analyse — please submit a clear full-body or upper-body photo"
+- Never be negative or judgmental — always professional and motivating`;
+
+      const result = await model.generateContent([
+        { inlineData: { mimeType, data: imageBase64 } },
+        prompt,
+      ]);
+      let text = result.response.text().trim();
+      text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const result2 = JSON.parse(text);
+      return NextResponse.json({ result: result2 });
+    }
+
     if (mode === 'analyze_food_image') {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const imageBase64 = context.imageBase64 ?? '';
@@ -566,7 +602,25 @@ Rules:
 - If the user mentions new goals they want to work on, update them with set_goals
 - When the user asks to add/schedule/plan something ("add a gym session", "put a run in my calendar", "schedule rest day"), use add_calendar_event immediately — confirm the date/time first if not stated
 - When adding a workout plan or meal plan, offer to add the sessions to their calendar too
-- When deleting a calendar event, reference the id from their current calendar shown above`,
+- When deleting a calendar event, reference the id from their current calendar shown above
+
+SLEEP COACHING RULES:
+- When sleep data shows <70% on-time nights: flag it as a recovery issue — poor sleep reduces muscle protein synthesis by ~18%, increases cortisol, and impairs fat loss
+- When 3 consecutive late nights are detected: proactively mention it even if the user didn't ask
+- Suggest wind-down routines, consistent wake times, and avoiding screens/caffeine after a certain hour based on their bedtime target
+- Connect sleep quality to their goals (e.g. "poor sleep is working against your muscle building goal")
+
+VICE & SPENDING ANALYSIS RULES:
+- When the user asks about spending, vices, or "how am I doing financially", summarise their tracked data clearly
+- Always include: "This is an informational summary of your own tracked data. It is not financial advice. For financial decisions, please consult a qualified financial advisor."
+- Frame observations neutrally: "Your data shows..." or "Based on what you've logged..." — never say "you should invest" or make specific financial recommendations
+- You CAN observe patterns (e.g. "you've logged 12 alcohol entries this month totalling ~£80"), suggest awareness ("that's roughly £960/year if the pattern continues"), and connect it to their savings goal
+- Never diagnose addiction or mental health — if patterns seem concerning, suggest speaking to a professional
+
+BODY COMPOSITION RULES:
+- When user asks about body fat or progress after a scan, reference their bodyCompositionLog data shown in context
+- Remind users scans are estimates (±3-5% error) — encourage tracking trends over time rather than single numbers
+- Connect body comp data to their nutrition and training for holistic advice`,
       });
 
       // Build Gemini chat history from previous turns

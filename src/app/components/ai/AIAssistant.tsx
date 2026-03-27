@@ -40,13 +40,40 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
     return (now.getTime() - d.getTime()) < 7 * 86400000;
   });
   const todaySteps    = store.stepLog.find(s => s.date === today)?.steps ?? 0;
-  const recentSleep   = store.sleepLog.slice(-3).map(s => s.onTime ? 'on time' : 'late').join(', ');
+  // Sleep analysis — last 14 entries
+  const recentSleepEntries = store.sleepLog.slice(-14);
+  const sleepOnTimeCount = recentSleepEntries.filter(s => s.onTime).length;
+  const sleepPct = recentSleepEntries.length > 0 ? Math.round((sleepOnTimeCount / recentSleepEntries.length) * 100) : null;
+  const sleepSummary = recentSleepEntries.length === 0 ? 'no data'
+    : `${sleepOnTimeCount}/${recentSleepEntries.length} nights on time (${sleepPct}%) — last 3: ${recentSleepEntries.slice(-3).map(s => s.onTime ? '✓' : '✗').join(' ')}`;
+
   const todayMeals    = store.mealLog.filter(m => m.date === today);
   const totalCalories = todayMeals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
   const totalProtein  = todayMeals.reduce((sum, m) => sum + (m.protein ?? 0), 0);
   const totalWater    = store.waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
   const recentGym     = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
+
+  // Vice/spending analysis — last 30 days
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const recentVices = store.vices.filter(v => v.date >= thirtyDaysAgo);
+  const viceTotals: Record<string, { count: number; spent: number }> = {};
+  recentVices.forEach(v => {
+    const def = store.viceDefs.find(d => d.id === v.type);
+    const name = def?.name ?? v.type;
+    if (!viceTotals[name]) viceTotals[name] = { count: 0, spent: 0 };
+    viceTotals[name].count += v.count;
+    viceTotals[name].spent += (def?.goldRate ?? 0) * v.count;
+  });
+  const viceBreakdown = Object.entries(viceTotals).map(([name, d]) =>
+    `${name}: ${d.count}x (${store.currencySymbol}${d.spent.toFixed(0)} est.)`).join(', ') || 'none';
+  const totalViceSpend = Object.values(viceTotals).reduce((s, d) => s + d.spent, 0);
+
+  const recentSpending = store.spendingLog.filter(s => s.date >= thirtyDaysAgo);
+  const totalSpending = recentSpending.reduce((s, e) => s + e.amount, 0);
+
+  // Body composition history
+  const latestBodyComp = store.bodyCompositionLog.slice(-1)[0];
 
   // Calendar context — today, tomorrow, next 7 days
   const todayEvents    = store.calendarEvents.filter(e => e.date === today);
@@ -125,12 +152,21 @@ TODAY'S NUTRITION & HYDRATION:
 
 TODAY'S ACTIVITY:
 - Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
-- Sleep recent: ${recentSleep || 'no data'}
 - Habits completed this week: ${recentHabits.length}
 - Gym sessions total: ${store.gymSessions.length} | Recent: ${recentGym || 'none'}
 
-FINANCES:
-- Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved so far: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
+SLEEP:
+- ${sleepSummary}
+
+BODY COMPOSITION:
+${latestBodyComp ? `- Last scan (${latestBodyComp.date}): est. body fat ${latestBodyComp.bodyFatLow ?? '?'}–${latestBodyComp.bodyFatHigh ?? '?'}%, build: ${latestBodyComp.build ?? 'unknown'}` : '- No body composition scans recorded yet'}
+- Total scans: ${store.bodyCompositionLog.length}
+
+VICES & SPENDING (last 30 days):
+- Vice log: ${viceBreakdown}
+- Estimated vice spend: ${store.currencySymbol}${totalViceSpend.toFixed(0)}
+- Other tracked spending: ${store.currencySymbol}${totalSpending.toFixed(0)} across ${recentSpending.length} entries
+- Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved via vice log: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
 - Login streak: ${store.loginStreak} days`;
 }
 
@@ -245,6 +281,15 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
   } else if (type === 'delete_calendar_event') {
     const eventId = String(action.id ?? '');
     if (eventId) store.deleteCalendarEvent(eventId);
+
+  } else if (type === 'log_body_composition') {
+    store.logBodyComposition({
+      date:         today,
+      bodyFatLow:   action.bodyFatLow  != null ? Number(action.bodyFatLow)  : undefined,
+      bodyFatHigh:  action.bodyFatHigh != null ? Number(action.bodyFatHigh) : undefined,
+      build:        action.build       ? String(action.build) : undefined,
+      notes:        String(action.notes ?? ''),
+    });
   }
 }
 
@@ -258,10 +303,11 @@ export default function AIAssistant() {
   const [loading,     setLoading]     = useState(false);
   const [loadingLabel, setLoadingLabel] = useState('Thinking…');
   const [listening,   setListening]   = useState(false);
-  const messagesEndRef  = useRef<HTMLDivElement>(null);
-  const inputRef        = useRef<HTMLInputElement>(null);
-  const fileInputRef    = useRef<HTMLInputElement>(null);
-  const cameraInputRef  = useRef<HTMLInputElement>(null);
+  const messagesEndRef    = useRef<HTMLDivElement>(null);
+  const inputRef          = useRef<HTMLInputElement>(null);
+  const fileInputRef      = useRef<HTMLInputElement>(null);
+  const cameraInputRef    = useRef<HTMLInputElement>(null);
+  const bodyInputRef      = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
@@ -490,6 +536,44 @@ export default function AIAssistant() {
     setLoading(false);
   };
 
+  const handleBodyPhoto = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setMessages(prev => [...prev, { role: 'user', text: '📸 Progress photo', mediaUrl: URL.createObjectURL(file), mediaType: 'image' }]);
+    setLoading(true);
+    setLoadingLabel('Analysing body composition…');
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve((e.target?.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res  = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'analyze_body_composition', context: { imageBase64: base64, mimeType: file.type } }),
+      });
+      const data = await res.json();
+      if (data.result) {
+        const r = data.result;
+        const store = useGameStore.getState();
+        store.logBodyComposition({
+          date: new Date().toISOString().slice(0, 10),
+          bodyFatLow:  r.bodyFatLow,
+          bodyFatHigh: r.bodyFatHigh,
+          build:       r.build,
+          notes:       r.summary,
+        });
+        addAiMsg(`**Body Composition Scan** 📊\n\nEst. body fat: **${r.bodyFatLow}–${r.bodyFatHigh}%**\nBuild: ${r.build}\n\n${r.summary}\n\n${r.tips}\n\n_⚠️ ${r.disclaimer}_`);
+      } else {
+        addAiMsg(data.error ?? 'Could not analyse that photo.');
+      }
+    } catch {
+      addAiMsg('Could not process the photo. Please try again.');
+    }
+    setLoading(false);
+  };
+
   const toggleMic = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
@@ -555,6 +639,14 @@ export default function AIAssistant() {
         capture="environment"
         className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+      />
+      <input
+        ref={bodyInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) handleBodyPhoto(f); e.target.value = ''; }}
       />
 
       {/* Drawer */}
@@ -639,6 +731,19 @@ export default function AIAssistant() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </button>
+
+            {/* Body composition scan */}
+            <button
+              onClick={() => bodyInputRef.current?.click()}
+              disabled={loading}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-ql-surface2 border border-ql text-ql-3 hover:text-ql transition-colors disabled:opacity-40"
+              title="Body composition scan (private — photo never stored)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
               </svg>
             </button>
 

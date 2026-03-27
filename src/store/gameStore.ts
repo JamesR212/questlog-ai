@@ -32,6 +32,7 @@ import type {
   SpendingEntry,
   PaycheckEntry,
   WeightEntry,
+  BodyCompositionEntry,
 } from '@/types';
 
 interface GameStore {
@@ -82,6 +83,7 @@ interface GameStore {
   performanceLog: PerformanceEntry[];
   primaryGoals: string[];       // e.g. ["Build Muscle", "Lose Fat"]
   weightLog: WeightEntry[];     // timestamped weight measurements
+  bodyCompositionLog: BodyCompositionEntry[];
 
   trainingTab: 'habits' | 'plans' | 'performance' | 'steps';
   nutritionTab: 'food' | 'drink';
@@ -138,6 +140,7 @@ interface GameStore {
   setActivityLevel: (level: ActivityLevel) => void;
   setPrimaryGoals: (goals: string[]) => void;
   logWeight: (date: string, weight: number) => void;
+  logBodyComposition: (entry: Omit<BodyCompositionEntry, 'id'>) => void;
   addToMealLibrary: (meal: Omit<SavedMealItem, 'id'>) => void;
   removeFromMealLibrary: (id: string) => void;
   addPerformanceStat: (stat: Omit<PerformanceStat, 'id'> & { id?: string }) => void;
@@ -363,6 +366,7 @@ const INITIAL_STATE = {
   performanceLog: [],
   primaryGoals: [],
   weightLog: [],
+  bodyCompositionLog: [],
   unlockedOutfits: [],
   stepLog: [],
   stepGoal: 10000,
@@ -458,6 +462,7 @@ export const useGameStore = create<GameStore>()(
       performanceLog: [],
       primaryGoals: [],
       weightLog: [],
+      bodyCompositionLog: [],
       unlockedOutfits: [],
       stepLog: [],
       stepGoal: 10000,
@@ -807,6 +812,10 @@ export const useGameStore = create<GameStore>()(
           const filtered = state.weightLog.filter(e => e.date !== date);
           return { weightLog: [...filtered, { date, weight }].sort((a, b) => a.date.localeCompare(b.date)) };
         }),
+      logBodyComposition: (entry) =>
+        set((state) => ({
+          bodyCompositionLog: [...state.bodyCompositionLog, { ...entry, id: generateId() }],
+        })),
       addToMealLibrary: (meal) =>
         set((state) => ({ savedMealLibrary: [...state.savedMealLibrary, { ...meal, id: generateId() }] })),
       removeFromMealLibrary: (id) =>
