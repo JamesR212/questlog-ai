@@ -228,6 +228,23 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
   } else if (type === 'set_goals') {
     const incoming = action.goals as string[];
     if (Array.isArray(incoming)) store.setPrimaryGoals(incoming);
+
+  } else if (type === 'add_calendar_event') {
+    store.addCalendarEvent({
+      title:     String(action.title     ?? 'Event'),
+      date:      String(action.date      ?? today),
+      startTime: String(action.startTime ?? ''),
+      endTime:   String(action.endTime   ?? ''),
+      allDay:    Boolean(action.allDay   ?? (!action.startTime)),
+      location:  String(action.location  ?? ''),
+      notes:     String(action.notes     ?? ''),
+      color:     String(action.color     ?? '#7c3aed'),
+      reminder:  Number(action.reminder  ?? 0),
+    });
+
+  } else if (type === 'delete_calendar_event') {
+    const eventId = String(action.id ?? '');
+    if (eventId) store.deleteCalendarEvent(eventId);
   }
 }
 

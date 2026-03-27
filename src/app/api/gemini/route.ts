@@ -533,6 +533,15 @@ Set the user's savings goal (currency amount):
 Set the user's activity level (sedentary, lightly_active, moderate, active, very_active):
 { "type": "set_activity_level", "level": "active" }
 
+Add an event to the user's calendar (date YYYY-MM-DD, times HH:MM 24h, color hex — use purple #7c3aed for workouts, blue #4a9eff for sport/social, green #16a34a for meals/nutrition, red #ef4444 for rest/health):
+{ "type": "add_calendar_event", "title": "Morning Run", "date": "2026-03-28", "startTime": "07:00", "endTime": "07:45", "allDay": false, "location": "Park", "notes": "Easy 5k", "color": "#7c3aed", "reminder": 15 }
+
+For all-day events (no specific time):
+{ "type": "add_calendar_event", "title": "Rest Day", "date": "2026-03-29", "startTime": "", "endTime": "", "allDay": true, "location": "", "notes": "", "color": "#ef4444", "reminder": 0 }
+
+Remove a calendar event (use the event id from the user's calendar context above):
+{ "type": "delete_calendar_event", "id": "abc1234" }
+
 Build a full workout/training plan — ask the user about: training type, goal, experience level, days per week, and focus area. Once you have enough info (can be from one message or across several), trigger:
 { "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience (6 months – 2 years)", "daysPerWeek": "3", "focus": "Upper body" } }
 
@@ -554,7 +563,10 @@ Rules:
 - When triggering generate_gym_plan or generate_meal_plan, your reply should be a very short confirmation like "Perfect, I have everything I need!" — keep it to one sentence, the app will show the timing and auto-save message itself
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
 - When asked "how am I doing?" or progress questions, reference their actual goals, weight change, time on app, gym sessions, and habit streak — be specific with real numbers
-- If the user mentions new goals they want to work on, update them with set_goals`,
+- If the user mentions new goals they want to work on, update them with set_goals
+- When the user asks to add/schedule/plan something ("add a gym session", "put a run in my calendar", "schedule rest day"), use add_calendar_event immediately — confirm the date/time first if not stated
+- When adding a workout plan or meal plan, offer to add the sessions to their calendar too
+- When deleting a calendar event, reference the id from their current calendar shown above`,
       });
 
       // Build Gemini chat history from previous turns
