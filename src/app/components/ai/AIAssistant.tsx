@@ -401,7 +401,8 @@ export default function AIAssistant() {
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />}
+      {/* Thin tap-to-close strip above the drawer — doesn't block the page scroll area */}
+      {open && <div className="fixed left-0 right-0 z-40" style={{ bottom: '45vh', height: 40 }} onClick={() => setOpen(false)} />}
 
       {/* Hidden file input */}
       <input
@@ -415,7 +416,7 @@ export default function AIAssistant() {
       {/* Drawer */}
       <div
         className={`fixed left-0 right-0 bottom-0 z-50 transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`}
-        style={{ height: '52vh' }}
+        style={{ height: '45vh' }}
       >
         <div className="h-full bg-ql-surface border-t border-ql rounded-t-3xl flex flex-col overflow-hidden shadow-2xl"
           style={{ maxWidth: 512, margin: '0 auto' }}>
