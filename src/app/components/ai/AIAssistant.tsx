@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import type { SavedMealItem } from '@/types';
 
 interface Message {
   role: 'user' | 'ai';
@@ -157,6 +158,63 @@ export default function AIAssistant() {
   const addAiMsg = (text: string) =>
     setMessages(prev => [...prev, { role: 'ai', text }]);
 
+  // ── Plan generation triggered by AI action ───────────────────────────────
+  const generatePlan = useCallback(async (
+    type: 'gym' | 'meal',
+    preferences: Record<string, string>,
+  ) => {
+    const s = useGameStore.getState();
+    try {
+      if (type === 'gym') {
+        setLoadingLabel('Building your plan…');
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'generate_gym_plan',
+            context: { stats: s.stats, gymLog: s.gymSessions, preferences },
+          }),
+        });
+        const data = await res.json();
+        if (data.plan) {
+          s.addGymPlan({
+            name:             data.plan.name,
+            emoji:            data.plan.emoji,
+            color:            data.plan.color,
+            exercises:        data.plan.exercises,
+            scheduleDays:     data.plan.scheduleDays ?? [],
+            scheduleTime:     data.plan.scheduleTime ?? '',
+            scheduleEndTime:  data.plan.scheduleEndTime ?? '',
+            dayTimes:         {},
+            dayEndTimes:      {},
+          });
+          addAiMsg(`✅ Your "${data.plan.name}" plan has been saved to your Training tab — head there to start logging sessions!`);
+        } else {
+          addAiMsg('Plan generation hit a snag. Try again with a bit more detail about what you want.');
+        }
+      } else {
+        setLoadingLabel('Building your meal plan…');
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'generate_meal_plan',
+            context: { nutritionGoal: s.nutritionGoal, preferences },
+          }),
+        });
+        const data = await res.json();
+        if (data.mealPlan?.meals?.length) {
+          (data.mealPlan.meals as Omit<SavedMealItem, 'id'>[]).forEach(meal => s.addToMealLibrary(meal));
+          addAiMsg(`✅ Added ${data.mealPlan.meals.length} meals to your Meal Library in the Food tab — you can log them any time!`);
+        } else {
+          addAiMsg('Meal plan generation hit a snag. Try describing your preferences again.');
+        }
+      }
+    } catch {
+      addAiMsg('Something went wrong building the plan. Try again in a moment.');
+    }
+  }, [addAiMsg]);
+
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
@@ -190,8 +248,15 @@ export default function AIAssistant() {
         }),
       });
       const data = await res.json();
-      if (data.action) executeAction(data.action, store);
-      addAiMsg(data.reply ?? data.error ?? 'Sorry, something went wrong.');
+      const reply = data.reply ?? data.error ?? 'Sorry, something went wrong.';
+      addAiMsg(reply);
+      if (data.action?.type === 'generate_gym_plan') {
+        await generatePlan('gym', data.action.preferences ?? {});
+      } else if (data.action?.type === 'generate_meal_plan') {
+        await generatePlan('meal', data.action.preferences ?? {});
+      } else if (data.action) {
+        executeAction(data.action, store);
+      }
     } catch {
       addAiMsg('Having trouble connecting. Try again in a moment.');
     }

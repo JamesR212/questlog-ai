@@ -481,6 +481,12 @@ Set the user's savings goal (currency amount):
 Set the user's activity level (sedentary, lightly_active, moderate, active, very_active):
 { "type": "set_activity_level", "level": "active" }
 
+Build a full workout/training plan — ask the user about: training type, goal, experience level, days per week, and focus area. Once you have enough info (can be from one message or across several), trigger:
+{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience (6 months – 2 years)", "daysPerWeek": "3", "focus": "Upper body" } }
+
+Build a full meal plan / meal library — ask the user about: nutrition goal, diet type, meals per day, cooking preference. Once you have enough info, trigger:
+{ "type": "generate_meal_plan", "preferences": { "nutritionGoal": "Lose weight", "dietType": "No restrictions", "mealsPerDay": "3", "cookingPref": "Happy to cook" } }
+
 If the user is NOT asking to log or change anything, return:
 { "reply": "your message here", "action": null }
 
@@ -488,10 +494,12 @@ Today's date: ${today}
 Rules:
 - Always return valid JSON — never plain text
 - Use their name naturally
-- Keep reply short (2-3 sentences)
+- Keep reply short (2-3 sentences max)
 - Be warm and direct like a coach
 - If unsure of a value (e.g. calories), make a reasonable estimate and mention it
-- When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)`,
+- When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)
+- For plan generation: gather info conversationally — don't ask all questions at once. 1-2 questions per message. Once you have enough to build a great plan, trigger the action immediately
+- When triggering generate_gym_plan or generate_meal_plan, your reply should be a short "On it, building your plan now!" style message — the app will handle confirming once it's saved`,
       });
 
       // Build Gemini chat history from previous turns
