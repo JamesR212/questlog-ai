@@ -785,19 +785,6 @@ export default function AIAssistant() {
               </svg>
             </button>
 
-            {/* Body composition scan */}
-            <button
-              onClick={() => bodyInputRef.current?.click()}
-              disabled={loading}
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-ql-surface2 border border-ql text-ql-3 hover:text-ql transition-colors disabled:opacity-40"
-              title="Body composition scan (private — photo never stored)"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </button>
-
             {/* Text input — shows live transcript while listening */}
             <div className="relative flex-1">
               <input
