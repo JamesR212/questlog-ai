@@ -2007,6 +2007,141 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
       {/* ── 4.5 Customise your way ───────────────────────────────────── */}
       <CustomiseSection onGetStarted={onGetStarted} />
 
+      {/* ── 4.8 Ask GAINN AI Showcase ────────────────────────────────── */}
+      <section
+        ref={aiShowcaseRef}
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'radial-gradient(ellipse 120% 80% at 50% 50%, rgba(22,163,74,0.10) 0%, #050508 65%)',
+          padding: '100px 24px',
+          textAlign: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Badge icon — drops in from above */}
+        <div style={{
+          opacity: aiShowcaseVisible ? 1 : 0,
+          transform: aiShowcaseVisible ? 'translateY(0) scale(1)' : 'translateY(-80px) scale(0.85)',
+          transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0s',
+          marginBottom: 36,
+        }}>
+          <div style={{
+            width: 110, height: 110, borderRadius: 28,
+            background: '#16a34a',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto',
+            boxShadow: '0 8px 60px rgba(22,163,74,0.5), 0 0 120px rgba(22,163,74,0.2)',
+            animation: aiShowcaseVisible ? 'glowPulse 3.5s ease-in-out 1.3s infinite' : 'none',
+          }}>
+            <span style={{ fontSize: 48, color: '#fff', lineHeight: 1 }}>✦</span>
+          </div>
+        </div>
+
+        {/* Headline */}
+        <div style={{
+          opacity: aiShowcaseVisible ? 1 : 0,
+          transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(24px)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
+          marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 12, letterSpacing: 4, color: '#16a34a', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
+            Meet Your AI
+          </div>
+          <h2 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.05, margin: 0 }}>
+            <span style={{ color: '#fff' }}>Ask </span>
+            <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span>
+          </h2>
+        </div>
+
+        {/* Subheading */}
+        <div style={{
+          opacity: aiShowcaseVisible ? 1 : 0,
+          transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s',
+          marginBottom: 64,
+        }}>
+          <p style={{ fontSize: 18, color: '#a1a1aa', maxWidth: 420, margin: '0 auto', lineHeight: 1.6 }}>
+            The intelligence at the centre of everything. Always there, always personal.
+          </p>
+        </div>
+
+        {/* Feature rows */}
+        {[
+          { delay: '0.7s',  icon: '💬', label: 'Any question',            desc: 'Ask GAINN AI' },
+          { delay: '0.85s', icon: '🙋', label: 'Ask for help',            desc: 'Ask GAINN AI' },
+          { delay: '1.0s',  icon: '📊', label: 'Log your stats',          desc: 'Ask GAINN AI' },
+          { delay: '1.15s', icon: '🗺️', label: 'Build your fitness plans', desc: 'Ask GAINN AI' },
+          { delay: '1.3s',  icon: '📈', label: 'Understand your data',    desc: 'Ask GAINN AI' },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{
+              opacity: aiShowcaseVisible ? 1 : 0,
+              transform: aiShowcaseVisible ? 'translateX(0)' : 'translateX(-30px)',
+              transition: `all 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${item.delay}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              maxWidth: 420,
+              padding: '18px 24px',
+              marginBottom: 12,
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: 'rgba(22,163,74,0.15)',
+                border: '1px solid rgba(22,163,74,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 20,
+                flexShrink: 0,
+              }}>{item.icon}</div>
+              <span style={{ fontSize: 16, color: '#e4e4e7', fontWeight: 500 }}>{item.label}</span>
+            </div>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#16a34a',
+              background: 'rgba(22,163,74,0.1)',
+              border: '1px solid rgba(22,163,74,0.25)',
+              borderRadius: 20,
+              padding: '4px 12px',
+              whiteSpace: 'nowrap',
+            }}>{item.desc}</div>
+          </div>
+        ))}
+
+        {/* Closing line */}
+        <div style={{
+          opacity: aiShowcaseVisible ? 1 : 0,
+          transform: aiShowcaseVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.5s',
+          marginTop: 48,
+        }}>
+          <p style={{
+            fontSize: 'clamp(22px, 4vw, 36px)',
+            fontWeight: 900,
+            color: '#fff',
+            letterSpacing: '-0.5px',
+          }}>
+            This is your <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#16a34a' }}>.</span>
+          </p>
+        </div>
+      </section>
+
       {/* ── 5. AI section — sticky background, scrolling text ───────── */}
       <section ref={aiRef} style={{ position: 'relative', background: '#050508' }}>
 
@@ -2369,140 +2504,6 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
             <span style={{ fontSize: 14, color: '#52525b', fontWeight: 500 }}>Coming to App Store &amp; Google Play soon</span>
             <span style={{ fontSize: 22 }}>🤖</span>
           </div>
-        </div>
-      </section>
-
-      {/* ── 8. Ask GAINN AI Showcase ─────────────────────────────────── */}
-      <section
-        ref={aiShowcaseRef}
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'radial-gradient(ellipse 120% 80% at 50% 50%, rgba(22,163,74,0.10) 0%, #050508 65%)',
-          padding: '100px 24px',
-          textAlign: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Badge icon — drops in from above */}
-        <div style={{
-          opacity: aiShowcaseVisible ? 1 : 0,
-          transform: aiShowcaseVisible ? 'translateY(0) scale(1)' : 'translateY(-80px) scale(0.85)',
-          transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0s',
-          marginBottom: 36,
-        }}>
-          <div style={{
-            width: 110, height: 110, borderRadius: 28,
-            background: '#16a34a',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto',
-            boxShadow: '0 8px 60px rgba(22,163,74,0.5), 0 0 120px rgba(22,163,74,0.2)',
-            animation: aiShowcaseVisible ? 'glowPulse 3.5s ease-in-out 1.3s infinite' : 'none',
-          }}>
-            <span style={{ fontSize: 48, color: '#fff', lineHeight: 1 }}>✦</span>
-          </div>
-        </div>
-
-        {/* Headline */}
-        <div style={{
-          opacity: aiShowcaseVisible ? 1 : 0,
-          transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(24px)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s',
-          marginBottom: 12,
-        }}>
-          <div style={{ fontSize: 12, letterSpacing: 4, color: '#16a34a', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
-            Meet Your AI
-          </div>
-          <h2 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.05, margin: 0 }}>
-            <span style={{ color: '#fff' }}>Ask </span>
-            <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span>
-          </h2>
-        </div>
-
-        {/* Subheading */}
-        <div style={{
-          opacity: aiShowcaseVisible ? 1 : 0,
-          transform: aiShowcaseVisible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s',
-          marginBottom: 64,
-        }}>
-          <p style={{ fontSize: 18, color: '#a1a1aa', maxWidth: 420, margin: '0 auto', lineHeight: 1.6 }}>
-            The intelligence at the centre of everything. Always there, always personal.
-          </p>
-        </div>
-
-        {/* Feature rows */}
-        {[
-          { delay: '0.7s', icon: '💬', label: 'Any question', desc: 'Ask GAINN AI' },
-          { delay: '0.85s', icon: '📋', label: 'Log anything', desc: 'Ask GAINN AI' },
-          { delay: '1.0s', icon: '🗺️', label: 'Build a plan', desc: 'Ask GAINN AI' },
-          { delay: '1.15s', icon: '📊', label: 'Understand your data', desc: 'Ask GAINN AI' },
-        ].map((item) => (
-          <div
-            key={item.label}
-            style={{
-              opacity: aiShowcaseVisible ? 1 : 0,
-              transform: aiShowcaseVisible ? 'translateX(0)' : 'translateX(-30px)',
-              transition: `all 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${item.delay}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              maxWidth: 420,
-              padding: '18px 24px',
-              marginBottom: 12,
-              borderRadius: 16,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: 'rgba(22,163,74,0.15)',
-                border: '1px solid rgba(22,163,74,0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                flexShrink: 0,
-              }}>{item.icon}</div>
-              <span style={{ fontSize: 16, color: '#e4e4e7', fontWeight: 500 }}>{item.label}</span>
-            </div>
-            <div style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#16a34a',
-              background: 'rgba(22,163,74,0.1)',
-              border: '1px solid rgba(22,163,74,0.25)',
-              borderRadius: 20,
-              padding: '4px 12px',
-              whiteSpace: 'nowrap',
-            }}>{item.desc}</div>
-          </div>
-        ))}
-
-        {/* Closing line */}
-        <div style={{
-          opacity: aiShowcaseVisible ? 1 : 0,
-          transform: aiShowcaseVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
-          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 1.4s',
-          marginTop: 48,
-        }}>
-          <p style={{
-            fontSize: 'clamp(22px, 4vw, 36px)',
-            fontWeight: 900,
-            color: '#fff',
-            letterSpacing: '-0.5px',
-          }}>
-            This is your <span style={{ color: '#fff' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#16a34a' }}>.</span>
-          </p>
         </div>
       </section>
 
