@@ -1952,10 +1952,10 @@ export default function TrainingHub() {
   } = useGameStore();
 
   const { trainingTab, gpsTrackingEnabled, disabledSections } = useGameStore();
-  const [activeTab, setActiveTab] = useState<'habits' | 'plans' | 'performance' | 'steps' | 'track'>(trainingTab ?? 'habits');
+  const [activeTab, setActiveTab] = useState<'training' | 'performance' | 'steps' | 'track'>(trainingTab === 'plans' || trainingTab === 'habits' ? 'training' : (trainingTab as 'performance' | 'steps' | 'track') ?? 'training');
 
   useEffect(() => {
-    if (trainingTab) setActiveTab(trainingTab);
+    if (trainingTab) setActiveTab(trainingTab === 'plans' || trainingTab === 'habits' ? 'training' : trainingTab as 'performance' | 'steps' | 'track');
   }, [trainingTab]);
 
   // Performance state
@@ -2107,7 +2107,7 @@ export default function TrainingHub() {
         body: JSON.stringify({ mode: 'generate_gym_plan', context: { stats, gymLog: gymSessions, preferences } }),
       });
       const data = await res.json();
-      if (data.plan) { setAiPreview(data.plan); setActiveTab('plans'); }
+      if (data.plan) { setAiPreview(data.plan); setActiveTab('training'); }
       else setAiError(data.error ?? 'Failed to generate plan');
     } catch {
       setAiError('Connection lost — check your API key');
@@ -2214,10 +2214,9 @@ export default function TrainingHub() {
       {/* ── Sub-tabs ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'habits',      label: '✅ Habits',  disabled: disabledSections.includes('habits')      },
-          { id: 'plans',       label: '🏋️ Plans',   disabled: disabledSections.includes('plans')       },
-          { id: 'steps',       label: '👟 Steps',   disabled: disabledSections.includes('steps')       },
-          { id: 'performance', label: '📊 Stats',   disabled: disabledSections.includes('stats')       },
+          { id: 'training',    label: '🏋️ Training', disabled: disabledSections.includes('habits') && disabledSections.includes('plans') },
+          { id: 'steps',       label: '👟 Steps',    disabled: disabledSections.includes('steps')       },
+          { id: 'performance', label: '📊 Stats',    disabled: disabledSections.includes('stats')       },
           ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track', disabled: disabledSections.includes('track') }] : []),
         ] as const).filter(tab => !tab.disabled).map(({ id, label }) => (
           <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
@@ -2228,9 +2227,12 @@ export default function TrainingHub() {
         ))}
       </div>
 
-      {/* ── Habits tab ── */}
-      {activeTab === 'habits' && (
+      {/* ── Training tab (Habits + Plans merged) ── */}
+      {activeTab === 'training' && (
         <>
+          {/* ── Habits section ── */}
+          {!disabledSections.includes('habits') && (
+          <>
           <div className="flex items-center justify-between -mt-1">
             <p className="text-ql-3 text-xs">{habitDefs.length} active habits</p>
             <button onClick={() => setShowAddHabit(true)}
@@ -2315,12 +2317,12 @@ export default function TrainingHub() {
               </div>
             </div>
           )}
-        </>
-      )}
+          </>
+          )}
 
-      {/* ── Plans tab ── */}
-      {activeTab === 'plans' && (
-        <>
+          {/* ── Plans section ── */}
+          {!disabledSections.includes('plans') && (
+          <>
           {/* AI error */}
           {aiError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3 flex items-center justify-between -mt-1">
@@ -2480,6 +2482,8 @@ export default function TrainingHub() {
                 })}
               </div>
             </>
+          )}
+          </>
           )}
         </>
       )}
