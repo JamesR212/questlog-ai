@@ -156,6 +156,7 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
   if (type === 'log_steps') {
     store.logSteps(today, Number(action.steps), 'manual');
   } else if (type === 'log_food') {
+    const rawMicros = action.micros as Record<string, number> | undefined;
     store.logMeal({
       name:     String(action.name     ?? 'Food'),
       calories: Number(action.calories ?? 0),
@@ -163,6 +164,7 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       carbs:    Number(action.carbs    ?? 0),
       fat:      Number(action.fat      ?? 0),
       sugar:    Number(action.sugar    ?? 0),
+      micros:   rawMicros ?? undefined,
     });
   } else if (type === 'log_water') {
     store.addWaterEntry(today, Number(action.amount ?? 250));

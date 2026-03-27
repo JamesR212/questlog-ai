@@ -491,8 +491,8 @@ Available actions:
 Log steps:
 { "type": "log_steps", "steps": 8000 }
 
-Log food/meal:
-{ "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "sugar": 3 }
+Log food/meal (always include micros with your best estimate — use null only if truly unknown):
+{ "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "sugar": 3, "micros": { "vitA": 90, "vitC": 12, "vitD": 0.2, "vitE": 1.2, "vitK": 40, "vitB6": 0.6, "vitB12": 0.3, "folate": 60, "calcium": 45, "iron": 2.1, "magnesium": 38, "zinc": 1.8, "potassium": 420, "sodium": 380 } }
 
 Log water (ml):
 { "type": "log_water", "amount": 500 }

@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { NutritionGoal, Micros } from '@/types';
 import AIAdvisor from '../shared/AIAdvisor';
 import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
+import BarcodeScanner, { type ScannedProduct } from './BarcodeScanner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayStr(): string {
@@ -134,6 +135,9 @@ function GoalSheet({
 function AddMealSheet({ onClose }: { onClose: () => void }) {
   const { logMeal } = useGameStore();
   const [form, setForm] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', sugar: '' });
+  const [micros, setMicros] = useState<Micros | undefined>(undefined);
+  const [servingNote, setServingNote] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
   const up = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const valid = form.name.trim().length > 0 && parseInt(form.calories) > 0;
@@ -147,60 +151,129 @@ function AddMealSheet({ onClose }: { onClose: () => void }) {
       carbs: parseInt(form.carbs) || 0,
       fat: parseInt(form.fat) || 0,
       sugar: parseInt(form.sugar) || 0,
+      micros,
     });
     onClose();
   };
 
+  const handleScan = (product: ScannedProduct) => {
+    setForm({
+      name:     product.name,
+      calories: String(product.calories),
+      protein:  String(product.protein),
+      carbs:    String(product.carbs),
+      fat:      String(product.fat),
+      sugar:    String(product.sugar),
+    });
+    setMicros(product.micros);
+    if (product.servingSize) setServingNote(`Per ${product.servingSize}`);
+    setShowScanner(false);
+  };
+
+  const hasMicros = micros && Object.values(micros).some(v => v != null);
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-ql-surface rounded-t-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-ql-surface3" />
-        </div>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-ql">
-          <button onClick={onClose} className="text-ql-3 text-sm">Cancel</button>
-          <h3 className="text-ql text-sm font-semibold">Log Meal</h3>
-          <button
-            onClick={handleAdd}
-            className={`text-sm font-semibold ${valid ? 'text-ql-accent' : 'text-ql-3'}`}
-          >
-            Add +10 XP
-          </button>
-        </div>
-        <div className="px-5 py-4 flex flex-col gap-3">
-          <input
-            autoFocus
-            value={form.name}
-            onChange={e => up('name', e.target.value)}
-            placeholder="Meal name (e.g. Chicken & Rice)"
-            className="w-full bg-ql-surface2 rounded-2xl px-4 py-3 text-ql text-base font-medium outline-none border border-ql focus:border-ql-accent transition-colors placeholder:text-ql-3"
-          />
-          {(
-            [
-              { key: 'calories', label: 'Calories', unit: 'kcal', required: true },
-              { key: 'protein',  label: 'Protein',  unit: 'g' },
-              { key: 'carbs',    label: 'Carbs',    unit: 'g' },
-              { key: 'fat',      label: 'Fat',      unit: 'g' },
-              { key: 'sugar',    label: 'Sugar',    unit: 'g' },
-            ] as const
-          ).map(({ key, label, unit }) => (
-            <div key={key} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3 flex items-center gap-3">
-              <span className="text-ql text-sm font-medium flex-1">{label}</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={form[key]}
-                onChange={e => up(key, e.target.value)}
-                placeholder="0"
-                className="w-24 bg-ql-input border border-ql rounded-xl px-3 py-1.5 text-sm text-ql outline-none focus:border-ql-accent text-right"
-              />
-              <span className="text-ql-3 text-xs w-8">{unit}</span>
-            </div>
-          ))}
-          <div className="h-4" />
+    <>
+      {showScanner && (
+        <BarcodeScanner onResult={handleScan} onClose={() => setShowScanner(false)} />
+      )}
+      <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+        <div className="bg-ql-surface rounded-t-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-ql-surface3" />
+          </div>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-ql">
+            <button onClick={onClose} className="text-ql-3 text-sm">Cancel</button>
+            <h3 className="text-ql text-sm font-semibold">Log Meal</h3>
+            <button
+              onClick={handleAdd}
+              className={`text-sm font-semibold ${valid ? 'text-ql-accent' : 'text-ql-3'}`}
+            >
+              Add
+            </button>
+          </div>
+          <div className="px-5 py-4 flex flex-col gap-3">
+            {/* Scan button */}
+            <button
+              onClick={() => setShowScanner(true)}
+              className="flex items-center justify-center gap-2 w-full bg-ql-accent/10 border border-ql-accent/30 rounded-2xl px-4 py-3 text-ql-accent text-sm font-semibold"
+            >
+              <span className="text-base">📷</span>
+              Scan Barcode / QR Code
+            </button>
+
+            <input
+              autoFocus
+              value={form.name}
+              onChange={e => up('name', e.target.value)}
+              placeholder="Meal name (e.g. Chicken & Rice)"
+              className="w-full bg-ql-surface2 rounded-2xl px-4 py-3 text-ql text-base font-medium outline-none border border-ql focus:border-ql-accent transition-colors placeholder:text-ql-3"
+            />
+
+            {servingNote && (
+              <p className="text-ql-3 text-xs px-1">{servingNote}</p>
+            )}
+
+            {(
+              [
+                { key: 'calories', label: 'Calories', unit: 'kcal' },
+                { key: 'protein',  label: 'Protein',  unit: 'g' },
+                { key: 'carbs',    label: 'Carbs',    unit: 'g' },
+                { key: 'fat',      label: 'Fat',      unit: 'g' },
+                { key: 'sugar',    label: 'Sugar',    unit: 'g' },
+              ] as const
+            ).map(({ key, label, unit }) => (
+              <div key={key} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3 flex items-center gap-3">
+                <span className="text-ql text-sm font-medium flex-1">{label}</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={form[key]}
+                  onChange={e => up(key, e.target.value)}
+                  placeholder="0"
+                  className="w-24 bg-ql-input border border-ql rounded-xl px-3 py-1.5 text-sm text-ql outline-none focus:border-ql-accent text-right"
+                />
+                <span className="text-ql-3 text-xs w-8">{unit}</span>
+              </div>
+            ))}
+
+            {/* Micros preview (when scanned) */}
+            {hasMicros && (
+              <div className="bg-ql-surface2 border border-ql rounded-2xl p-3">
+                <p className="text-ql text-xs font-semibold mb-2">Vitamins & Minerals (from barcode scan)</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {[
+                    { key: 'vitA',      label: 'Vit A',      unit: 'µg' },
+                    { key: 'vitC',      label: 'Vit C',      unit: 'mg' },
+                    { key: 'vitD',      label: 'Vit D',      unit: 'µg' },
+                    { key: 'vitE',      label: 'Vit E',      unit: 'mg' },
+                    { key: 'vitK',      label: 'Vit K',      unit: 'µg' },
+                    { key: 'vitB6',     label: 'Vit B6',     unit: 'mg' },
+                    { key: 'vitB12',    label: 'Vit B12',    unit: 'µg' },
+                    { key: 'folate',    label: 'Folate',     unit: 'µg' },
+                    { key: 'calcium',   label: 'Calcium',    unit: 'mg' },
+                    { key: 'iron',      label: 'Iron',       unit: 'mg' },
+                    { key: 'magnesium', label: 'Magnesium',  unit: 'mg' },
+                    { key: 'zinc',      label: 'Zinc',       unit: 'mg' },
+                    { key: 'potassium', label: 'Potassium',  unit: 'mg' },
+                    { key: 'sodium',    label: 'Sodium',     unit: 'mg' },
+                  ].filter(m => micros[m.key as keyof Micros] != null).map(m => (
+                    <div key={m.key} className="flex justify-between text-[11px]">
+                      <span className="text-ql-3">{m.label}</span>
+                      <span className="text-ql font-medium tabular-nums">
+                        {micros[m.key as keyof Micros]}{m.unit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="h-4" />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
