@@ -422,24 +422,64 @@ Rules:
 
     // ── Persistent AI assistant mode ────────────────────────────────────────
     if (mode === 'assistant') {
+      const today = new Date().toISOString().slice(0, 10);
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
-        systemInstruction: `You are GAINN's personal AI assistant — friendly, concise, and genuinely familiar with this user. You know their real data and speak to them personally by name.
+        systemInstruction: `You are GAINN's personal AI assistant — a master controller that can read AND write all user data. You know this user personally and can log anything for them instantly.
 
 ${context.userContext}
 
+Available habits: ${context.habitList || 'none listed'}
 ${context.sectionContext}
 
+LOGGING CAPABILITIES — when the user asks you to log, track, record or add anything, return a JSON response with both a reply and an action.
+
+You MUST return ONLY valid JSON in this exact format (no markdown, no code fences):
+{
+  "reply": "your friendly confirmation message",
+  "action": { ... } or null
+}
+
+Available actions:
+
+Log steps:
+{ "type": "log_steps", "steps": 8000 }
+
+Log food/meal:
+{ "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "sugar": 3 }
+
+Log water (ml):
+{ "type": "log_water", "amount": 500 }
+
+Mark habit complete (match habit name from the list above):
+{ "type": "log_habit", "habitName": "Morning Run" }
+
+Log sleep (onTime = did they hit their sleep/wake target):
+{ "type": "log_sleep", "onTime": true }
+
+Update step goal:
+{ "type": "set_step_goal", "steps": 12000 }
+
+If the user is NOT asking to log anything, return:
+{ "reply": "your message here", "action": null }
+
+Today's date: ${today}
 Rules:
-- Use their name naturally (not every message)
-- Reference their actual stats, streaks, and goals when relevant
-- Keep replies short — 2-4 sentences max unless they ask for detail
-- Be warm and direct, like a coach who knows them well
-- Never say "I don't have access to your data" — you do, it's above
-- If they ask to log something, acknowledge it clearly (actual logging happens in the app)`,
+- Always return valid JSON — never plain text
+- Use their name naturally
+- Keep reply short (2-3 sentences)
+- Be warm and direct like a coach
+- If unsure of a value (e.g. calories), make a reasonable estimate and mention it`,
       });
       const result = await model.generateContent(message);
-      return NextResponse.json({ reply: result.response.text() });
+      let raw = result.response.text().trim();
+      raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      try {
+        const parsed = JSON.parse(raw);
+        return NextResponse.json({ reply: parsed.reply ?? raw, action: parsed.action ?? null });
+      } catch {
+        return NextResponse.json({ reply: raw, action: null });
+      }
     }
 
     // ── Standard chat mode ───────────────────────────────────────────────────

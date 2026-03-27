@@ -54,6 +54,34 @@ const SECTION_CONTEXT: Record<string, string> = {
 
 const CHUNK = 3 * 1024 * 1024;
 
+function executeAction(action: Record<string, unknown>, store: ReturnType<typeof useGameStore.getState>) {
+  const today = new Date().toISOString().slice(0, 10);
+  const type  = action.type as string;
+
+  if (type === 'log_steps') {
+    store.logSteps(today, Number(action.steps), 'manual');
+  } else if (type === 'log_food') {
+    store.logMeal({
+      name:     String(action.name     ?? 'Food'),
+      calories: Number(action.calories ?? 0),
+      protein:  Number(action.protein  ?? 0),
+      carbs:    Number(action.carbs    ?? 0),
+      fat:      Number(action.fat      ?? 0),
+      sugar:    Number(action.sugar    ?? 0),
+    });
+  } else if (type === 'log_water') {
+    store.addWaterEntry(today, Number(action.amount ?? 250));
+  } else if (type === 'log_habit') {
+    const name = String(action.habitName ?? '').toLowerCase();
+    const habit = store.habitDefs.find(h => h.name.toLowerCase().includes(name));
+    if (habit) store.logHabit(habit.id, today);
+  } else if (type === 'log_sleep') {
+    store.logSleep(today, Boolean(action.onTime));
+  } else if (type === 'set_step_goal') {
+    store.setStepGoal(Number(action.steps));
+  }
+}
+
 export default function AIAssistant() {
   const store = useGameStore();
   const { activeSection, userName } = store;
@@ -92,6 +120,7 @@ export default function AIAssistant() {
     setLoading(true);
     setLoadingLabel('Thinking…');
     try {
+      const habitList = store.habitDefs.map(h => h.name).join(', ');
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,10 +131,12 @@ export default function AIAssistant() {
           context: {
             userContext: buildUserContext(store),
             sectionContext: SECTION_CONTEXT[activeSection] ?? '',
+            habitList,
           },
         }),
       });
       const data = await res.json();
+      if (data.action) executeAction(data.action, store);
       addAiMsg(data.reply ?? data.error ?? 'Sorry, something went wrong.');
     } catch {
       addAiMsg('Having trouble connecting. Try again in a moment.');
