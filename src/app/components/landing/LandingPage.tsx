@@ -712,34 +712,81 @@ function Phone({ feature }: { feature: number }) {
       </div>
     </div>,
 
-    // 6 — AI Support (real chat)
-    <div key="ai" style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: APP.tx, marginBottom: 2 }}>AI Support</div>
-      <div style={{ ...card({ background: `${APP.accent}18`, borderColor: `${APP.accent}44`, padding: '7px 9px' }), display: 'flex', gap: 6, alignItems: 'center' }}>
-        <span style={{ fontSize: 16 }}>🤖</span>
-        <div>
-          <div style={{ fontSize: 8, color: '#c4b5fd', fontWeight: 600 }}>GAINN AI</div>
-          <div style={{ fontSize: 7, color: APP.tx3 }}>Your personal coach</div>
+    // 6 — AI Plan Generation (training + chat overlay)
+    <div key="ai" style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Training page behind */}
+      <div style={{ padding: '0 8px', paddingTop: 2 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: APP.tx, marginBottom: 1 }}>Training</div>
+        <div style={{ fontSize: 5.5, color: APP.tx3, marginBottom: 5 }}>0/0 habits done · 0 sessions logged</div>
+        {/* Plan card */}
+        <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 10, padding: '6px 7px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 12 }}>👟</span>
+              <div>
+                <div style={{ fontSize: 6.5, fontWeight: 800, color: APP.tx, lineHeight: 1.2 }}>Beginner 5k Foundation</div>
+                <div style={{ fontSize: 5, color: APP.tx3 }}>4 exercises · 7:00am – 8:00am</div>
+              </div>
+            </div>
+            <div style={{ background: '#3b82f6', borderRadius: 6, padding: '3px 6px', fontSize: 5.5, fontWeight: 700, color: '#fff', flexShrink: 0 }}>Log Workout</div>
+          </div>
+          {[
+            'Warm-up Walk — 5 min',
+            'Easy Run / Walk Intervals — 20 min',
+            'Cool-down Walk — 5 min',
+          ].map((ex, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 2, borderTop: `1px solid ${APP.border}` }}>
+              <span style={{ fontSize: 5, color: APP.tx3 }}>{ex}</span>
+              <span style={{ fontSize: 5, color: APP.tx3, flexShrink: 0 }}>1×1 BW</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 5, color: APP.tx3, marginTop: 2 }}>+1 more</div>
         </div>
       </div>
-      {[
-        { from: 'user', text: "I skipped leg day again 😬" },
-        { from: 'ai', text: "Let's fix that — here's a 30-min leg session for your equipment:" },
-        { from: 'ai', text: "Goblet Squats 3×12 · RDLs 3×10 · Lunges 3×10 💪" },
-        { from: 'user', text: "Perfect, logging it now!" },
-      ].map((msg, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: msg.from === 'user' ? 'flex-end' : 'flex-start' }}>
-          <div style={{
-            maxWidth: '82%', fontSize: 8, color: APP.tx, lineHeight: 1.5, padding: '5px 8px',
-            background: msg.from === 'user' ? `${APP.accent}44` : APP.surface2,
-            border: `1px solid ${msg.from === 'user' ? `${APP.accent}66` : APP.border}`,
-            borderRadius: msg.from === 'user' ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
-          }}>{msg.text}</div>
+
+      {/* GAINN AI chat overlay — slides up from bottom */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'linear-gradient(to bottom, rgba(13,13,20,0.0) 0%, rgba(13,13,20,0.97) 12%, #0d0d14 100%)',
+        paddingTop: 16,
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* AI header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', marginBottom: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 16, height: 16, borderRadius: 5, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 9, color: '#fff', lineHeight: 1 }}>✦</span>
+            </div>
+            <span style={{ fontSize: 7.5, fontWeight: 700, color: APP.tx }}>GAINN AI</span>
+          </div>
+          <span style={{ fontSize: 9, color: APP.tx3 }}>×</span>
         </div>
-      ))}
-      <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
-        <div style={{ flex: 1, ...card({ padding: '5px 8px' }), fontSize: 8, color: APP.tx3 }}>Ask anything…</div>
-        <div style={{ width: 26, height: 26, borderRadius: 8, background: APP.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>↑</div>
+        {/* Messages */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 8px', marginBottom: 5 }}>
+          {/* User bubble */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{
+              maxWidth: '80%', fontSize: 6.5, color: '#fff', lineHeight: 1.5, padding: '5px 7px',
+              background: '#16a34a',
+              borderRadius: '9px 9px 2px 9px',
+              boxShadow: '0 2px 8px rgba(22,163,74,0.35)',
+            }}>Please generate me a beginners 5k running plan</div>
+          </div>
+          {/* AI bubble */}
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              maxWidth: '85%', fontSize: 6.5, color: APP.tx, lineHeight: 1.5, padding: '5px 7px',
+              background: APP.surface2,
+              border: `1px solid ${APP.border}`,
+              borderRadius: '9px 9px 9px 2px',
+            }}>Absolutely! A beginner 5k plan is a great goal. How many days a week would you like to run?</div>
+          </div>
+        </div>
+        {/* Input bar */}
+        <div style={{ display: 'flex', gap: 4, padding: '0 8px 8px', alignItems: 'center' }}>
+          <div style={{ flex: 1, background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 8, padding: '4px 7px', fontSize: 6.5, color: APP.tx3 }}>Ask anything…</div>
+          <div style={{ width: 22, height: 22, borderRadius: 7, background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(22,163,74,0.4)' }}>↑</div>
+        </div>
       </div>
     </div>,
 
