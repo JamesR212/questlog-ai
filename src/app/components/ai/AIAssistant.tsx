@@ -269,9 +269,11 @@ export default function AIAssistant() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'linear-gradient(135deg, #000000, #16a34a, #000000)' }}>
-                ✦
+              <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: '#16a34a' }}>
+                <svg width="13" height="13" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2C14 2 14 14 2 14C14 14 14 26 14 26C14 26 14 14 26 14C14 14 14 2 14 2Z" fill="white"/>
+                </svg>
               </div>
               <span className="text-ql text-sm font-semibold">GAINN AI</span>
             </div>
@@ -355,10 +357,12 @@ export default function AIAssistant() {
       <button
         onClick={() => setOpen(o => !o)}
         className={`fixed bottom-20 right-4 z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 relative ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
-        style={{ background: 'linear-gradient(135deg, #000000 0%, #16a34a 50%, #000000 100%)' }}
+        style={{ background: '#16a34a' }}
         aria-label="Open AI assistant"
       >
-        <span className="text-white text-lg">✦</span>
+        <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2C14 2 14 14 2 14C14 14 14 26 14 26C14 26 14 14 26 14C14 14 14 2 14 2Z" fill="white"/>
+        </svg>
         {/* Live pulse dot */}
         <span className="absolute -top-1 -right-1 w-3 h-3">
           <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />

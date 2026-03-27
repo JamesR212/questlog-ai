@@ -278,7 +278,14 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={s.id}
-                    onClick={() => toggleHiddenSection(s.id)}
+                    onClick={() => {
+                      // When re-enabling the Finance tab, also clear any disabledSections blocks
+                      if (s.id === 'vices' && hidden) {
+                        if (disabledSections.includes('finance')) toggleDisabledSection('finance');
+                        if (disabledSections.includes('vices')) toggleDisabledSection('vices');
+                      }
+                      toggleHiddenSection(s.id);
+                    }}
                     className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
                   >
                     <div className="flex items-center gap-3">

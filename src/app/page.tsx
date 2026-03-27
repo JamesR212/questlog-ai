@@ -201,24 +201,24 @@ export default function Home() {
             </span>
             <button
               onClick={() => setActiveSection(activeSection === 'social' ? 'dashboard' : 'social')}
-              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                activeSection === 'social' ? 'bg-ql-accent text-white' : 'bg-ql-surface2 border border-ql text-ql-3'
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
+                activeSection === 'social' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
             >
               👥
             </button>
             <button
               onClick={() => setActiveSection(activeSection === 'leaderboard' ? 'dashboard' : 'leaderboard')}
-              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                activeSection === 'leaderboard' ? 'bg-ql-accent text-white' : 'bg-ql-surface2 border border-ql text-ql-3'
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
+                activeSection === 'leaderboard' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
             >
               🏆
             </button>
             <button
               onClick={() => setActiveSection(activeSection === 'settings' ? 'dashboard' : 'settings')}
-              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                activeSection === 'settings' ? 'bg-ql-accent text-white' : 'bg-ql-surface2 border border-ql text-ql-3'
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
+                activeSection === 'settings' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
             >
               ⚙️
