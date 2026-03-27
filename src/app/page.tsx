@@ -27,6 +27,7 @@ import FoodDrink from './components/nutrition/FoodDrink';
 import SettingsPage from './components/settings/SettingsPage';
 import SocialPage from './components/social/SocialPage';
 import LeaderboardPage from './components/leaderboard/LeaderboardPage';
+import FeedbackPage from './components/feedback/FeedbackPage';
 
 // Debounce helper
 function useDebounce<T>(value: T, delay: number): T {
@@ -48,7 +49,6 @@ export default function Home() {
   const [showAuth, setShowAuth]       = useState(false);
   const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
   const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
-  const [socialTab, setSocialTab]     = useState<'friends' | 'search' | 'feedback'>('friends');
   const hydratedUid                   = useRef<string | null>(null);
 
   // ── Auth listener ────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ export default function Home() {
               {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
             <button
-              onClick={() => { setSocialTab('friends'); setActiveSection(activeSection === 'social' ? 'dashboard' : 'social'); }}
+              onClick={() => setActiveSection(activeSection === 'social' ? 'dashboard' : 'social')}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
                 activeSection === 'social' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
@@ -209,16 +209,16 @@ export default function Home() {
               👥
             </button>
             <button
-              onClick={() => { setSocialTab('feedback'); setActiveSection('social'); }}
+              onClick={() => setActiveSection(activeSection === 'feedback' ? 'dashboard' : 'feedback')}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
-                activeSection === 'social' && socialTab === 'feedback' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
+                activeSection === 'feedback' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
               title="Send feedback"
             >
               💬
             </button>
             <button
-              onClick={() => { setSocialTab('friends'); setActiveSection(activeSection === 'leaderboard' ? 'dashboard' : 'leaderboard'); }}
+              onClick={() => setActiveSection(activeSection === 'leaderboard' ? 'dashboard' : 'leaderboard')}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
                 activeSection === 'leaderboard' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
@@ -247,7 +247,8 @@ export default function Home() {
         {activeSection === 'gym'       && <GymFitness />}
         {activeSection === 'nutrition' && <FoodDrink />}
         {activeSection === 'settings'  && <SettingsPage />}
-        {activeSection === 'social'      && <SocialPage userId={user.uid} initialTab={socialTab} key={socialTab} />}
+        {activeSection === 'social'      && <SocialPage userId={user.uid} />}
+        {activeSection === 'feedback'    && <FeedbackPage userId={user.uid} />}
         {activeSection === 'leaderboard' && <LeaderboardPage userId={user.uid} displayName={store.userName || user.displayName || 'Anonymous'} />}
       </main>
 
