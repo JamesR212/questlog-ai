@@ -187,48 +187,54 @@ export default function AIAssistant() {
         }
 
       } else {
-        // ── Form video: chunked upload ────────────────────────────────────
-        const total  = file.size;
-        const chunks = Math.ceil(total / CHUNK);
+        // ── Form video: chunked upload (raw body + headers, matching FormAnalyzer) ──
+        const total    = file.size;
+        const chunks   = Math.ceil(total / CHUNK);
         const uploadId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-        let fileUri = '';
-        let fileName = '';
+        const chunkUrls: string[] = [];
+        let uploadData: { fileUri?: string; fileName?: string; mimeType?: string; chunkUrl?: string; error?: string } = {};
 
         for (let i = 0; i < chunks; i++) {
-          const isLast = i === chunks - 1;
-          const blob   = file.slice(i * CHUNK, (i + 1) * CHUNK);
-          const mb     = Math.round(Math.min((i + 1) * CHUNK, total) / 1024 / 1024);
-          const totMb  = Math.round(total / 1024 / 1024);
+          const blob  = file.slice(i * CHUNK, (i + 1) * CHUNK);
+          const mb    = Math.round(Math.min((i + 1) * CHUNK, total) / 1024 / 1024);
+          const totMb = Math.round(total / 1024 / 1024);
           setLoadingLabel(`Uploading… ${mb} / ${totMb} MB`);
 
-          const form = new FormData();
-          form.append('chunk',    blob,        `chunk-${i}`);
-          form.append('uploadId', uploadId);
-          form.append('index',    String(i));
-          form.append('total',    String(chunks));
-          form.append('mimeType', file.type);
-          if (isLast) form.append('isLast', '1');
+          const res = await fetch('/api/gemini/upload-chunk', {
+            method: 'POST',
+            headers: {
+              'Content-Type':   'application/octet-stream',
+              'x-chunk-index':  String(i),
+              'x-total-chunks': String(chunks),
+              'x-total-size':   String(total),
+              'x-mime-type':    file.type || 'video/mp4',
+              'x-upload-id':    uploadId,
+              'x-chunk-urls':   JSON.stringify(chunkUrls),
+            },
+            body: blob,
+          });
 
-          const res  = await fetch('/api/gemini/upload-chunk', { method: 'POST', body: form });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error);
-          if (isLast) { fileUri = data.fileUri ?? ''; fileName = data.fileName ?? ''; }
+          const text = await res.text();
+          try { uploadData = JSON.parse(text); } catch { throw new Error(`Chunk ${i + 1} failed: ${text.slice(0, 200)}`); }
+          if (!res.ok) throw new Error(uploadData.error ?? `Chunk ${i + 1} failed`);
+          if (uploadData.chunkUrl) chunkUrls.push(uploadData.chunkUrl);
         }
+
+        if (!uploadData.fileUri) throw new Error(uploadData.error ?? 'Upload failed — no file URI returned');
 
         setLoadingLabel('Analysing form…');
         const res  = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: 'analyze_form_video', context: { fileUri, fileName, mimeType: file.type } }),
+          body: JSON.stringify({ mode: 'analyze_form_video', context: { fileUri: uploadData.fileUri, fileName: uploadData.fileName, mimeType: uploadData.mimeType } }),
         });
         const data = await res.json();
         if (data.analysis) {
           const a = data.analysis;
-          const positives  = (a.positives  ?? []).map((p: string) => `✅ ${p}`).join('\n');
-          const issues     = (a.issues     ?? []).map((p: string) => `⚠️ ${p}`).join('\n');
+          const positives   = (a.positives   ?? []).map((p: string) => `✅ ${p}`).join('\n');
+          const issues      = (a.issues      ?? []).map((p: string) => `⚠️ ${p}`).join('\n');
           const corrections = (a.corrections ?? []).map((p: string) => `🔧 ${p}`).join('\n');
-          addAiMsg(`**${a.exercise}** — ${a.rating}\n\n${positives}${issues ? '\n' + issues : ''}${corrections ? '\n' + corrections : ''}${a.safetyNote ? '\n\n' + a.safetyNote : ''}`);
+          addAiMsg(`${a.exercise} — ${a.rating}\n\n${positives}${issues ? '\n' + issues : ''}${corrections ? '\n' + corrections : ''}${a.safetyNote ? '\n\n' + a.safetyNote : ''}`);
         } else {
           addAiMsg(data.error ?? 'Could not analyse that video.');
         }
