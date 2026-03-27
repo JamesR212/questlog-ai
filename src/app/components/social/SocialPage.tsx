@@ -35,7 +35,7 @@ function FriendCard({ profile, onRemove }: { profile: PublicProfile; onRemove: (
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export default function SocialPage({ userId }: { userId: string }) {
+export default function SocialPage({ userId, initialTab }: { userId: string; initialTab?: 'friends' | 'search' | 'feedback' }) {
   const { userName, shareLocation, setShareLocation } = useGameStore();
 
   const [search,     setSearch]     = useState('');
@@ -46,7 +46,7 @@ export default function SocialPage({ userId }: { userId: string }) {
   const [reqLoading, setReqLoading] = useState<Record<string, boolean>>({});
   const [reqError,   setReqError]   = useState('');
   const [sent,       setSent]       = useState<Set<string>>(new Set());
-  const [tab,        setTab]        = useState<'friends' | 'search' | 'feedback'>('friends');
+  const [tab,        setTab]        = useState<'friends' | 'search' | 'feedback'>(initialTab ?? 'friends');
   const [fbMessages, setFbMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [fbInput,    setFbInput]    = useState('');
   const [fbLoading,  setFbLoading]  = useState(false);

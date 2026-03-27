@@ -48,6 +48,7 @@ export default function Home() {
   const [showAuth, setShowAuth]       = useState(false);
   const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
   const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
+  const [socialTab, setSocialTab]     = useState<'friends' | 'search' | 'feedback'>('friends');
   const hydratedUid                   = useRef<string | null>(null);
 
   // ── Auth listener ────────────────────────────────────────────────────────
@@ -200,7 +201,7 @@ export default function Home() {
               {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
             <button
-              onClick={() => setActiveSection(activeSection === 'social' ? 'dashboard' : 'social')}
+              onClick={() => { setSocialTab('friends'); setActiveSection(activeSection === 'social' ? 'dashboard' : 'social'); }}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
                 activeSection === 'social' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
@@ -208,7 +209,16 @@ export default function Home() {
               👥
             </button>
             <button
-              onClick={() => setActiveSection(activeSection === 'leaderboard' ? 'dashboard' : 'leaderboard')}
+              onClick={() => { setSocialTab('feedback'); setActiveSection('social'); }}
+              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
+                activeSection === 'social' && socialTab === 'feedback' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
+              }`}
+              title="Send feedback"
+            >
+              💬
+            </button>
+            <button
+              onClick={() => { setSocialTab('friends'); setActiveSection(activeSection === 'leaderboard' ? 'dashboard' : 'leaderboard'); }}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
                 activeSection === 'leaderboard' ? 'ring-2 ring-white bg-ql-surface2' : 'bg-ql-surface2 border border-ql text-ql-3'
               }`}
@@ -237,7 +247,7 @@ export default function Home() {
         {activeSection === 'gym'       && <GymFitness />}
         {activeSection === 'nutrition' && <FoodDrink />}
         {activeSection === 'settings'  && <SettingsPage />}
-        {activeSection === 'social'      && <SocialPage userId={user.uid} />}
+        {activeSection === 'social'      && <SocialPage userId={user.uid} initialTab={socialTab} key={socialTab} />}
         {activeSection === 'leaderboard' && <LeaderboardPage userId={user.uid} displayName={store.userName || user.displayName || 'Anonymous'} />}
       </main>
 
