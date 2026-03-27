@@ -1862,6 +1862,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
     { icon: '🏋️', title: 'AI Gym Plan Generation', desc: 'Get a personalised workout plan built around your equipment, goals, and schedule.' },
     { icon: '💪', title: 'AI Gym Form Support', desc: 'Record your reps and get real-time AI feedback on your technique to train safer and smarter.' },
     { icon: '🔬', title: 'AI Meal Macros Identifier', desc: 'Describe any meal and AI breaks down the exact calories, protein, carbs and fat instantly.' },
+    { icon: '📸', title: 'AI Body Fat % Estimator', desc: 'Upload a photo and AI estimates your body fat percentage — track your body composition over time.' },
     { icon: '💧', title: 'AI Hydration Recommendation', desc: 'Your daily water goal calculated from your body stats, activity, and climate.' },
     { icon: '🤖', title: 'AI Support', desc: 'Chat with an AI coach that knows every aspect of your health journey.' },
     { icon: '🍎', title: 'AI Food Suggestions', desc: 'Stuck on what to eat? AI suggests meals that fit your remaining macros.' },
