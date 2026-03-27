@@ -253,7 +253,7 @@ export default function Home() {
 
       <NavBar />
       <LevelUpModal />
-      <AIAssistant />
+      {hasOnboarded && <AIAssistant />}
     </div>
   );
 }
