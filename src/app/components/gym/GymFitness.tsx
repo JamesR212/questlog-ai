@@ -625,7 +625,7 @@ export default function GymFitness() {
         />
       )}
 
-      <FormAnalyzer />
+      {/* FormAnalyzer hidden — use GAINN AI floating assistant instead */}
       <AIAdvisor section="gym" />
     </div>
   );

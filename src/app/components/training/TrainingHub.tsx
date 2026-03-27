@@ -2485,7 +2485,7 @@ export default function TrainingHub() {
       )}
 
       {/* ── Form Analyzer (habits + plans tabs) ── */}
-      {(activeTab === 'habits' || activeTab === 'plans') && <FormAnalyzer />}
+      {/* FormAnalyzer hidden — use GAINN AI floating assistant instead */}
 
       {/* ── Steps tab ── */}
       {activeTab === 'steps' && (
