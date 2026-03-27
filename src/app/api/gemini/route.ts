@@ -505,7 +505,7 @@ Rules:
 - If unsure of a value (e.g. calories), make a reasonable estimate and mention it
 - When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)
 - For plan generation: gather info conversationally — don't ask all questions at once. 1-2 questions per message. Once you have enough to build a great plan, trigger the action immediately
-- When triggering generate_gym_plan or generate_meal_plan, your reply should be a short "On it, building your plan now!" style message — the app will handle confirming once it's saved
+- When triggering generate_gym_plan or generate_meal_plan, your reply should be a very short confirmation like "Perfect, I have everything I need!" — keep it to one sentence, the app will show the timing and auto-save message itself
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
 - When asked "how am I doing?" or progress questions, reference their actual goals, weight change, time on app, gym sessions, and habit streak — be specific with real numbers
 - If the user mentions new goals they want to work on, update them with set_goals`,

@@ -199,7 +199,8 @@ export default function AIAssistant() {
     const s = useGameStore.getState();
     try {
       if (type === 'gym') {
-        setLoadingLabel('Building your plan…');
+        setLoadingLabel('Building your training plan… (~15 sec)');
+        addAiMsg('⏳ Generating your training plan — usually takes around 15 seconds. It\'ll be saved directly to your Training tab when it\'s ready, so no need to wait here!');
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -226,7 +227,8 @@ export default function AIAssistant() {
           addAiMsg('Plan generation hit a snag. Try again with a bit more detail about what you want.');
         }
       } else {
-        setLoadingLabel('Building your meal plan…');
+        setLoadingLabel('Building your meal plan… (~20 sec)');
+        addAiMsg('⏳ Generating your meal plan — usually takes around 20 seconds. All the meals will be saved automatically to your Meal Library in the Food tab when ready, so feel free to carry on!');
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
