@@ -1952,10 +1952,10 @@ export default function TrainingHub() {
   } = useGameStore();
 
   const { trainingTab, gpsTrackingEnabled, disabledSections } = useGameStore();
-  const [activeTab, setActiveTab] = useState<'training' | 'performance' | 'steps' | 'track'>(trainingTab === 'plans' || trainingTab === 'habits' ? 'training' : (trainingTab as 'performance' | 'steps' | 'track') ?? 'training');
+  const [activeTab, setActiveTab] = useState<'habits' | 'plans' | 'performance' | 'steps' | 'track'>(trainingTab ?? 'habits');
 
   useEffect(() => {
-    if (trainingTab) setActiveTab(trainingTab === 'plans' || trainingTab === 'habits' ? 'training' : trainingTab as 'performance' | 'steps' | 'track');
+    if (trainingTab) setActiveTab(trainingTab as typeof activeTab);
   }, [trainingTab]);
 
   // Performance state
@@ -1972,7 +1972,6 @@ export default function TrainingHub() {
   const [viewingGymPlan,  setViewingGymPlan]  = useState<GymPlan | null>(null);
 
   // Habit state
-  const [trainingView, setTrainingView] = useState<'habits' | 'plans'>('habits');
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [editingHabit, setEditingHabit] = useState<HabitDef | null>(null);
 
@@ -2108,7 +2107,7 @@ export default function TrainingHub() {
         body: JSON.stringify({ mode: 'generate_gym_plan', context: { stats, gymLog: gymSessions, preferences } }),
       });
       const data = await res.json();
-      if (data.plan) { setAiPreview(data.plan); setActiveTab('training'); setTrainingView('plans'); }
+      if (data.plan) { setAiPreview(data.plan); setActiveTab('plans'); }
       else setAiError(data.error ?? 'Failed to generate plan');
     } catch {
       setAiError('Connection lost — check your API key');
@@ -2123,7 +2122,9 @@ export default function TrainingHub() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-ql text-xl font-bold">✅ Habits</h2>
+          <h2 className="text-ql text-xl font-bold">
+            {['plans','steps','stats','track'].every(s => disabledSections.includes(s)) && !disabledSections.includes('habits') ? 'Habits' : 'Training'}
+          </h2>
           <p className="text-ql-3 text-xs mt-0.5">
             {doneToday}/{todayHabits.length} habits · {gymSessions.length} sessions · +20 XP habits · +75 XP workouts
           </p>
@@ -2213,9 +2214,10 @@ export default function TrainingHub() {
       {/* ── Sub-tabs ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'training',    label: '✅ Habits' },
-          { id: 'steps',       label: '👟 Steps'    },
-          { id: 'performance', label: '📊 Stats'    },
+          { id: 'habits',      label: '✅ Habits'  },
+          { id: 'plans',       label: '🏋️ Plans'   },
+          { id: 'steps',       label: '👟 Steps'   },
+          { id: 'performance', label: '📊 Stats'   },
           ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track' }] : []),
         ] as const).map(({ id, label }) => (
           <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
@@ -2226,24 +2228,9 @@ export default function TrainingHub() {
         ))}
       </div>
 
-      {/* ── Training tab (Habits + Plans with toggle) ── */}
-      {activeTab === 'training' && (
+      {/* ── Habits tab ── */}
+      {activeTab === 'habits' && (
         <>
-          {/* Habits / Plans pill toggle */}
-          <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql -mt-1">
-            <button
-              onClick={() => setTrainingView('habits')}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${trainingView === 'habits' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
-            >✅ Habits</button>
-            <button
-              onClick={() => setTrainingView('plans')}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${trainingView === 'plans' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
-            >🏋️ Plans</button>
-          </div>
-
-          {/* ── Habits section ── */}
-          {trainingView === 'habits' && (
-          <>
           <div className="flex items-center justify-between -mt-1">
             <p className="text-ql-3 text-xs">{habitDefs.length} active habits</p>
             <button onClick={() => setShowAddHabit(true)}
@@ -2328,12 +2315,12 @@ export default function TrainingHub() {
               </div>
             </div>
           )}
-          </>
-          )}
+        </>
+      )}
 
-          {/* ── Plans section ── */}
-          {trainingView === 'plans' && (
-          <>
+      {/* ── Plans tab ── */}
+      {activeTab === 'plans' && (
+        <>
           {/* AI error */}
           {aiError && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3 flex items-center justify-between -mt-1">
@@ -2493,8 +2480,6 @@ export default function TrainingHub() {
                 })}
               </div>
             </>
-          )}
-          </>
           )}
         </>
       )}
