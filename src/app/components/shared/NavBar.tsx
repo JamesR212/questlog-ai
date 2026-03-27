@@ -6,7 +6,6 @@ import type { ActiveSection } from '@/types';
 const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysShow?: boolean }[] = [
   { section: 'dashboard', icon: '🏠',  label: 'Home'     },
   { section: 'nutrition', icon: '🥗',  label: 'Food'     },
-  { section: 'calendar',  icon: '📅',  label: 'Calendar' },
   { section: 'vices',     icon: '💰',  label: 'Finance'  },
   { section: 'training',  icon: '💪',  label: 'Training' },
 ];

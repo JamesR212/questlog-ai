@@ -239,8 +239,7 @@ export default function Home() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full px-4 py-5 pb-6">
-        {activeSection === 'dashboard' && <HomePage />}
-        {activeSection === 'calendar'  && <CalendarPage />}
+        {(activeSection === 'dashboard' || activeSection === 'calendar') && <HomePage />}
         {activeSection === 'vices'     && <ViceTracker />}
         {activeSection === 'training'  && <TrainingHub />}
         {activeSection === 'habits'    && <HabitTracker />}

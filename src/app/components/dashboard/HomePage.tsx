@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import AIAdvisor from '../shared/AIAdvisor';
 import type { HabitDef } from '@/types';
 import HabitEmoji from '../shared/HabitEmoji';
+import CalendarPage from '../calendar/CalendarPage';
 
 function computeStreak(
   gymLog: { date: string }[],
@@ -1169,6 +1170,11 @@ export default function HomePage() {
       })()}
 
       <AIAdvisor section="dashboard" />
+
+      {/* ── Calendar ────────────────────────────────────────────── */}
+      <div className="border-t border-ql pt-2 -mx-0">
+        <CalendarPage />
+      </div>
     </div>
   );
 }
