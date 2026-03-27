@@ -274,17 +274,28 @@ export default function SettingsPage() {
             </div>
             <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
               {TOGGLEABLE_SECTIONS.map((s, i) => {
-                const hidden = hiddenSections.includes(s.id);
+                // Finance tab is actually hidden if EITHER hiddenSections OR both disabledSections block it
+                const isFinance = s.id === 'vices';
+                const hidden = isFinance
+                  ? hiddenSections.includes('vices') || (disabledSections.includes('finance') && disabledSections.includes('vices'))
+                  : hiddenSections.includes(s.id);
                 return (
                   <button
                     key={s.id}
                     onClick={() => {
-                      // When re-enabling the Finance tab, also clear any disabledSections blocks
-                      if (s.id === 'vices' && hidden) {
-                        if (disabledSections.includes('finance')) toggleDisabledSection('finance');
-                        if (disabledSections.includes('vices')) toggleDisabledSection('vices');
+                      if (isFinance) {
+                        if (hidden) {
+                          // Turn ON: clear every possible blocking mechanism
+                          if (disabledSections.includes('finance')) toggleDisabledSection('finance');
+                          if (disabledSections.includes('vices')) toggleDisabledSection('vices');
+                          if (hiddenSections.includes('vices')) toggleHiddenSection('vices');
+                        } else {
+                          // Turn OFF: hide via hiddenSections
+                          toggleHiddenSection('vices');
+                        }
+                      } else {
+                        toggleHiddenSection(s.id);
                       }
-                      toggleHiddenSection(s.id);
                     }}
                     className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
                   >
@@ -292,7 +303,7 @@ export default function SettingsPage() {
                       <span className="text-lg">{s.icon}</span>
                       <span className={`text-sm font-medium ${hidden ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
                     </div>
-                    <Toggle on={!hidden} onToggle={() => toggleHiddenSection(s.id)} />
+                    <Toggle on={!hidden} onToggle={() => {}} />
                   </button>
                 );
               })}
