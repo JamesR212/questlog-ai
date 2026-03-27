@@ -2123,9 +2123,7 @@ export default function TrainingHub() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-ql text-xl font-bold">
-            {['plans','steps','stats','track'].every(s => disabledSections.includes(s)) && !disabledSections.includes('habits') ? 'Habits' : 'Training'}
-          </h2>
+          <h2 className="text-ql text-xl font-bold">✅ Habits</h2>
           <p className="text-ql-3 text-xs mt-0.5">
             {doneToday}/{todayHabits.length} habits · {gymSessions.length} sessions · +20 XP habits · +75 XP workouts
           </p>
@@ -2215,7 +2213,7 @@ export default function TrainingHub() {
       {/* ── Sub-tabs ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'training',    label: '🏋️ Training' },
+          { id: 'training',    label: '✅ Habits' },
           { id: 'steps',       label: '👟 Steps'    },
           { id: 'performance', label: '📊 Stats'    },
           ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track' }] : []),
