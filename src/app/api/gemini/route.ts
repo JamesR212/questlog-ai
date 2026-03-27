@@ -460,7 +460,28 @@ Log sleep (onTime = did they hit their sleep/wake target):
 Update step goal:
 { "type": "set_step_goal", "steps": 12000 }
 
-If the user is NOT asking to log anything, return:
+Add XP to the user (triggers level-up if threshold crossed):
+{ "type": "add_xp", "amount": 50 }
+
+Add to a specific RPG stat (str, con, dex, or gold):
+{ "type": "add_stat", "stat": "str", "amount": 5 }
+
+Set a specific RPG stat to an exact value (str, con, dex, gold, xp, level):
+{ "type": "set_stat", "stat": "str", "value": 25 }
+
+Set the user's wake-up target time (HH:MM 24h):
+{ "type": "set_wake_time", "time": "06:30" }
+
+Set the user's bedtime target (HH:MM 24h):
+{ "type": "set_bed_time", "time": "22:30" }
+
+Set the user's savings goal (currency amount):
+{ "type": "set_savings_goal", "amount": 2000 }
+
+Set the user's activity level (sedentary, lightly_active, moderate, active, very_active):
+{ "type": "set_activity_level", "level": "active" }
+
+If the user is NOT asking to log or change anything, return:
 { "reply": "your message here", "action": null }
 
 Today's date: ${today}
@@ -469,7 +490,8 @@ Rules:
 - Use their name naturally
 - Keep reply short (2-3 sentences)
 - Be warm and direct like a coach
-- If unsure of a value (e.g. calories), make a reasonable estimate and mention it`,
+- If unsure of a value (e.g. calories), make a reasonable estimate and mention it
+- When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)`,
       });
       const result = await model.generateContent(message);
       let raw = result.response.text().trim();

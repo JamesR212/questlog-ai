@@ -79,6 +79,51 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     store.logSleep(today, Boolean(action.onTime));
   } else if (type === 'set_step_goal') {
     store.setStepGoal(Number(action.steps));
+
+  // ── Stats & profile controls ─────────────────────────────────────────────
+  } else if (type === 'add_xp') {
+    const amount = Number(action.amount ?? 50);
+    const cur = useGameStore.getState().stats;
+    const newXp = cur.xp + amount;
+    if (newXp >= cur.xpToNext) {
+      const newLevel = cur.level + 1;
+      useGameStore.setState({
+        stats: { ...cur, xp: newXp - cur.xpToNext, xpToNext: Math.floor(cur.xpToNext * 1.5), level: newLevel },
+        showLevelUp: true,
+        levelUpMessage: `Level ${newLevel} Reached!`,
+      });
+    } else {
+      useGameStore.setState({ stats: { ...cur, xp: newXp } });
+    }
+
+  } else if (type === 'add_stat') {
+    const stat = String(action.stat ?? '').toLowerCase();
+    const amount = Number(action.amount ?? 1);
+    if (['str', 'con', 'dex', 'gold'].includes(stat)) {
+      const cur = useGameStore.getState().stats;
+      useGameStore.setState({ stats: { ...cur, [stat]: (cur as unknown as Record<string, number>)[stat] + amount } });
+    }
+
+  } else if (type === 'set_stat') {
+    const stat = String(action.stat ?? '').toLowerCase();
+    const value = Number(action.value ?? 0);
+    if (['str', 'con', 'dex', 'gold', 'xp', 'level'].includes(stat)) {
+      const cur = useGameStore.getState().stats;
+      useGameStore.setState({ stats: { ...cur, [stat]: value } });
+    }
+
+  } else if (type === 'set_wake_time') {
+    store.setWakeTarget(String(action.time ?? '06:30'));
+
+  } else if (type === 'set_bed_time') {
+    store.setBedTime(String(action.time ?? '22:00'));
+
+  } else if (type === 'set_savings_goal') {
+    store.setSavingsGoal(Number(action.amount ?? 1000));
+
+  } else if (type === 'set_activity_level') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    store.setActivityLevel(String(action.level ?? 'moderate') as any);
   }
 }
 
