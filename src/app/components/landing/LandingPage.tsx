@@ -402,39 +402,6 @@ function Phone({ feature }: { feature: number }) {
         ))}
       </div>
 
-      {/* Today's Meals */}
-      <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '6px 8px' }}>
-        {/* Header + buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 7, fontWeight: 800, color: APP.tx, flexShrink: 0 }}>Today&apos;s Meals</span>
-          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-            {['Library','Manual+'].map((t,i) => (
-              <div key={i} style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '2px 4px', fontSize: 5, color: APP.tx2 }}>{t}</div>
-            ))}
-          </div>
-        </div>
-        {/* AI Smart Log row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 5.5, color: APP.tx2, fontWeight: 700 }}>⚡ AI SMART LOG</span>
-          <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 5, padding: '2px 5px', fontSize: 5, color: APP.tx2 }}>📷 Photo</div>
-        </div>
-        {/* Input + AI */}
-        <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
-          <div style={{ flex: 1, minWidth: 0, background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 7, padding: '4px 6px', fontSize: 5.5, color: APP.tx3, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>e.g. 2 scrambled eggs on toast...</div>
-          <div style={{ flexShrink: 0, background: APP.accent, borderRadius: 7, padding: '4px 7px', fontSize: 6.5, fontWeight: 700, color: '#fff' }}>⚡ AI</div>
-        </div>
-        {/* Meal entry card */}
-        <div style={{ background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: 8, padding: '5px 7px' }}>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 6, fontWeight: 700, color: APP.tx, lineHeight: 1.3, marginBottom: 2 }}>3 Scrambled Eggs with Baked Beans, Chips, and Side Salad</div>
-              <div style={{ fontSize: 5, color: APP.tx3, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>960 kcal · P:34g · C:103g · F:49g · S:14g</div>
-            </div>
-            <span style={{ fontSize: 7, color: APP.tx3, flexShrink: 0, marginTop: 1 }}>×</span>
-          </div>
-        </div>
-      </div>
-
       {/* Vitamins & Minerals */}
       <div style={{ background: APP.surface, border: `1px solid ${APP.border}`, borderRadius: 11, padding: '6px 8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
