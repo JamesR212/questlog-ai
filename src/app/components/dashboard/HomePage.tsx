@@ -1139,35 +1139,25 @@ export default function HomePage() {
         </button>}
       </div>
 
+      {/* Steps · Nutrition · Hydration rings */}
+      {!disabledSections.includes('stats') && (
+        <>
+          <div className="h-px bg-ql-border mx-1 flex items-center">
+            <span className="bg-ql-bg px-2 text-ql-3 text-[10px] font-semibold uppercase tracking-widest mx-auto">Today</span>
+          </div>
+          <DailyTrioCard />
+        </>
+      )}
+
       {/* Weekly snapshot grid */}
       <WeeklySnapshotGrid />
-
-      {/* Steps · Nutrition · Hydration rings */}
-      {!disabledSections.includes('stats') && <DailyTrioCard />}
 
       {/* Pinned budget allowances */}
       <BudgetTrackerCard />
 
       {/* Level & XP — hidden (coming soon as dedicated tab) */}
 
-      {/* Quick stats */}
-      {!disabledSections.includes('stats') && (() => {
-        const cards = [
-          { show: true,                                    value: (gymSessions?.length ?? 0) + habitLog.length,             label: 'Activities done'  },
-          { show: !disabledSections.includes('wake'),      value: wakeQuest.checkIns.filter((c) => c.onTime).length,        label: 'On-time rises'    },
-          { show: !disabledSections.includes('vices'),     value: vices.reduce((s, v) => s + v.count, 0),                   label: 'Vices skipped'    },
-        ].filter(c => c.show);
-        return cards.length > 0 ? (
-          <div className={`grid gap-2 grid-cols-${cards.length}`}>
-            {cards.map(c => (
-              <div key={c.label} className="bg-ql-surface rounded-2xl shadow-ql-sm border border-ql p-3 text-center">
-                <div className="text-ql text-lg font-bold tabular-nums">{c.value}</div>
-                <div className="text-ql-3 text-[10px] font-medium mt-0.5">{c.label}</div>
-              </div>
-            ))}
-          </div>
-        ) : null;
-      })()}
+      {/* Quick stats hidden */}
 
       <AIAdvisor section="dashboard" />
 

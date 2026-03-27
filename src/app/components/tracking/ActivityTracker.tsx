@@ -156,6 +156,7 @@ export default function ActivityTracker() {
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCoord   = useRef<{ lat: number; lng: number } | null>(null);
   const lastAlt     = useRef<number | null>(null);
+  const warmupCount = useRef(0); // skip first few readings while GPS settles
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -173,17 +174,20 @@ export default function ActivityTracker() {
     setElevationGain(0);
     lastCoord.current = null;
     lastAlt.current = null;
+    warmupCount.current = 0;
     setStartTime(new Date().toISOString());
     setPhase('tracking');
 
     watchRef.current = navigator.geolocation.watchPosition(
       pos => {
-        const { latitude: lat, longitude: lng, altitude: alt } = pos.coords;
+        const { latitude: lat, longitude: lng, altitude: alt, accuracy } = pos.coords;
         const next = { lat, lng, ...(alt != null ? { alt } : {}) };
         setCoords(prev => [...prev, next]);
-        if (lastCoord.current) {
+        warmupCount.current += 1;
+        // Skip first 4 readings while GPS settles, then require ≥50m accuracy + ≥5m movement
+        if (warmupCount.current > 4 && lastCoord.current) {
           const d = haversine(lastCoord.current.lat, lastCoord.current.lng, lat, lng);
-          if (d < 0.5) setDistance(prev => prev + d);
+          if (accuracy <= 50 && d >= 0.005 && d < 0.5) setDistance(prev => prev + d);
         }
         if (alt != null) {
           if (lastAlt.current != null) {
@@ -195,7 +199,7 @@ export default function ActivityTracker() {
         lastCoord.current = next;
       },
       () => setGpsError('Unable to get GPS signal. Make sure location is enabled.'),
-      { enableHighAccuracy: true, maximumAge: 0 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
 
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
@@ -211,12 +215,13 @@ export default function ActivityTracker() {
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
     watchRef.current = navigator.geolocation.watchPosition(
       pos => {
-        const { latitude: lat, longitude: lng, altitude: alt } = pos.coords;
+        const { latitude: lat, longitude: lng, altitude: alt, accuracy } = pos.coords;
         const next = { lat, lng, ...(alt != null ? { alt } : {}) };
         setCoords(prev => [...prev, next]);
-        if (lastCoord.current) {
+        warmupCount.current += 1;
+        if (warmupCount.current > 4 && lastCoord.current) {
           const d = haversine(lastCoord.current.lat, lastCoord.current.lng, lat, lng);
-          if (d < 0.5) setDistance(prev => prev + d);
+          if (accuracy <= 50 && d >= 0.005 && d < 0.5) setDistance(prev => prev + d);
         }
         if (alt != null) {
           if (lastAlt.current != null) {
@@ -228,7 +233,7 @@ export default function ActivityTracker() {
         lastCoord.current = next;
       },
       () => setGpsError('Unable to get GPS signal.'),
-      { enableHighAccuracy: true, maximumAge: 0 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
   };
 

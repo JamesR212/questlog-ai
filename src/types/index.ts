@@ -169,6 +169,8 @@ export interface GymPlan {
   scheduleEndTime: string;                  // 'HH:MM' or '' (legacy / fallback)
   dayTimes?: Record<string, string>;        // day-of-week index → 'HH:MM'
   dayEndTimes?: Record<string, string>;     // day-of-week index → 'HH:MM'
+  split?: string;                           // e.g. "Push / Pull / Legs", "Upper / Lower", "Full Body"
+  recoveryNotes?: string;                   // Short recovery guidance shown on the plan card
   createdAt: string;
   linkedHabitId?: string;                   // HabitDef.id created alongside this plan
   linkedStatId?: string;                    // PerformanceStat.id auto-created for this plan

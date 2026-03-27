@@ -31,7 +31,6 @@ const PRESET_HABITS = [
   { name: 'Gym',         emoji: '💪', color: '#ff3b30' },
   { name: 'Meditation',  emoji: '🧘', color: '#af52de' },
   { name: 'Cold Shower', emoji: '🚿', color: '#5ac8fa' },
-  { name: 'No Alcohol',  emoji: '🚫', color: '#ff9500' },
   { name: 'Journaling',  emoji: '✏️', color: '#a2845e' },
   { name: 'Stretching',  emoji: '🤸', color: '#ffcc00' },
 ];
@@ -408,7 +407,7 @@ export default function HabitTracker() {
         <div>
           <h2 className="text-ql text-xl font-bold">Good Habits</h2>
           <p className="text-ql-3 text-xs mt-0.5">
-            {doneToday}/{todayHabits.length} done today · +20 XP each
+            {doneToday}/{todayHabits.length} done today · 
           </p>
         </div>
         <button onClick={() => setShowAdd(true)}
@@ -451,7 +450,7 @@ export default function HabitTracker() {
                     <p className="text-ql-3 text-[10px] mt-0.5">{timeLabel}</p>
                   )}
                 </div>
-                {done && <span className="text-xs text-ql-accent font-bold">+20 XP</span>}
+                {done && <span className="text-xs text-ql-accent font-bold">✓</span>}
               </div>
             );
           })}

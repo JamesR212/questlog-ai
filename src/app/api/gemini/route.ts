@@ -84,44 +84,93 @@ export async function POST(req: NextRequest) {
     if (mode === 'generate_gym_plan') {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const prefs = context.preferences ?? {};
-      const prompt = `You are a personal trainer creating a personalised gym workout plan.
-Hero stats: STR=${context.stats?.str}, CON=${context.stats?.con}, DEX=${context.stats?.dex}, Level=${context.stats?.level}
-Past gym sessions: ${context.gymLog?.length ?? 0}
+      const daysPerWeek = parseInt(prefs.daysPerWeek ?? '3', 10);
+      const rawSplit = (prefs.split ?? '').toLowerCase().replace(/[^a-z]/g, '');
+
+      // Fuzzy split detection — handle PPL, pushpulllegs, upperlower, UL, etc.
+      const isPPL        = /p(ush)?p(ull)?l(eg)?s?/.test(rawSplit) || rawSplit.includes('ppl');
+      const isUpperLower = rawSplit.includes('upper') || rawSplit.includes('ul') || rawSplit === 'upperlower';
+      const isBodyPart   = rawSplit.includes('bodypart') || rawSplit.includes('bro') || rawSplit.includes('isolation');
+      const isRunning    = rawSplit.includes('run') || rawSplit.includes('cardio') || (prefs.type ?? '').toLowerCase().includes('run');
+
+      // Also infer from daysPerWeek if no split specified
+      const inferredPPL        = !rawSplit && daysPerWeek >= 5;
+      const inferredUpperLower = !rawSplit && daysPerWeek === 4;
+
+      const splitInstructions = (isPPL || inferredPPL)
+        ? `REQUIRED SPLIT: Push/Pull/Legs — generate EXACTLY 3 plans:
+  - Plan 1 "Push Day": Chest, Shoulders, Triceps. scheduleDays = [1,4] (Mon+Thu).
+  - Plan 2 "Pull Day": Back, Biceps, Rear Delts. scheduleDays = [2,5] (Tue+Fri).
+  - Plan 3 "Legs Day": Quads, Hamstrings, Glutes, Calves. scheduleDays = [3,6] (Wed+Sat).
+  If daysPerWeek is 3: Push [1], Pull [3], Legs [5] (one day each, no repeats).`
+        : (isUpperLower || inferredUpperLower)
+        ? `REQUIRED SPLIT: Upper/Lower — generate EXACTLY 2 plans:
+  - Plan 1 "Upper Body": Chest, Back, Shoulders, Arms. scheduleDays = [1,4] (Mon+Thu).
+  - Plan 2 "Lower Body": Quads, Hamstrings, Glutes, Calves, Core. scheduleDays = [2,5] (Tue+Fri).`
+        : isBodyPart
+        ? `REQUIRED SPLIT: Body Part — generate EXACTLY 5 plans (one muscle group per day):
+  Chest [1], Back [2], Shoulders [3], Arms [4], Legs [5]. One day each per week.`
+        : isRunning
+        ? `REQUIRED: Running plan — generate 1 plan. Alternate hard/easy efforts. Never two hard days back-to-back. Include distance/duration in exercise names.`
+        : `REQUIRED SPLIT: Full Body — generate 1 plan scheduled ${daysPerWeek <= 2 ? 'with rest days between (e.g. [1,4])' : 'Mon/Wed/Fri [1,3,5]'}. Hit all major muscle groups each session.`;
+
+      const prompt = `You are an expert personal trainer creating a science-backed gym programme with proper recovery built in.
 
 User preferences:
 - Training type: ${prefs.type ?? 'Weights and gym training'}
 - Goal: ${prefs.goal ?? 'General fitness'}
 - Experience: ${prefs.experience ?? 'Some experience'}
-- Days per week: ${prefs.daysPerWeek ?? '3'}
-- Focus area: ${prefs.focus ?? 'Full body balanced'}
+- Days per week: ${daysPerWeek}
+- Focus area: ${prefs.focus ?? 'Full body'}
+- Stats: STR=${context.stats?.str ?? 10}, CON=${context.stats?.con ?? 10}, Level=${context.stats?.level ?? 1}
 
-Generate a realistic plan tailored to these exact preferences.
-If the training type is running, use running-specific exercises like "Easy Run", "Tempo Run", "Interval Sprints", "Long Run", "Rest / Walk" with sets=1, targetReps=1, targetWeight=0 and note the distance/duration in the name (e.g. "Easy Run — 20 min").
-If beginner or 1 day per week, keep it very simple and achievable.
-Return ONLY a raw JSON object (no markdown, no code fences) in this exact shape:
-{
-  "name": "string (short catchy plan name)",
-  "emoji": "single emoji",
-  "color": "hex color like #4a6fa5",
-  "exercises": [
-    { "name": "Exercise name", "sets": 3, "targetReps": 10, "targetWeight": 0 }
-  ],
-  "scheduleDays": [1, 3, 5],
-  "scheduleTime": "07:00",
-  "scheduleEndTime": "08:00"
-}
+${splitInstructions}
+
+RECOVERY RULES (always apply):
+- Never schedule the same muscle group on consecutive days (minimum 48h between same group).
+- For multi-plan splits: scheduleDays across plans must never overlap.
+- Each plan's recoveryNotes must clearly explain the recovery logic in plain English.
+
+Return ONLY a raw JSON array (no markdown, no code fences, no wrapping object):
+[
+  {
+    "name": "Push Day",
+    "emoji": "💪",
+    "color": "#e05a2b",
+    "split": "Push · Pull · Legs",
+    "recoveryNotes": "Chest, shoulders and triceps get 72h rest before the next Push session.",
+    "exercises": [
+      { "name": "Bench Press", "sets": 4, "targetReps": 8, "targetWeight": 60 }
+    ],
+    "scheduleDays": [1, 4],
+    "scheduleTime": "07:00",
+    "scheduleEndTime": "08:00"
+  }
+]
+
 Rules:
-- 4-6 exercises matching the equipment and focus area
-- targetWeight 0 means bodyweight
-- scheduleDays: 0=Sun, 1=Mon … 6=Sat — pick the right number of days to match daysPerWeek
-- scheduleTime/scheduleEndTime: realistic gym hours (~1 hour session)
-- Tailor difficulty to experience level and STR stat (${context.stats?.str ?? 10}/150)`;
+- ALWAYS return an array, even for a single plan.
+- 4–6 exercises per plan, specific to that day's muscle group(s).
+- targetWeight 0 = bodyweight.
+- scheduleDays: 0=Sun … 6=Sat. No two plans may share a day.
+- All plans in a split share the same split label string.
+- scheduleTime/scheduleEndTime: realistic gym hours (~1 hour session).
+- Tailor difficulty to experience and STR (${context.stats?.str ?? 10}/150).`;
 
+      console.log('[GymPlan] prefs:', JSON.stringify(prefs));
+      console.log('[GymPlan] splitInstructions used:', splitInstructions.slice(0, 80));
       const result = await model.generateContent(prompt);
       let text = result.response.text().trim();
-      text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-      const plan = JSON.parse(text);
-      return NextResponse.json({ plan });
+      console.log('[GymPlan] raw Gemini response:', text.slice(0, 300));
+      // Strip code fences anywhere
+      text = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      // Extract array: find first [ to last ]
+      const arrStart = text.indexOf('[');
+      const arrEnd   = text.lastIndexOf(']');
+      if (arrStart !== -1 && arrEnd > arrStart) text = text.slice(arrStart, arrEnd + 1);
+      const plans = JSON.parse(text);
+      console.log('[GymPlan] parsed plans count:', Array.isArray(plans) ? plans.length : 'not array');
+      return NextResponse.json({ plans: Array.isArray(plans) ? plans : [plans] });
     }
 
     if (mode === 'generate_meal_plan') {
@@ -459,9 +508,23 @@ Rules:
     // ── Persistent AI assistant mode ────────────────────────────────────────
     if (mode === 'assistant') {
       const today = new Date().toISOString().slice(0, 10);
+      const intensity = Number(context.aiIntensity ?? 50);
+      const intensityInstruction = intensity <= 20
+        ? 'COACHING STYLE — Supportive (intensity 1-20): Be extremely gentle, warm, and non-judgmental. Celebrate every small win enthusiastically. Never criticise or point out failures directly. If they miss a goal say something like "That\'s totally okay — what got in the way? Let\'s make tomorrow count 🤗"'
+        : intensity <= 40
+        ? 'COACHING STYLE — Encouraging (intensity 21-40): Be positive and motivating. Give gentle nudges when goals are missed. Focus on progress over perfection. Keep the tone warm and friendly. Mild accountability but always supportive.'
+        : intensity <= 60
+        ? 'COACHING STYLE — Balanced (intensity 41-60): Be honest and direct. Mix genuine praise with clear accountability. Point out shortfalls constructively but always offer a path forward. Direct but kind.'
+        : intensity <= 80
+        ? 'COACHING STYLE — Tough Love (intensity 61-80): Push the user hard. Call out missed goals directly (e.g. "You missed your step goal 3 days this week — that needs to change"). Be demanding but always goal-focused. No sugarcoating, but no cruelty either.'
+        : 'COACHING STYLE — Drill Sergeant (intensity 81-100): Maximum intensity. Zero tolerance for excuses. Military-style accountability. If they miss goals be blunt and demanding (e.g. "You said you wanted results. Skipping workouts won\'t get you there. Lock in — no more excuses."). Relentlessly push them toward their goals.';
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
         systemInstruction: `You are GAINN's personal AI assistant — a knowledgeable personal coach with full access to this user's data, schedule, nutrition, and activity. You give accurate, evidence-based advice tailored specifically to what they have going on today and this week.
+
+FEATURE EXPLANATION — if a user seems confused about how something works (e.g. asks "how do I...?", "what does X do?", "why isn't X working?", "I don't understand"), give a short, clear explanation of that feature. Keep it to 2–4 sentences max. Cover: what it is, how to use it, and one practical tip. Don't be overly technical — explain it like a helpful friend. Features include: Habits (daily check-offs that build streaks and earn XP), Gym Plans (AI-generated workout plans you log after each session), Vice Tracker (track temptations you resist and earn tokens), Calendar (schedule events and see daily breakdowns), GPS Tracker (record walks/runs/cycles with live map), Quests (goal-setting with milestones), Finance (track income, bills, and wants), Nutrition (log meals and hit your calorie/macro goals), Sleep (log sleep and wake times), Steps (track daily step count), Leaderboard (compete on lifts and XP with others).
+
+${intensityInstruction}
 
 ${context.userContext}
 
@@ -578,8 +641,9 @@ For all-day events (no specific time):
 Remove a calendar event (use the event id from the user's calendar context above):
 { "type": "delete_calendar_event", "id": "abc1234" }
 
-Build a full workout/training plan — ask the user about: training type, goal, experience level, days per week, and focus area. Once you have enough info (can be from one message or across several), trigger:
-{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience (6 months – 2 years)", "daysPerWeek": "3", "focus": "Upper body" } }
+Build a full workout/training plan — ask the user about: training type, goal, experience level, days per week, focus area, and whether they want a split (e.g. Push/Pull/Legs, Upper/Lower) or full body. Once you have enough info (can be from one message or across several), trigger:
+{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience (6 months – 2 years)", "daysPerWeek": "4", "focus": "Full body", "split": "Upper/Lower" } }
+The "split" field must be one of: "Full Body", "Push/Pull/Legs", "Upper/Lower", "Body Part", "Running". If the user explicitly asks for a split, set it accordingly. If they haven't specified, infer from daysPerWeek (1-2→Full Body, 3→Full Body, 4→Upper/Lower, 5-6→Push/Pull/Legs).
 
 Build a full meal plan / meal library — ask the user about: nutrition goal, diet type, meals per day, cooking preference. Once you have enough info, trigger:
 { "type": "generate_meal_plan", "preferences": { "nutritionGoal": "Lose weight", "dietType": "No restrictions", "mealsPerDay": "3", "cookingPref": "Happy to cook" } }
@@ -620,19 +684,80 @@ VICE & SPENDING ANALYSIS RULES:
 BODY COMPOSITION RULES:
 - When user asks about body fat or progress after a scan, reference their bodyCompositionLog data shown in context
 - Remind users scans are estimates (±3-5% error) — encourage tracking trends over time rather than single numbers
-- Connect body comp data to their nutrition and training for holistic advice`,
+- Connect body comp data to their nutrition and training for holistic advice
+
+HELP & TUTORIAL RULES:
+- When the user asks "help", "how does this work", "what can you do", "tutorial", "guide me", or any similar request for guidance — respond with the full mini tutorial below (formatted exactly as shown, using line breaks and sections).
+- Deliver it as your reply field inside the normal JSON response (action: null).
+- Use their first name at the start if you know it.
+
+MINI TUTORIAL (deliver this when asked for help):
+"Here's everything GAINN AI can do for you 👋
+
+🍽️ FOOD & NUTRITION
+• Just say what you ate — "I had 2 eggs and toast" — I'll log it instantly
+• Tap the 📷 camera button to photograph your meal and I'll estimate the macros
+• Or tap 🖼️ gallery to upload a photo
+• I log calories, protein, carbs, fat, sugar AND vitamins & minerals automatically
+• You can also scan food barcodes in the Food tab for exact nutrition data
+
+💪 HABITS & GYM
+• Ask me to mark a habit done — "mark meditation complete"
+• Head to the Habits tab to create and track your daily habits with streaks
+• Go to the Gym tab to build workout plans and log sessions
+• Ask me to build you a personalised gym plan — I'll ask a couple of questions then generate it
+
+📅 CALENDAR
+• Ask me to add events — "add a gym session Tuesday at 7am"
+• I can also remove events — "delete my Thursday run"
+• I'll suggest calendar blocks when building your training plan
+
+😴 SLEEP & RECOVERY
+• Tell me how you slept — "I went to bed at 11 and woke at 7"
+• Ask "set my wake time to 6:30am" and I'll update your wake quest
+• I'll flag if poor sleep is affecting your goals
+
+💧 STEPS & WATER
+• "Log 8000 steps" or "I drank 500ml of water" — done instantly
+• Ask me to update your step goal any time
+
+💰 VICES & FINANCE
+• Head to the Finance tab to track spending and vices
+• Ask me "how am I doing with spending this month?" for a summary
+• (Note: this is informational only, not financial advice)
+
+📸 BODY SCAN
+• Tap the 🧍 body scan button (person icon) to take a private photo
+• I'll estimate your body fat % range — the photo is never stored
+• Track progress over time by scanning monthly
+
+🎤 VOICE
+• Tap the 🎤 mic button to speak to me instead of typing
+
+Just ask me anything — I'm here to coach you! 🏆"`,
       });
 
-      // Build Gemini chat history from previous turns
-      const chatHistory = (rawHistory as { role: string; text: string }[]).map(m => ({
+      // Build Gemini chat history — must start with a 'user' turn
+      let chatHistory = (rawHistory as { role: string; text: string }[]).map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.text }],
       }));
+      // Drop any leading model messages (Gemini rejects history that doesn't start with 'user')
+      while (chatHistory.length > 0 && chatHistory[0].role !== 'user') {
+        chatHistory = chatHistory.slice(1);
+      }
 
       const chat = model.startChat({ history: chatHistory });
       const result = await chat.sendMessage(message);
       let raw = result.response.text().trim();
-      raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      // Strip all code fences (they may appear anywhere, not just at start/end)
+      raw = raw.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      // Extract just the JSON object — find outermost { ... }
+      const jsonStart = raw.indexOf('{');
+      const jsonEnd   = raw.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        raw = raw.slice(jsonStart, jsonEnd + 1);
+      }
       try {
         const parsed = JSON.parse(raw);
         return NextResponse.json({ reply: parsed.reply ?? raw, action: parsed.action ?? null });

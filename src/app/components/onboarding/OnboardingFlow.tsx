@@ -62,7 +62,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'nutrition' | 'theme' | 'sections' | 'feedback' | 'terms';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'gym_exp' | 'run_exp' | 'nutrition' | 'theme' | 'sections' | 'coaching' | 'feedback' | 'terms';
 
 const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
   { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
@@ -80,7 +80,7 @@ const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: stri
 ];
 
 export default function OnboardingFlow() {
-  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode, setDisabledSections, setPrimaryGoals, logWeight } = useGameStore();
+  const { setUserName, setCurrencySymbol, setSavingsGoal, setWakeTarget, setBedTime, setStepGoal, setHasOnboarded, setTheme, setCharacterAppearance, setFinancialMode, setDisabledSections, setPrimaryGoals, logWeight, setAiIntensity, setGymExperience, setRunExperience } = useGameStore();
 
   const [stepIndex,         setStepIndex]         = useState(0);
   const [name,              setName]              = useState('');
@@ -103,6 +103,8 @@ export default function OnboardingFlow() {
   const [countdown,         setCountdown]         = useState(5);
   const [termsAccepted,     setTermsAccepted]     = useState(false);
   const [nutritionGoals,    setNutritionGoals]    = useState<string[]>([]);
+  const [gymExp,            setGymExp]            = useState('');
+  const [runExp,            setRunExp]            = useState('');
 
   // Compute dynamic steps based on selected goals
   const steps: StepId[] = useMemo(() => {
@@ -110,9 +112,12 @@ export default function OnboardingFlow() {
     if (goals.includes('save_money')) list.push('money');
     if (goals.includes('wake_early')) list.push('sleep');
     if (goals.includes('get_fit') || goals.includes('build_strength') || goals.includes('track_life')) list.push('fitness');
+    if (goals.includes('build_strength') || goals.includes('track_life')) list.push('gym_exp');
+    if (goals.includes('get_fit') || goals.includes('track_life')) list.push('run_exp');
     if (goals.includes('nutrition')) list.push('nutrition');
     list.push('theme');
     list.push('sections');
+    list.push('coaching');
     list.push('feedback');
     list.push('terms');
     return list;
@@ -169,11 +174,38 @@ export default function OnboardingFlow() {
       nutrition:      'Eat Better',
     };
     setPrimaryGoals(goals.map(g => GOAL_LABELS[g] ?? g));
+    if (gymExp) setGymExperience(gymExp);
+    if (runExp) setRunExperience(runExp);
     // Log starting weight as the first data point
     const today = new Date().toISOString().slice(0, 10);
     if (weightKg > 0) logWeight(today, weightKg);
     setHasOnboarded();
   };
+
+  // ── Auto-disable sections based on goals when sections step is reached ──
+  useEffect(() => {
+    if (currentStep !== 'sections') return;
+    // Map each section to which goals enable it
+    const SECTION_GOALS: Record<string, string[]> = {
+      food:      ['nutrition', 'track_life'],
+      hydration: ['nutrition', 'get_fit', 'track_life'],
+      sleep:     ['wake_early', 'track_life'],
+      wake:      ['wake_early', 'track_life'],
+      calendar:  ['get_fit', 'build_strength', 'wake_early', 'track_life', 'save_money'],
+      vices:     ['quit_vices', 'save_money', 'track_life'],
+      finance:   ['save_money', 'quit_vices', 'track_life'],
+      habits:    ['get_fit', 'build_strength', 'wake_early', 'quit_vices', 'track_life'],
+      plans:     ['get_fit', 'build_strength', 'track_life'],
+      steps:     ['get_fit', 'track_life'],
+      stats:     ['get_fit', 'build_strength', 'track_life'],
+      track:     ['get_fit', 'build_strength', 'track_life'],
+    };
+    const autoDisabled = ONBOARDING_SECTIONS
+      .filter(s => !SECTION_GOALS[s.id]?.some(g => goals.includes(g)))
+      .map(s => s.id);
+    setDisabledOnboarding(autoDisabled);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   // ── Countdown on feedback step (just enables the button, doesn't auto-advance) ──
   useEffect(() => {
@@ -445,6 +477,80 @@ export default function OnboardingFlow() {
           </>
         )}
 
+        {/* ── Gym Experience ── */}
+        {currentStep === 'gym_exp' && (() => {
+          const options = [
+            { id: 'Brand new',   emoji: '🆕', desc: 'Never trained with weights before' },
+            { id: '< 6 months',  emoji: '🌱', desc: 'Just getting started' },
+            { id: '6–12 months', emoji: '📈', desc: 'Getting the hang of it' },
+            { id: '1–2 years',   emoji: '💪', desc: 'Solid foundation built' },
+            { id: '2–4 years',   emoji: '🏋️', desc: 'Experienced lifter' },
+            { id: '4+ years',    emoji: '🏆', desc: 'Advanced — knows the craft' },
+          ];
+          return (
+            <>
+              <div className="text-5xl mb-6">🏋️</div>
+              <h1 className="text-white text-3xl font-bold mb-2">Gym Background</h1>
+              <p className="text-white/50 text-sm mb-6">How long have you been training with weights? This helps GAINN build the right plan for your level.</p>
+              <div className="flex flex-col gap-2 flex-1">
+                {options.map(o => (
+                  <button key={o.id} onClick={() => { setGymExp(o.id); goNext(); }}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all ${gymExp === o.id ? 'bg-white/15 border-white/30' : 'bg-white/5 border-white/8'}`}
+                  >
+                    <span className="text-2xl">{o.emoji}</span>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-semibold">{o.id}</p>
+                      <p className="text-white/40 text-xs">{o.desc}</p>
+                    </div>
+                    {gymExp === o.id && <span className="text-white text-sm">✓</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
+                <button onClick={goNext} className="flex-1 py-4 bg-white/10 text-white/50 font-bold rounded-2xl text-base">Skip</button>
+              </div>
+            </>
+          );
+        })()}
+
+        {/* ── Running Experience ── */}
+        {currentStep === 'run_exp' && (() => {
+          const options = [
+            { id: 'Never run',   emoji: '🆕', desc: 'Haven\'t really run before' },
+            { id: '< 6 months',  emoji: '🌱', desc: 'Just starting out' },
+            { id: '6–12 months', emoji: '📈', desc: 'Running regularly' },
+            { id: '1–2 years',   emoji: '🏃', desc: 'Comfortable with distance' },
+            { id: '2–4 years',   emoji: '⚡', desc: 'Working on pace & endurance' },
+            { id: '4+ years',    emoji: '🏆', desc: 'Experienced runner' },
+          ];
+          return (
+            <>
+              <div className="text-5xl mb-6">🏃</div>
+              <h1 className="text-white text-3xl font-bold mb-2">Running Background</h1>
+              <p className="text-white/50 text-sm mb-6">How long have you been running? Helps GAINN pitch your cardio plans at the right level.</p>
+              <div className="flex flex-col gap-2 flex-1">
+                {options.map(o => (
+                  <button key={o.id} onClick={() => { setRunExp(o.id); goNext(); }}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all ${runExp === o.id ? 'bg-white/15 border-white/30' : 'bg-white/5 border-white/8'}`}
+                  >
+                    <span className="text-2xl">{o.emoji}</span>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-semibold">{o.id}</p>
+                      <p className="text-white/40 text-xs">{o.desc}</p>
+                    </div>
+                    {runExp === o.id && <span className="text-white text-sm">✓</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
+                <button onClick={goNext} className="flex-1 py-4 bg-white/10 text-white/50 font-bold rounded-2xl text-base">Skip</button>
+              </div>
+            </>
+          );
+        })()}
+
         {/* ── Nutrition ── */}
         {currentStep === 'nutrition' && (
           <>
@@ -568,6 +674,34 @@ export default function OnboardingFlow() {
             <div className="mt-4 flex gap-3">
               <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
               <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+            </div>
+          </>
+        )}
+
+        {/* ── Coaching Style slide ── */}
+        {currentStep === 'coaching' && (
+          <>
+            <div className="text-5xl mb-4">🤖</div>
+            <h1 className="text-white text-3xl font-bold mb-2">How should GAINN coach you?</h1>
+            <p className="text-white/60 text-sm mb-6">You can change this anytime in Settings</p>
+            <div className="flex flex-col gap-3 w-full">
+              {[
+                { icon: '🤗', label: 'Go Easy', desc: 'Gentle, non-judgmental. Celebrates every small win.', value: 20 },
+                { icon: '⚖️', label: 'Balanced', desc: 'Honest and encouraging. The right mix of push and support.', value: 50 },
+                { icon: '🎖️', label: 'Drill Sergeant', desc: 'Maximum intensity. No excuses. Military-style accountability.', value: 90 },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setAiIntensity(opt.value); goNext(); }}
+                  className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl px-5 py-4 text-left transition-all active:scale-[0.98]"
+                >
+                  <span className="text-3xl shrink-0">{opt.icon}</span>
+                  <div>
+                    <p className="text-white font-bold text-base">{opt.label}</p>
+                    <p className="text-white/60 text-xs mt-0.5">{opt.desc}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </>
         )}

@@ -45,7 +45,11 @@ export default function AuthScreen({ initialMode = 'login' }: { initialMode?: Mo
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Something went wrong';
-      setError(msg.replace('Firebase: ', '').replace(/\s*\(auth\/.*?\)\.?/, '').trim());
+      if (msg.includes('email-already-in-use')) {
+        setError('Email already in use — try logging in instead.');
+      } else {
+        setError(msg.replace('Firebase: ', '').replace(/\s*\(auth\/.*?\)\.?/, '').trim());
+      }
     }
 
     setLoading(false);

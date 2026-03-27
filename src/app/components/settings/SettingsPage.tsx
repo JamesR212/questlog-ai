@@ -91,6 +91,7 @@ const TOGGLEABLE_STATS = [
 export default function SettingsPage() {
   const {
     theme, setTheme,
+    aiIntensity, setAiIntensity,
     competitionMode, setCompetitionMode,
     financialMode, setFinancialMode,
     hiddenSections, toggleHiddenSection,
@@ -104,6 +105,8 @@ export default function SettingsPage() {
     characterAppearance, setCharacterAppearance,
     disabledSections, toggleDisabledSection,
     clockFormat, setClockFormat,
+    gymExperience, setGymExperience,
+    runExperience, setRunExperience,
   } = useGameStore();
 
   const handleSignOut = async () => {
@@ -482,6 +485,76 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      {/* ── GAINN AI ──────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <p className="text-ql text-sm font-semibold">GAINN AI</p>
+        <div className="bg-ql-surface rounded-2xl border border-ql p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ql text-sm font-medium">Coaching Style</p>
+              <p className="text-ql-3 text-xs mt-0.5">
+                {aiIntensity <= 20 ? '🤗 Supportive'
+                  : aiIntensity <= 40 ? '😊 Encouraging'
+                  : aiIntensity <= 60 ? '⚖️ Balanced'
+                  : aiIntensity <= 80 ? '💪 Tough Love'
+                  : '🎖️ Drill Sergeant'}
+              </p>
+            </div>
+            <span className="text-ql-3 text-xs tabular-nums">{aiIntensity}</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={100}
+            value={aiIntensity}
+            onChange={e => setAiIntensity(Number(e.target.value))}
+            className="w-full h-2 rounded-full outline-none cursor-pointer"
+            style={{ accentColor: 'var(--ql-accent)' }}
+          />
+          <div className="flex justify-between text-[10px] text-ql-3">
+            <span>Supportive</span>
+            <span>Balanced</span>
+            <span>Drill Sergeant</span>
+          </div>
+          <p className="text-ql-3 text-[11px] leading-relaxed">
+            {aiIntensity <= 20 ? 'Gentle and non-judgmental. Celebrates small wins, no pressure.'
+              : aiIntensity <= 40 ? 'Positive and motivating. Gentle nudges when you miss days.'
+              : aiIntensity <= 60 ? 'Honest and direct. Mix of encouragement and accountability.'
+              : aiIntensity <= 80 ? 'Pushes hard. Calls out missed goals. No excuses, but still kind.'
+              : 'Maximum intensity. Military-style accountability. Zero tolerance for excuses.'}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Training Background ─────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <p className="text-ql text-sm font-semibold">Training Background</p>
+        <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
+          {/* Gym experience */}
+          <div className="px-4 py-3.5 border-b border-ql">
+            <p className="text-ql text-sm font-medium mb-2">🏋️ Gym Experience</p>
+            <div className="flex flex-wrap gap-2">
+              {['Brand new', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'].map(opt => (
+                <button key={opt} onClick={() => setGymExperience(gymExperience === opt ? '' : opt)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${gymExperience === opt ? 'bg-ql-accent text-white border-ql-accent' : 'bg-ql-surface2 text-ql-3 border-ql'}`}
+                >{opt}</button>
+              ))}
+            </div>
+          </div>
+          {/* Running experience */}
+          <div className="px-4 py-3.5">
+            <p className="text-ql text-sm font-medium mb-2">🏃 Running Experience</p>
+            <div className="flex flex-wrap gap-2">
+              {['Never run', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'].map(opt => (
+                <button key={opt} onClick={() => setRunExperience(runExperience === opt ? '' : opt)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${runExperience === opt ? 'bg-ql-accent text-white border-ql-accent' : 'bg-ql-surface2 text-ql-3 border-ql'}`}
+                >{opt}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── Account ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
         <p className="text-ql text-sm font-semibold">Account</p>

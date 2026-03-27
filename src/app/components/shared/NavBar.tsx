@@ -7,7 +7,8 @@ const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysSh
   { section: 'dashboard', icon: '🏠',  label: 'Home'     },
   { section: 'nutrition', icon: '🥗',  label: 'Food'     },
   { section: 'vices',     icon: '💰',  label: 'Finance'  },
-  { section: 'training',  icon: '💪',  label: 'Training' },
+  { section: 'training',  icon: '✅',  label: 'Habits'   },
+  { section: 'gym',       icon: '🏃',  label: 'Exercise' },
 ];
 
 export default function NavBar() {
@@ -20,6 +21,7 @@ export default function NavBar() {
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.section === 'dashboard') return true;
     if (item.section === 'training') return !trainingAllOff;
+    if (item.section === 'gym') return true;
     // Hard-disabled via disabledSections
     if (item.section === 'nutrition' && disabledSections.includes('food')) return false;
     if (item.section === 'calendar'  && disabledSections.includes('calendar')) return false;
@@ -43,14 +45,12 @@ export default function NavBar() {
             >
               <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : ''}`}>
                 {item.section === 'vices' && (!financialMode || disabledSections.includes('finance')) ? '🚫'
-                  : item.section === 'training' && habitsOnly ? '✅'
                   : item.icon}
               </span>
               <span className={`text-[10px] font-medium transition-colors duration-200 ${
                 active ? 'text-ql-accent' : 'text-ql-3'
               }`}>
                 {item.section === 'vices' && (!financialMode || disabledSections.includes('finance')) ? 'Vices'
-                  : item.section === 'training' && habitsOnly ? 'Habits'
                   : item.label}
               </span>
             </button>

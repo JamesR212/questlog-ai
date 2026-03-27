@@ -17,7 +17,7 @@ const REWARD_EMOJIS = ['🍕','🍷','🎮','☕','🍫','🛒','🎬','🍦','�
 
 const TOKENS_PER_EARN = 3; // vice entries per token
 
-const SUB_EMOJIS = ['📺','🎵','☁️','💪','🧘','🎬','📰','🎮','🛒','💊','🚗','📦','🔐','🌐','✈️','🍔'];
+const SUB_EMOJIS = ['📺','🎵','☁️','💪','🧘','🎬','📰','🎮','🛒','🚗','📦','🔐','🌐','✈️','🍔'];
 const SUB_CATEGORIES: { id: SubscriptionCategory; label: string; emoji: string }[] = [
   { id: 'entertainment', label: 'Entertainment', emoji: '🎬' },
   { id: 'health',        label: 'Health',         emoji: '💪' },
@@ -60,9 +60,10 @@ function VicesTab() {
   const todayStr   = new Date().toDateString();
   const todayVices = vices.filter((v) => new Date(v.date).toDateString() === todayStr);
 
-  const tokensEarned = Math.floor(vices.length / tokensPerEarn);
+  const totalSkips   = vices.reduce((sum, v) => sum + v.count, 0);
+  const tokensEarned = Math.floor(totalSkips / tokensPerEarn);
   const available    = tokensEarned - tokensSpent;
-  const progress     = vices.length % tokensPerEarn;
+  const progress     = totalSkips % tokensPerEarn;
   const progressPct  = (progress / tokensPerEarn) * 100;
 
   const getCount = (id: string) => counts[id] ?? 0;
@@ -114,7 +115,7 @@ function VicesTab() {
         <div>
           <p className="text-ql-3 text-xs font-medium mb-0.5">Total Saved</p>
           <div className="text-3xl font-bold text-amber-500 tabular-nums">{sym}{totalSaved.toFixed(2)}</div>
-          <p className="text-ql-3 text-xs mt-0.5">{vices.length} entries logged</p>
+          <p className="text-ql-3 text-xs mt-0.5">{totalSkips} skip{totalSkips !== 1 ? 's' : ''} logged</p>
         </div>
         <div className="text-5xl">💰</div>
       </div>
@@ -408,7 +409,7 @@ function toMonthly(amount: number, frequency: 'weekly' | 'monthly' | 'annual' | 
   return amount;
 }
 
-const BUDGET_EMOJIS = ['🏠','🛒','🚗','💊','🍔','🎉','🍺','☕','🎬','🎮','👗','✈️','🐾','💳','📚','💡'];
+const BUDGET_EMOJIS = ['🏠','🛒','🚗','🍔','🎉','🍺','☕','🎬','🎮','👗','✈️','🐾','💳','📚','💡'];
 
 // ── Period spend helper ────────────────────────────────────────────────────────
 function getMonday(d: Date): Date {

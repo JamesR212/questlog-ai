@@ -154,6 +154,8 @@ TODAY'S ACTIVITY:
 - Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
 - Habits completed this week: ${recentHabits.length}
 - Gym sessions total: ${store.gymSessions.length} | Recent: ${recentGym || 'none'}
+- Gym experience: ${store.gymExperience || 'not set'}
+- Running experience: ${store.runExperience || 'not set'}
 
 SLEEP:
 - ${sleepSummary}
@@ -336,30 +338,56 @@ export default function AIAssistant() {
     const s = useGameStore.getState();
     try {
       if (type === 'gym') {
-        setLoadingLabel('Building your training plan… (~15 sec)');
-        addAiMsg('⏳ Generating your training plan — usually takes around 15 seconds. It\'ll be saved directly to your Training tab when it\'s ready, so no need to wait here!');
+        addAiMsg('⏳ Building your plan now — this takes around 15 seconds. It\'ll appear automatically in the Gym tab when ready. You can keep chatting!');
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mode: 'generate_gym_plan',
-            context: { stats: s.stats, gymLog: s.gymSessions, preferences },
+            context: {
+              stats: s.stats,
+              gymLog: s.gymSessions,
+              preferences: {
+                ...preferences,
+                // Always use stored experience so it's accurate regardless of what the assistant captured
+                experience: preferences.experience || s.gymExperience || 'Some experience',
+                runExperience: s.runExperience || preferences.runExperience || '',
+              },
+            },
           }),
         });
         const data = await res.json();
-        if (data.plan) {
-          s.addGymPlan({
-            name:             data.plan.name,
-            emoji:            data.plan.emoji,
-            color:            data.plan.color,
-            exercises:        data.plan.exercises,
-            scheduleDays:     data.plan.scheduleDays ?? [],
-            scheduleTime:     data.plan.scheduleTime ?? '',
-            scheduleEndTime:  data.plan.scheduleEndTime ?? '',
-            dayTimes:         {},
-            dayEndTimes:      {},
+        if (!res.ok || data.error) {
+          addAiMsg(`Plan generation failed: ${data.error ?? res.status}. Try again in a moment.`);
+          return;
+        }
+        // Support both legacy { plan } and new { plans: [...] }
+        const rawPlans: Record<string, unknown>[] = data.plans ?? (data.plan ? [data.plan] : []);
+        console.log('[GymPlan] rawPlans received:', JSON.stringify(rawPlans, null, 2));
+        if (rawPlans.length > 0) {
+          rawPlans.forEach(p => {
+            s.addGymPlan({
+              name:          p.name as string,
+              emoji:         p.emoji as string,
+              color:         p.color as string,
+              split:         p.split as string | undefined,
+              recoveryNotes: p.recoveryNotes as string | undefined,
+              exercises:     ((p.exercises as Record<string, unknown>[]) ?? []).map(ex => ({
+                ...ex,
+                id: Math.random().toString(36).slice(2, 9),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              } as any)),
+              scheduleDays:    (p.scheduleDays as number[]) ?? [],
+              scheduleTime:    (p.scheduleTime as string) ?? '',
+              scheduleEndTime: (p.scheduleEndTime as string) ?? '',
+              dayTimes:        {},
+              dayEndTimes:     {},
+            });
           });
-          addAiMsg(`✅ Your "${data.plan.name}" plan has been saved to your Training tab — head there to start logging sessions!`);
+          const label = rawPlans.length === 1
+            ? `"${rawPlans[0].name as string}"`
+            : rawPlans.map(p => `"${p.name as string}"`).join(', ');
+          addAiMsg(`✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Gym tab → Plans. Head there to log your first session!`);
         } else {
           addAiMsg('Plan generation hit a snag. Try again with a bit more detail about what you want.');
         }
@@ -382,8 +410,9 @@ export default function AIAssistant() {
           addAiMsg('Meal plan generation hit a snag. Try describing your preferences again.');
         }
       }
-    } catch {
-      addAiMsg('Something went wrong building the plan. Try again in a moment.');
+    } catch (err) {
+      console.error('[GymPlan] generatePlan error:', err);
+      addAiMsg(`Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [addAiMsg]);
 
@@ -416,23 +445,27 @@ export default function AIAssistant() {
             userContext: buildUserContext(store),
             sectionContext: SECTION_CONTEXT[activeSection] ?? '',
             habitList,
+            aiIntensity: store.aiIntensity ?? 50,
           },
         }),
       });
       const data = await res.json();
       const reply = data.reply ?? data.error ?? 'Sorry, something went wrong.';
       addAiMsg(reply);
+      // Release the input immediately so user can keep chatting
+      setLoading(false);
       if (data.action?.type === 'generate_gym_plan') {
-        await generatePlan('gym', data.action.preferences ?? {});
+        // Fire plan generation in background — it posts its own status messages
+        generatePlan('gym', data.action.preferences ?? {});
       } else if (data.action?.type === 'generate_meal_plan') {
-        await generatePlan('meal', data.action.preferences ?? {});
+        generatePlan('meal', data.action.preferences ?? {});
       } else if (data.action) {
         executeAction(data.action, store);
       }
     } catch {
       addAiMsg('Having trouble connecting. Try again in a moment.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleFile = async (file: File) => {

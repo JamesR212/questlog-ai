@@ -97,6 +97,12 @@ interface GameStore {
   setWeightUnit: (unit: 'kg' | 'st_lbs' | 'lbs') => void;
   setCurrencySymbol: (symbol: string) => void;
   setHasOnboarded: () => void;
+  aiIntensity: number;
+  setAiIntensity: (v: number) => void;
+  gymExperience: string;
+  setGymExperience: (v: string) => void;
+  runExperience: string;
+  setRunExperience: (v: string) => void;
   setCompetitionMode: (on: boolean) => void;
   setFinancialMode: (on: boolean) => void;
   toggleHiddenSection: (section: string) => void;
@@ -114,6 +120,7 @@ interface GameStore {
   updateGymPlan: (id: string, patch: Partial<GymPlan>) => void;
   removeGymPlan: (id: string) => void;
   logGymSession: (planId: string) => void;
+  removeGymSession: (sessionId: string) => void;
   addHabit: (def: Omit<HabitDef, 'id' | 'createdAt'>) => string;
   updateHabit: (id: string, patch: Partial<HabitDef>) => void;
   removeHabit: (id: string) => void;
@@ -327,6 +334,9 @@ const INITIAL_STATE = {
   currencySymbol: '£',
   hasOnboarded: false,
   accountCreatedDate: null,
+  aiIntensity: 50,
+  gymExperience: '',
+  runExperience: '',
   competitionMode: true,
   financialMode: true,
   hiddenSections: [],
@@ -423,6 +433,9 @@ export const useGameStore = create<GameStore>()(
       currencySymbol: '£',
       hasOnboarded: false,
       accountCreatedDate: null,
+      aiIntensity: 50,
+      gymExperience: '',
+      runExperience: '',
       competitionMode: true,
       financialMode: true,
       hiddenSections: [],
@@ -496,6 +509,9 @@ export const useGameStore = create<GameStore>()(
         hasOnboarded: true,
         accountCreatedDate: state.accountCreatedDate ?? new Date().toISOString().slice(0, 10),
       })),
+      setAiIntensity: (v) => set({ aiIntensity: Math.max(1, Math.min(100, v)) }),
+      setGymExperience: (v) => set({ gymExperience: v }),
+      setRunExperience: (v) => set({ runExperience: v }),
       setCompetitionMode: (on) => set({ competitionMode: on }),
       setFinancialMode: (on) => set({ financialMode: on }),
       setDisabledSections: (sections) => set({ disabledSections: sections }),
@@ -612,6 +628,9 @@ export const useGameStore = create<GameStore>()(
 
       logGymSession: (planId) =>
         set((state) => {
+          // Prevent double-logging the same plan on the same day
+          const todayPrefix = new Date().toISOString().slice(0, 10);
+          if (state.gymSessions.some(s => s.planId === planId && s.date.slice(0, 10) === todayPrefix)) return state;
           const session: GymSession = { id: generateId(), planId, date: new Date().toISOString() };
           const newStats = tryLevelUp(state.stats, {
             str: state.stats.str + 3,
@@ -637,6 +656,11 @@ export const useGameStore = create<GameStore>()(
           }
           return { gymSessions: [...state.gymSessions, session], habitLog: newHabitLog, stats: newStats };
         }),
+
+      removeGymSession: (sessionId) =>
+        set((state) => ({
+          gymSessions: state.gymSessions.filter(s => s.id !== sessionId),
+        })),
 
       addHabit: (def) => {
         const id = generateId();

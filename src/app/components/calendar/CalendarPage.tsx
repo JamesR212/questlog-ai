@@ -522,9 +522,6 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Sleep & wake ── */}
-      {!disabledSections.includes('sleep') && !disabledSections.includes('wake') && <SleepWakeCard date={today} />}
-
       <div className="flex flex-col gap-0">
       {/* ── Month header ── */}
       <div className="flex items-center justify-between mb-3">
@@ -763,6 +760,13 @@ export default function CalendarPage() {
         </div>
       )}
 
+      {/* ── Sleep & wake log for selected day ── */}
+      {!disabledSections.includes('sleep') && !disabledSections.includes('wake') && (
+        <div className="mt-2">
+          <SleepWakeCard date={selected} />
+        </div>
+      )}
+
       {/* ── Gym plans for this day ── */}
       {dayGymPlans.length > 0 && (
         <div className="mt-2 flex flex-col gap-2">
@@ -788,13 +792,6 @@ export default function CalendarPage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* ── Sleep & wake log for selected day ── */}
-      {!disabledSections.includes('sleep') && !disabledSections.includes('wake') && (
-        <div className="mt-4">
-          <SleepWakeCard date={selected} />
         </div>
       )}
 
