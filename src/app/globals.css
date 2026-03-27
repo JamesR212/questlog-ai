@@ -194,6 +194,18 @@ input[type="number"]::-webkit-outer-spin-button {
   filter: invert(1);
 }
 
+/* ── Onboarding animations ────────────────────────────────────── */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.35), 0 0 80px rgba(124,58,237,0.15); }
+  50%       { box-shadow: 0 0 70px rgba(124,58,237,0.55), 0 0 140px rgba(124,58,237,0.25); }
+}
+
 /* ── Range sliders ────────────────────────────────────────────── */
 
 input[type="range"].ql-slider {

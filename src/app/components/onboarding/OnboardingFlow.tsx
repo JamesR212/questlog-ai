@@ -62,7 +62,7 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
   { id: 'very_active', label: 'Athlete',           desc: 'Twice daily or physical job',  emoji: '🏆' },
 ];
 
-type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'gym_exp' | 'run_exp' | 'nutrition' | 'theme' | 'sections' | 'coaching' | 'feedback' | 'terms';
+type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'gym_exp' | 'run_exp' | 'nutrition' | 'theme' | 'sections' | 'coaching' | 'feedback' | 'gainn_ai' | 'terms';
 
 const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
   { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
@@ -119,6 +119,7 @@ export default function OnboardingFlow() {
     list.push('sections');
     list.push('coaching');
     list.push('feedback');
+    list.push('gainn_ai');
     list.push('terms');
     return list;
   }, [goals]);
@@ -750,6 +751,83 @@ export default function OnboardingFlow() {
             >
               Let&apos;s Go →
             </button>
+          </div>
+        )}
+
+        {/* ── GAINN AI showcase slide ── */}
+        {currentStep === 'gainn_ai' && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-0 overflow-hidden">
+            {/* Glowing orb */}
+            <div style={{ animation: 'fadeSlideUp 1s cubic-bezier(0.16,1,0.3,1) 0.05s both' }}>
+              <div style={{
+                width: 96, height: 96, borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(124,58,237,0.4) 0%, rgba(124,58,237,0.08) 70%, transparent 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 24px',
+                animation: 'glowPulse 3.5s ease-in-out infinite',
+              }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28,
+                }}>✦</div>
+              </div>
+            </div>
+
+            {/* Label */}
+            <div style={{ animation: 'fadeSlideUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s both' }}>
+              <p className="text-[11px] font-bold tracking-widest uppercase mb-3" style={{ color: '#7c3aed' }}>Meet Your AI</p>
+              <h2 className="text-3xl font-black text-white leading-tight mb-3">
+                Ask <span className="text-white">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-white">NN</span>
+              </h2>
+              <p className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto mb-7">
+                The intelligence at the centre of everything. Always there, always personal.
+              </p>
+            </div>
+
+            {/* Feature rows */}
+            <div className="w-full max-w-xs flex flex-col gap-2.5 mb-8">
+              {[
+                { icon: '💬', label: 'Any question',          delay: '0.35s' },
+                { icon: '📋', label: 'Log anything',          delay: '0.48s' },
+                { icon: '🗺️', label: 'Build a plan',          delay: '0.61s' },
+                { icon: '📊', label: 'Understand your data',  delay: '0.74s' },
+              ].map(item => (
+                <div key={item.label}
+                  style={{ animation: `fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) ${item.delay} both` }}
+                >
+                  <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '10px 14px', width: '100%', justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: 'rgba(124,58,237,0.15)',
+                        border: '1px solid rgba(124,58,237,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 18, flexShrink: 0,
+                      }}>{item.icon}</div>
+                      <span className="text-white/80 text-sm font-medium">{item.label}</span>
+                    </div>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ color: '#7c3aed', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)', whiteSpace: 'nowrap' }}>
+                      Ask GAINN AI
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Closing line + button */}
+            <div style={{ animation: 'fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.9s both' }} className="flex flex-col items-center gap-4">
+              <p className="text-xl font-black text-white">
+                This is your <span style={{ color: '#7c3aed' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#7c3aed' }}>NN</span><span style={{ color: '#7c3aed' }}>.</span>
+              </p>
+              <button onClick={goNext}
+                className="px-10 py-3.5 rounded-2xl font-bold text-sm text-white transition-all"
+                style={{ background: '#16a34a', border: '2px solid #16a34a' }}>
+                Continue →
+              </button>
+            </div>
           </div>
         )}
 
