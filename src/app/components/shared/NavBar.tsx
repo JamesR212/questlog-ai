@@ -21,8 +21,8 @@ export default function NavBar() {
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.section === 'dashboard') return true;
     if (item.section === 'training') return !trainingAllOff;
-    if (item.section === 'gym') return true;
     // Hard-disabled via disabledSections
+    if (item.section === 'gym'       && disabledSections.includes('gym')) return false;
     if (item.section === 'nutrition' && disabledSections.includes('food')) return false;
     if (item.section === 'calendar'  && disabledSections.includes('calendar')) return false;
     if (item.section === 'vices'     && disabledSections.includes('finance') && disabledSections.includes('vices')) return false;

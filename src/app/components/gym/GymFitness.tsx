@@ -1122,68 +1122,95 @@ function recoveryColor(pct: number): string {
 function MaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) {
   const rc = recoveryColor;
   const bg = 'var(--ql-surface2)';
-  const sk = 'rgba(80,110,200,0.72)';
-  const sw = 0.8;
-  const dv = 'rgba(80,110,200,0.32)';
+  const sk = 'rgba(80,110,200,0.35)';
+  const sw = 0.6;
+  const dv = 'rgba(80,110,200,0.28)';
   return (
     <svg width="90" height="180" viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* BASE SHAPES */}
-      <ellipse cx="50" cy="11" rx="9.5" ry="10.5" fill={bg} stroke={sk} strokeWidth="1.2"/>
-      <path d="M44,21 Q50,19 56,21 L57,31 Q50,33 43,31 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M44,22 C40,25 32,30 27,38 L32,45 C38,40 47,35 50,32 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M56,22 C60,25 68,30 73,38 L68,45 C62,40 53,35 50,32 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M7,36 C3,42 3,55 7,66 L14,69 L22,63 L26,53 L28,40 C20,33 11,31 7,36 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M93,36 C97,42 97,55 93,66 L86,69 L78,63 L74,53 L72,40 C80,33 89,31 93,36 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M28,40 C27,36 38,31 50,31 L50,65 L28,65 C24,59 24,48 28,40 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M72,40 C73,36 62,31 50,31 L50,65 L72,65 C76,59 76,48 72,40 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M29,65 L50,65 L50,102 L29,98 C26,90 26,76 29,65 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M71,65 L50,65 L50,102 L71,98 C74,90 74,76 71,65 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M25,68 L29,66 L29,98 L25,100 C21,92 21,78 25,68 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M75,68 L71,66 L71,98 L75,100 C79,92 79,78 75,68 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M9,56 C7,63 7,74 10,83 L18,87 L25,81 L27,62 L22,54 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M91,56 C93,63 93,74 90,83 L82,87 L75,81 L73,62 L78,54 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M10,83 C8,91 9,103 13,112 L19,115 L25,109 L25,83 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M90,83 C92,91 91,103 87,112 L81,115 L75,109 L75,83 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M10,112 L25,112 L25,121 Q17,124 10,121 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M90,112 L75,112 L75,121 Q83,124 90,121 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M27,100 C25,104 27,110 30,112 L50,114 L70,112 C73,110 75,104 73,100 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M27,110 C21,120 19,138 24,156 L32,160 L36,154 L33,132 L30,110 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M30,110 L50,112 L50,158 L30,158 C27,148 27,127 30,110 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M70,110 L50,112 L50,158 L70,158 C73,148 73,127 70,110 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M73,110 C79,120 81,138 76,156 L68,160 L64,154 L67,132 L70,110 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M24,158 C19,166 20,177 24,186 L34,190 L38,184 L35,158 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M76,158 C81,166 80,177 76,186 L66,190 L62,184 L65,158 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M21,186 L37,188 L36,198 L23,198 Q14,195 21,186 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M79,186 L63,188 L64,198 L77,198 Q86,195 79,186 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      {/* MUSCLE OVERLAYS */}
-      <path d="M28,40 C27,36 38,31 50,31 L50,65 L28,65 C24,59 24,48 28,40 Z" fill={rc(recovery.Chest)} opacity="0.72"/>
-      <path d="M72,40 C73,36 62,31 50,31 L50,65 L72,65 C76,59 76,48 72,40 Z" fill={rc(recovery.Chest)} opacity="0.72"/>
-      <path d="M44,22 C40,25 32,30 27,38 L32,45 C38,40 47,35 50,32 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M56,22 C60,25 68,30 73,38 L68,45 C62,40 53,35 50,32 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M7,36 C3,42 3,55 7,66 L14,69 L22,63 L26,53 L28,40 C20,33 11,31 7,36 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M93,36 C97,42 97,55 93,66 L86,69 L78,63 L74,53 L72,40 C80,33 89,31 93,36 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M29,65 L50,65 L50,102 L29,98 C26,90 26,76 29,65 Z" fill={rc(recovery.Abs)} opacity="0.72"/>
-      <path d="M71,65 L50,65 L50,102 L71,98 C74,90 74,76 71,65 Z" fill={rc(recovery.Abs)} opacity="0.72"/>
-      <path d="M25,68 L29,66 L29,98 L25,100 C21,92 21,78 25,68 Z" fill={rc(recovery.Abs)} opacity="0.62"/>
-      <path d="M75,68 L71,66 L71,98 L75,100 C79,92 79,78 75,68 Z" fill={rc(recovery.Abs)} opacity="0.62"/>
-      <path d="M9,56 C7,63 7,74 10,83 L18,87 L25,81 L27,62 L22,54 Z" fill={rc(recovery.Arms)} opacity="0.72"/>
-      <path d="M91,56 C93,63 93,74 90,83 L82,87 L75,81 L73,62 L78,54 Z" fill={rc(recovery.Arms)} opacity="0.72"/>
-      <path d="M10,83 C8,91 9,103 13,112 L19,115 L25,109 L25,83 Z" fill={rc(recovery.Arms)} opacity="0.62"/>
-      <path d="M90,83 C92,91 91,103 87,112 L81,115 L75,109 L75,83 Z" fill={rc(recovery.Arms)} opacity="0.62"/>
-      <path d="M27,110 C21,120 19,138 24,156 L32,160 L36,154 L33,132 L30,110 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M30,110 L50,112 L50,158 L30,158 C27,148 27,127 30,110 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M70,110 L50,112 L50,158 L70,158 C73,148 73,127 70,110 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M73,110 C79,120 81,138 76,156 L68,160 L64,154 L67,132 L70,110 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M24,158 C19,166 20,177 24,186 L34,190 L38,184 L35,158 Z" fill={rc(recovery.Legs)} opacity="0.62"/>
-      <path d="M76,158 C81,166 80,177 76,186 L66,190 L62,184 L65,158 Z" fill={rc(recovery.Legs)} opacity="0.62"/>
-      {/* DIVISION LINES */}
-      <line x1="50" y1="31" x2="50" y2="65" stroke={dv} strokeWidth="0.7"/>
-      <line x1="50" y1="65" x2="50" y2="102" stroke={dv} strokeWidth="0.6"/>
-      <path d="M29,77 Q50,75 71,77" stroke={dv} strokeWidth="0.6" fill="none"/>
-      <path d="M29,90 Q50,88 71,90" stroke={dv} strokeWidth="0.6" fill="none"/>
-      <line x1="36" y1="110" x2="34" y2="158" stroke={dv} strokeWidth="0.5"/>
-      <line x1="64" y1="110" x2="66" y2="158" stroke={dv} strokeWidth="0.5"/>
-      {/* LEGEND */}
+      {/* ── BASE SHAPES (subtle stroke, no harsh panels) ── */}
+      <ellipse cx="50" cy="11" rx="9" ry="10" fill={bg} stroke="rgba(80,110,200,0.6)" strokeWidth="1"/>
+      {/* Neck */}
+      <path d="M45,21 Q50,19 55,21 L56,30 Q50,32 44,30 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left trap */}
+      <path d="M45,23 C41,27 34,33 28,41 L32,47 C37,41 46,36 50,33 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right trap */}
+      <path d="M55,23 C59,27 66,33 72,41 L68,47 C63,41 54,36 50,33 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left deltoid — smaller rounded cap */}
+      <path d="M14,41 C10,45 9,55 12,64 L18,68 L24,63 L26,53 L27,43 C22,38 17,36 14,41 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right deltoid */}
+      <path d="M86,41 C90,45 91,55 88,64 L82,68 L76,63 L74,53 L73,43 C78,38 83,36 86,41 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left pec */}
+      <path d="M27,43 C26,38 36,33 50,32 L50,63 L28,63 C24,58 24,51 27,43 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right pec */}
+      <path d="M73,43 C74,38 64,33 50,32 L50,63 L72,63 C76,58 76,51 73,43 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left abs + oblique combined */}
+      <path d="M24,63 L50,63 L50,100 L25,97 C22,89 22,75 24,63 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right abs + oblique */}
+      <path d="M76,63 L50,63 L50,100 L75,97 C78,89 78,75 76,63 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left bicep */}
+      <path d="M11,60 C8,66 8,77 11,86 L18,90 L25,85 L27,64 L22,58 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right bicep */}
+      <path d="M89,60 C92,66 92,77 89,86 L82,90 L75,85 L73,64 L78,58 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left forearm */}
+      <path d="M11,86 C9,94 10,106 14,114 L19,117 L25,112 L25,86 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right forearm */}
+      <path d="M89,86 C91,94 90,106 86,114 L81,117 L75,112 L75,86 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left hand */}
+      <path d="M11,114 L24,114 L23,123 Q17,126 11,123 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right hand */}
+      <path d="M89,114 L76,114 L77,123 Q83,126 89,123 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left quad outer */}
+      <path d="M24,108 C18,119 17,138 22,156 L30,160 L34,154 L32,132 L27,108 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left quad front */}
+      <path d="M27,108 L48,110 L47,158 L28,158 C25,147 25,127 27,108 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right quad front */}
+      <path d="M73,108 L52,110 L53,158 L72,158 C75,147 75,127 73,108 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right quad outer */}
+      <path d="M76,108 C82,119 83,138 78,156 L70,160 L66,154 L68,132 L73,108 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left calf */}
+      <path d="M22,158 C17,167 18,179 22,188 L31,192 L35,186 L34,158 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right calf */}
+      <path d="M78,158 C83,167 82,179 78,188 L69,192 L65,186 L66,158 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left foot */}
+      <path d="M19,188 L35,190 L34,198 L21,198 Q12,195 19,188 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right foot */}
+      <path d="M81,188 L65,190 L66,198 L79,198 Q88,195 81,188 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+
+      {/* ── MUSCLE OVERLAYS ── */}
+      {/* Chest */}
+      <path d="M27,43 C26,38 36,33 50,32 L50,63 L28,63 C24,58 24,51 27,43 Z" fill={rc(recovery.Chest)} opacity="0.78"/>
+      <path d="M73,43 C74,38 64,33 50,32 L50,63 L72,63 C76,58 76,51 73,43 Z" fill={rc(recovery.Chest)} opacity="0.78"/>
+      {/* Traps */}
+      <path d="M45,23 C41,27 34,33 28,41 L32,47 C37,41 46,36 50,33 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      <path d="M55,23 C59,27 66,33 72,41 L68,47 C63,41 54,36 50,33 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      {/* Deltoids */}
+      <path d="M14,41 C10,45 9,55 12,64 L18,68 L24,63 L26,53 L27,43 C22,38 17,36 14,41 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      <path d="M86,41 C90,45 91,55 88,64 L82,68 L76,63 L74,53 L73,43 C78,38 83,36 86,41 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      {/* Abs */}
+      <path d="M24,63 L50,63 L50,100 L25,97 C22,89 22,75 24,63 Z" fill={rc(recovery.Abs)} opacity="0.78"/>
+      <path d="M76,63 L50,63 L50,100 L75,97 C78,89 78,75 76,63 Z" fill={rc(recovery.Abs)} opacity="0.78"/>
+      {/* Arms */}
+      <path d="M11,60 C8,66 8,77 11,86 L18,90 L25,85 L27,64 L22,58 Z" fill={rc(recovery.Arms)} opacity="0.78"/>
+      <path d="M89,60 C92,66 92,77 89,86 L82,90 L75,85 L73,64 L78,58 Z" fill={rc(recovery.Arms)} opacity="0.78"/>
+      <path d="M11,86 C9,94 10,106 14,114 L19,117 L25,112 L25,86 Z" fill={rc(recovery.Arms)} opacity="0.65"/>
+      <path d="M89,86 C91,94 90,106 86,114 L81,117 L75,112 L75,86 Z" fill={rc(recovery.Arms)} opacity="0.65"/>
+      {/* Legs */}
+      <path d="M24,108 C18,119 17,138 22,156 L30,160 L34,154 L32,132 L27,108 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M27,108 L48,110 L47,158 L28,158 C25,147 25,127 27,108 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M73,108 L52,110 L53,158 L72,158 C75,147 75,127 73,108 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M76,108 C82,119 83,138 78,156 L70,160 L66,154 L68,132 L73,108 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M22,158 C17,167 18,179 22,188 L31,192 L35,186 L34,158 Z" fill={rc(recovery.Legs)} opacity="0.65"/>
+      <path d="M78,158 C83,167 82,179 78,188 L69,192 L65,186 L66,158 Z" fill={rc(recovery.Legs)} opacity="0.65"/>
+
+      {/* ── DIVISION LINES ── */}
+      <line x1="50" y1="32" x2="50" y2="63" stroke={dv} strokeWidth="0.7"/>
+      <line x1="50" y1="63" x2="50" y2="100" stroke={dv} strokeWidth="0.6"/>
+      <path d="M25,76 Q50,74 75,76" stroke={dv} strokeWidth="0.5" fill="none"/>
+      <path d="M25,89 Q50,87 75,89" stroke={dv} strokeWidth="0.5" fill="none"/>
+      <line x1="35" y1="108" x2="34" y2="158" stroke={dv} strokeWidth="0.5"/>
+      <line x1="65" y1="108" x2="66" y2="158" stroke={dv} strokeWidth="0.5"/>
+
+      {/* ── LEGEND ── */}
       <circle cx="8" cy="196" r="3" fill="#22c55e"/>
       <circle cx="21" cy="196" r="3" fill="#f59e0b"/>
       <circle cx="34" cy="196" r="3" fill="#ef4444"/>
@@ -1194,68 +1221,95 @@ function MaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) {
 function FemaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) {
   const rc = recoveryColor;
   const bg = 'var(--ql-surface2)';
-  const sk = 'rgba(80,110,200,0.72)';
-  const sw = 0.8;
-  const dv = 'rgba(80,110,200,0.32)';
+  const sk = 'rgba(80,110,200,0.35)';
+  const sw = 0.6;
+  const dv = 'rgba(80,110,200,0.28)';
   return (
     <svg width="90" height="180" viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* BASE SHAPES */}
-      <ellipse cx="50" cy="11" rx="9" ry="10" fill={bg} stroke={sk} strokeWidth="1.2"/>
-      <path d="M45,21 Q50,19 55,21 L56,30 Q50,32 44,30 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M45,22 C42,25 36,30 31,38 L35,44 C40,39 48,35 50,32 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M55,22 C58,25 64,30 69,38 L65,44 C60,39 52,35 50,32 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M15,37 C11,42 11,53 15,63 L21,67 L27,61 L30,52 L32,40 C25,34 18,32 15,37 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M85,37 C89,42 89,53 85,63 L79,67 L73,61 L70,52 L68,40 C75,34 82,32 85,37 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M31,40 C29,36 38,31 50,31 L50,68 Q44,72 36,70 C30,67 29,60 31,50 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M69,40 C71,36 62,31 50,31 L50,68 Q56,72 64,70 C70,67 71,60 69,50 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M32,70 L50,70 L50,106 L32,102 C29,94 29,80 32,70 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M68,70 L50,70 L50,106 L68,102 C71,94 71,80 68,70 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M27,72 L32,70 L32,102 L27,104 C23,96 23,82 27,72 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M73,72 L68,70 L68,102 L73,104 C77,96 77,82 73,72 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M13,54 C11,61 11,72 14,81 L20,85 L26,80 L28,62 L24,52 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M87,54 C89,61 89,72 86,81 L80,85 L74,80 L72,62 L76,52 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M14,81 C12,89 13,101 17,110 L22,113 L27,108 L27,81 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M86,81 C88,89 87,101 83,110 L78,113 L73,108 L73,81 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M14,110 L27,110 L27,119 Q20,122 14,119 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M86,110 L73,110 L73,119 Q80,122 86,119 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M24,104 C21,108 23,116 27,118 L50,120 L73,118 C77,116 79,108 76,104 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M24,116 C18,126 16,144 21,162 L30,166 L34,160 L31,138 L27,116 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M27,116 L50,118 L50,164 L27,164 C23,154 23,134 27,116 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M73,116 L50,118 L50,164 L73,164 C77,154 77,134 73,116 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M76,116 C82,126 84,144 79,162 L70,166 L66,160 L69,138 L73,116 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M21,164 C17,172 18,183 22,192 L31,196 L35,190 L33,164 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M79,164 C83,172 82,183 78,192 L69,196 L65,190 L67,164 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M19,192 L35,194 L34,200 L20,200 Q11,197 19,192 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      <path d="M81,192 L65,194 L66,200 L80,200 Q89,197 81,192 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
-      {/* MUSCLE OVERLAYS */}
-      <path d="M31,40 C29,36 38,31 50,31 L50,68 Q44,72 36,70 C30,67 29,60 31,50 Z" fill={rc(recovery.Chest)} opacity="0.68"/>
-      <path d="M69,40 C71,36 62,31 50,31 L50,68 Q56,72 64,70 C70,67 71,60 69,50 Z" fill={rc(recovery.Chest)} opacity="0.68"/>
-      <path d="M45,22 C42,25 36,30 31,38 L35,44 C40,39 48,35 50,32 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M55,22 C58,25 64,30 69,38 L65,44 C60,39 52,35 50,32 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M15,37 C11,42 11,53 15,63 L21,67 L27,61 L30,52 L32,40 C25,34 18,32 15,37 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M85,37 C89,42 89,53 85,63 L79,67 L73,61 L70,52 L68,40 C75,34 82,32 85,37 Z" fill={rc(recovery.Shoulders)} opacity="0.72"/>
-      <path d="M32,70 L50,70 L50,106 L32,102 C29,94 29,80 32,70 Z" fill={rc(recovery.Abs)} opacity="0.72"/>
-      <path d="M68,70 L50,70 L50,106 L68,102 C71,94 71,80 68,70 Z" fill={rc(recovery.Abs)} opacity="0.72"/>
-      <path d="M27,72 L32,70 L32,102 L27,104 C23,96 23,82 27,72 Z" fill={rc(recovery.Abs)} opacity="0.62"/>
-      <path d="M73,72 L68,70 L68,102 L73,104 C77,96 77,82 73,72 Z" fill={rc(recovery.Abs)} opacity="0.62"/>
-      <path d="M13,54 C11,61 11,72 14,81 L20,85 L26,80 L28,62 L24,52 Z" fill={rc(recovery.Arms)} opacity="0.72"/>
-      <path d="M87,54 C89,61 89,72 86,81 L80,85 L74,80 L72,62 L76,52 Z" fill={rc(recovery.Arms)} opacity="0.72"/>
-      <path d="M14,81 C12,89 13,101 17,110 L22,113 L27,108 L27,81 Z" fill={rc(recovery.Arms)} opacity="0.62"/>
-      <path d="M86,81 C88,89 87,101 83,110 L78,113 L73,108 L73,81 Z" fill={rc(recovery.Arms)} opacity="0.62"/>
-      <path d="M24,116 C18,126 16,144 21,162 L30,166 L34,160 L31,138 L27,116 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M27,116 L50,118 L50,164 L27,164 C23,154 23,134 27,116 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M73,116 L50,118 L50,164 L73,164 C77,154 77,134 73,116 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M76,116 C82,126 84,144 79,162 L70,166 L66,160 L69,138 L73,116 Z" fill={rc(recovery.Legs)} opacity="0.72"/>
-      <path d="M21,164 C17,172 18,183 22,192 L31,196 L35,190 L33,164 Z" fill={rc(recovery.Legs)} opacity="0.62"/>
-      <path d="M79,164 C83,172 82,183 78,192 L69,196 L65,190 L67,164 Z" fill={rc(recovery.Legs)} opacity="0.62"/>
-      {/* DIVISION LINES */}
-      <line x1="50" y1="31" x2="50" y2="68" stroke={dv} strokeWidth="0.7"/>
-      <line x1="50" y1="70" x2="50" y2="106" stroke={dv} strokeWidth="0.6"/>
-      <path d="M32,84 Q50,82 68,84" stroke={dv} strokeWidth="0.6" fill="none"/>
-      <path d="M32,96 Q50,94 68,96" stroke={dv} strokeWidth="0.6" fill="none"/>
-      <line x1="34" y1="116" x2="32" y2="164" stroke={dv} strokeWidth="0.5"/>
-      <line x1="66" y1="116" x2="68" y2="164" stroke={dv} strokeWidth="0.5"/>
-      {/* LEGEND */}
+      {/* ── BASE SHAPES ── */}
+      <ellipse cx="50" cy="11" rx="8.5" ry="9.5" fill={bg} stroke="rgba(80,110,200,0.6)" strokeWidth="1"/>
+      {/* Neck */}
+      <path d="M46,21 Q50,19 54,21 L55,30 Q50,32 45,30 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left trap (narrower) */}
+      <path d="M46,23 C43,27 37,33 32,40 L36,46 C41,40 48,36 50,33 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right trap */}
+      <path d="M54,23 C57,27 63,33 68,40 L64,46 C59,40 52,36 50,33 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left deltoid (narrower) */}
+      <path d="M18,39 C14,43 13,53 16,62 L22,66 L28,61 L30,52 L32,42 C27,37 21,35 18,39 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right deltoid */}
+      <path d="M82,39 C86,43 87,53 84,62 L78,66 L72,61 L70,52 L68,42 C73,37 79,35 82,39 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left breast/chest */}
+      <path d="M32,42 C30,38 38,33 50,32 L50,68 Q44,73 37,71 C30,68 30,61 32,50 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right breast/chest */}
+      <path d="M68,42 C70,38 62,33 50,32 L50,68 Q56,73 63,71 C70,68 70,61 68,50 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left abs (tapered hourglass) */}
+      <path d="M27,70 L50,70 L50,108 L28,104 C25,96 25,82 27,70 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right abs */}
+      <path d="M73,70 L50,70 L50,108 L72,104 C75,96 75,82 73,70 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left arm (slimmer) */}
+      <path d="M14,60 C12,66 12,77 15,86 L20,90 L26,85 L28,65 L24,57 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right arm */}
+      <path d="M86,60 C88,66 88,77 85,86 L80,90 L74,85 L72,65 L76,57 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left forearm */}
+      <path d="M15,86 C13,94 14,105 17,113 L22,116 L27,111 L27,86 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right forearm */}
+      <path d="M85,86 C87,94 86,105 83,113 L78,116 L73,111 L73,86 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left hand */}
+      <path d="M14,113 L27,113 L26,121 Q20,124 14,121 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right hand */}
+      <path d="M86,113 L73,113 L74,121 Q80,124 86,121 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left quad outer (wider hips) */}
+      <path d="M22,114 C16,125 15,144 20,162 L29,166 L33,160 L30,138 L26,114 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left quad front */}
+      <path d="M26,114 L48,116 L47,162 L27,162 C24,151 23,132 26,114 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right quad front */}
+      <path d="M74,114 L52,116 L53,162 L73,162 C76,151 77,132 74,114 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right quad outer */}
+      <path d="M78,114 C84,125 85,144 80,162 L71,166 L67,160 L70,138 L74,114 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left calf */}
+      <path d="M20,163 C16,172 17,183 21,191 L30,195 L34,189 L33,163 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right calf */}
+      <path d="M80,163 C84,172 83,183 79,191 L70,195 L66,189 L67,163 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Left foot */}
+      <path d="M17,191 L33,193 L32,199 L19,199 Q11,196 17,191 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+      {/* Right foot */}
+      <path d="M83,191 L67,193 L68,199 L81,199 Q89,196 83,191 Z" fill={bg} stroke={sk} strokeWidth={sw}/>
+
+      {/* ── MUSCLE OVERLAYS ── */}
+      {/* Chest/Bust */}
+      <path d="M32,42 C30,38 38,33 50,32 L50,68 Q44,73 37,71 C30,68 30,61 32,50 Z" fill={rc(recovery.Chest)} opacity="0.7"/>
+      <path d="M68,42 C70,38 62,33 50,32 L50,68 Q56,73 63,71 C70,68 70,61 68,50 Z" fill={rc(recovery.Chest)} opacity="0.7"/>
+      {/* Traps */}
+      <path d="M46,23 C43,27 37,33 32,40 L36,46 C41,40 48,36 50,33 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      <path d="M54,23 C57,27 63,33 68,40 L64,46 C59,40 52,36 50,33 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      {/* Deltoids */}
+      <path d="M18,39 C14,43 13,53 16,62 L22,66 L28,61 L30,52 L32,42 C27,37 21,35 18,39 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      <path d="M82,39 C86,43 87,53 84,62 L78,66 L72,61 L70,52 L68,42 C73,37 79,35 82,39 Z" fill={rc(recovery.Shoulders)} opacity="0.78"/>
+      {/* Abs */}
+      <path d="M27,70 L50,70 L50,108 L28,104 C25,96 25,82 27,70 Z" fill={rc(recovery.Abs)} opacity="0.78"/>
+      <path d="M73,70 L50,70 L50,108 L72,104 C75,96 75,82 73,70 Z" fill={rc(recovery.Abs)} opacity="0.78"/>
+      {/* Arms */}
+      <path d="M14,60 C12,66 12,77 15,86 L20,90 L26,85 L28,65 L24,57 Z" fill={rc(recovery.Arms)} opacity="0.78"/>
+      <path d="M86,60 C88,66 88,77 85,86 L80,90 L74,85 L72,65 L76,57 Z" fill={rc(recovery.Arms)} opacity="0.78"/>
+      <path d="M15,86 C13,94 14,105 17,113 L22,116 L27,111 L27,86 Z" fill={rc(recovery.Arms)} opacity="0.65"/>
+      <path d="M85,86 C87,94 86,105 83,113 L78,116 L73,111 L73,86 Z" fill={rc(recovery.Arms)} opacity="0.65"/>
+      {/* Legs */}
+      <path d="M22,114 C16,125 15,144 20,162 L29,166 L33,160 L30,138 L26,114 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M26,114 L48,116 L47,162 L27,162 C24,151 23,132 26,114 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M74,114 L52,116 L53,162 L73,162 C76,151 77,132 74,114 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M78,114 C84,125 85,144 80,162 L71,166 L67,160 L70,138 L74,114 Z" fill={rc(recovery.Legs)} opacity="0.78"/>
+      <path d="M20,163 C16,172 17,183 21,191 L30,195 L34,189 L33,163 Z" fill={rc(recovery.Legs)} opacity="0.65"/>
+      <path d="M80,163 C84,172 83,183 79,191 L70,195 L66,189 L67,163 Z" fill={rc(recovery.Legs)} opacity="0.65"/>
+
+      {/* ── DIVISION LINES ── */}
+      <line x1="50" y1="32" x2="50" y2="68" stroke={dv} strokeWidth="0.7"/>
+      <line x1="50" y1="70" x2="50" y2="108" stroke={dv} strokeWidth="0.6"/>
+      <path d="M27,85 Q50,83 73,85" stroke={dv} strokeWidth="0.5" fill="none"/>
+      <path d="M27,98 Q50,96 73,98" stroke={dv} strokeWidth="0.5" fill="none"/>
+      <line x1="33" y1="114" x2="32" y2="162" stroke={dv} strokeWidth="0.5"/>
+      <line x1="67" y1="114" x2="68" y2="162" stroke={dv} strokeWidth="0.5"/>
+
+      {/* ── LEGEND ── */}
       <circle cx="8" cy="196" r="3" fill="#22c55e"/>
       <circle cx="21" cy="196" r="3" fill="#f59e0b"/>
       <circle cx="34" cy="196" r="3" fill="#ef4444"/>
@@ -1392,9 +1446,10 @@ export default function GymFitness() {
     stats, savedGymPrefs, setSavedGymPrefs,
     stepLog, stepGoal, gpsActivities, floorsGoal,
     performanceStats, performanceLog, deletePerformanceEntry,
-    gpsTrackingEnabled, calendarEvents, sleepLog,
+    gpsTrackingEnabled, calendarEvents, sleepLog, disabledSections,
   } = useGameStore();
-  const [activeTab,    setActiveTab]    = useState<'plans' | 'steps' | 'performance' | 'track'>('plans');
+  const plansEnabled = !disabledSections.includes('plans');
+  const [activeTab,    setActiveTab]    = useState<'plans' | 'steps' | 'performance' | 'track'>(plansEnabled ? 'plans' : 'steps');
   const [showAdd,      setShowAdd]      = useState(false);
   const [editing,      setEditing]      = useState<GymPlan | null>(null);
   const [logging,      setLogging]      = useState<string | null>(null);
@@ -1519,7 +1574,7 @@ export default function GymFitness() {
         </div>
         <div className="flex gap-2">
           {/* AI Plan button hidden — use GAINN AI floating assistant instead */}
-          {activeTab === 'plans' && (
+          {activeTab === 'plans' && plansEnabled && (
             <button onClick={() => setShowAdd(true)}
               className="px-4 py-2 bg-ql-accent hover:bg-ql-accent-h text-white text-sm font-medium rounded-2xl transition-colors"
             >
@@ -1532,11 +1587,11 @@ export default function GymFitness() {
       {/* ── Sub-tab pill bar ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'plans',       label: '🏋️ Plans'  },
+          ...(plansEnabled ? [{ id: 'plans', label: '🏋️ Plans' }] : []),
           { id: 'steps',       label: '👟 Steps'   },
           { id: 'performance', label: '📊 Stats'   },
           ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track' }] : []),
-        ] as const).map(({ id, label }) => (
+        ] as { id: string; label: string }[]).map(({ id, label }) => (
           <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === id ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'
