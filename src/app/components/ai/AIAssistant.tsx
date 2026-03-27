@@ -257,9 +257,12 @@ export default function AIAssistant() {
   const [input,       setInput]       = useState('');
   const [loading,     setLoading]     = useState(false);
   const [loadingLabel, setLoadingLabel] = useState('Thinking…');
+  const [listening,   setListening]   = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
   const fileInputRef   = useRef<HTMLInputElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (open) {
@@ -486,6 +489,51 @@ export default function AIAssistant() {
     setLoading(false);
   };
 
+  const toggleMic = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    if (!SR) { addAiMsg('Speech recognition is not supported in this browser. Try Chrome or Safari.'); return; }
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const recognition = new SR();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setListening(true);
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results as SpeechRecognitionResultList)
+        .map((r: SpeechRecognitionResult) => r[0].transcript)
+        .join('');
+      setInput(transcript);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      // Auto-send if we got something
+      setInput(prev => {
+        if (prev.trim()) {
+          setTimeout(() => {
+            const sendBtn = document.getElementById('ql-ai-send-btn');
+            sendBtn?.click();
+          }, 100);
+        }
+        return prev;
+      });
+    };
+
+    recognition.onerror = () => setListening(false);
+
+    recognition.start();
+  };
+
   return (
     <>
       {/* Thin tap-to-close strip above the drawer — doesn't block the page scroll area */}
@@ -572,16 +620,52 @@ export default function AIAssistant() {
               </svg>
             </button>
 
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder="Ask anything…"
-              className="flex-1 bg-ql-surface2 border border-ql rounded-2xl px-4 py-2.5 text-ql text-sm outline-none focus:border-ql-accent transition-colors placeholder:text-ql-3"
-            />
+            {/* Text input — shows live transcript while listening */}
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && send()}
+                placeholder={listening ? 'Listening…' : 'Ask anything…'}
+                className={`w-full bg-ql-surface2 border rounded-2xl px-4 py-2.5 text-ql text-sm outline-none transition-colors placeholder:text-ql-3 ${
+                  listening ? 'border-red-500 placeholder:text-red-400' : 'border-ql focus:border-ql-accent'
+                }`}
+              />
+              {listening && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-0.5 items-end h-4">
+                  {[0,1,2].map(i => (
+                    <span key={i} className="w-0.5 rounded-full bg-red-500 animate-bounce"
+                      style={{ height: `${[10,14,10][i]}px`, animationDelay: `${i * 0.12}s` }} />
+                  ))}
+                </span>
+              )}
+            </div>
+
+            {/* Mic button */}
+            <button
+              onClick={toggleMic}
+              disabled={loading}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40 ${
+                listening ? 'bg-red-500 scale-105' : 'bg-ql-surface2 border border-ql text-ql-3 hover:text-ql'
+              }`}
+              title={listening ? 'Stop listening' : 'Speak to GAINN'}
+            >
+              {listening ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
+                  <rect x="6" y="6" width="12" height="12" rx="2"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="2" width="6" height="11" rx="3"/>
+                  <path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/>
+                  <line x1="9" y1="22" x2="15" y2="22"/>
+                </svg>
+              )}
+            </button>
 
             <button
+              id="ql-ai-send-btn"
               onClick={send}
               disabled={!input.trim() || loading}
               className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
