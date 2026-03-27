@@ -191,6 +191,20 @@ export default function SettingsPage() {
     } catch { /* ignore */ }
   };
 
+  const handleSectionToggle = (id: string, isFinance: boolean, hidden: boolean) => {
+    if (isFinance) {
+      if (hidden) {
+        if (disabledSections.includes('finance')) toggleDisabledSection('finance');
+        if (disabledSections.includes('vices')) toggleDisabledSection('vices');
+        if (hiddenSections.includes('vices')) toggleHiddenSection('vices');
+      } else {
+        toggleHiddenSection('vices');
+      }
+    } else {
+      toggleHiddenSection(id);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -282,28 +296,14 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={s.id}
-                    onClick={() => {
-                      if (isFinance) {
-                        if (hidden) {
-                          // Turn ON: clear every possible blocking mechanism
-                          if (disabledSections.includes('finance')) toggleDisabledSection('finance');
-                          if (disabledSections.includes('vices')) toggleDisabledSection('vices');
-                          if (hiddenSections.includes('vices')) toggleHiddenSection('vices');
-                        } else {
-                          // Turn OFF: hide via hiddenSections
-                          toggleHiddenSection('vices');
-                        }
-                      } else {
-                        toggleHiddenSection(s.id);
-                      }
-                    }}
+                    onClick={() => handleSectionToggle(s.id, isFinance, hidden)}
                     className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{s.icon}</span>
                       <span className={`text-sm font-medium ${hidden ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
                     </div>
-                    <Toggle on={!hidden} onToggle={() => {}} />
+                    <Toggle on={!hidden} onToggle={() => handleSectionToggle(s.id, isFinance, hidden)} />
                   </button>
                 );
               })}
