@@ -508,8 +508,8 @@ export default function SettingsPage() {
             max={100}
             value={aiIntensity}
             onChange={e => setAiIntensity(Number(e.target.value))}
-            className="w-full h-2 rounded-full outline-none cursor-pointer"
-            style={{ accentColor: 'var(--ql-accent)' }}
+            className="ql-slider w-full"
+            style={{ '--slider-pct': `${((aiIntensity - 1) / 99) * 100}%` } as React.CSSProperties}
           />
           <div className="flex justify-between text-[10px] text-ql-3">
             <span>Supportive</span>
@@ -542,7 +542,8 @@ export default function SettingsPage() {
                 </div>
                 <input type="range" min={0} max={gymOpts.length - 1} step={1} value={gymIdx}
                   onChange={e => setGymExperience(gymOpts[Number(e.target.value)])}
-                  className="w-full accent-ql-accent h-1.5 rounded-full cursor-pointer"
+                  className="ql-slider w-full"
+                  style={{ '--slider-pct': `${(gymIdx / (gymOpts.length - 1)) * 100}%` } as React.CSSProperties}
                 />
                 <div className="flex justify-between mt-1.5">
                   <span className="text-ql-3 text-[10px]">Brand new</span>
@@ -563,7 +564,8 @@ export default function SettingsPage() {
                 </div>
                 <input type="range" min={0} max={runOpts.length - 1} step={1} value={runIdx}
                   onChange={e => setRunExperience(runOpts[Number(e.target.value)])}
-                  className="w-full accent-ql-accent h-1.5 rounded-full cursor-pointer"
+                  className="ql-slider w-full"
+                  style={{ '--slider-pct': `${(runIdx / (runOpts.length - 1)) * 100}%` } as React.CSSProperties}
                 />
                 <div className="flex justify-between mt-1.5">
                   <span className="text-ql-3 text-[10px]">Never run</span>
