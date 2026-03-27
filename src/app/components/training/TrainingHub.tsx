@@ -2214,11 +2214,11 @@ export default function TrainingHub() {
       {/* ── Sub-tabs ── */}
       <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql">
         {([
-          { id: 'training',    label: '🏋️ Training', disabled: disabledSections.includes('habits') && disabledSections.includes('plans') },
-          { id: 'steps',       label: '👟 Steps',    disabled: disabledSections.includes('steps')       },
-          { id: 'performance', label: '📊 Stats',    disabled: disabledSections.includes('stats')       },
-          ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track', disabled: disabledSections.includes('track') }] : []),
-        ] as const).filter(tab => !tab.disabled).map(({ id, label }) => (
+          { id: 'training',    label: '🏋️ Training' },
+          { id: 'steps',       label: '👟 Steps'    },
+          { id: 'performance', label: '📊 Stats'    },
+          ...(gpsTrackingEnabled ? [{ id: 'track', label: '🗺️ Track' }] : []),
+        ] as const).map(({ id, label }) => (
           <button key={id} onClick={() => setActiveTab(id as typeof activeTab)}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === id ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'
