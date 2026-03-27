@@ -12,8 +12,29 @@ interface Message {
   loadingLabel?: string;
 }
 
+// Classify a calendar event title into an activity type for advice purposes
+function classifyEvent(title: string, notes: string): string {
+  const t = (title + ' ' + notes).toLowerCase();
+  if (/\b(run|running|jog|5k|10k|half marathon|marathon|parkrun)\b/.test(t)) return 'running';
+  if (/\b(gym|weights|lift|workout|training|wod|crossfit|hiit|circuit)\b/.test(t)) return 'gym';
+  if (/\b(swim|swimming|pool|laps)\b/.test(t)) return 'swimming';
+  if (/\b(cycle|cycling|bike|biking|spin)\b/.test(t)) return 'cycling';
+  if (/\b(football|rugby|basketball|tennis|squash|badminton|hockey|sport|match|game|tournament)\b/.test(t)) return 'sport';
+  if (/\b(yoga|pilates|stretch|mobility|flexibility)\b/.test(t)) return 'yoga/mobility';
+  if (/\b(hike|hiking|walk|walking|trek)\b/.test(t)) return 'hiking';
+  if (/\b(rest|recovery|rest day)\b/.test(t)) return 'rest';
+  if (/\b(meal prep|cook|dinner|lunch|breakfast|eat|restaurant|food)\b/.test(t)) return 'meal';
+  if (/\b(sleep|nap|bed|early night)\b/.test(t)) return 'sleep';
+  if (/\b(work|meeting|office|shift|busy|presentation|deadline)\b/.test(t)) return 'work';
+  if (/\b(travel|flight|drive|commute|trip|holiday|abroad)\b/.test(t)) return 'travel';
+  return 'general';
+}
+
 function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today    = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const in7Days  = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
   const recentHabits = store.habitLog.filter(h => {
     const d = new Date(h.date); const now = new Date();
     return (now.getTime() - d.getTime()) < 7 * 86400000;
@@ -22,13 +43,37 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const recentSleep   = store.sleepLog.slice(-3).map(s => s.onTime ? 'on time' : 'late').join(', ');
   const todayMeals    = store.mealLog.filter(m => m.date === today);
   const totalCalories = todayMeals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
+  const totalProtein  = todayMeals.reduce((sum, m) => sum + (m.protein ?? 0), 0);
+  const totalWater    = store.waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
   const recentGym     = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
 
+  // Calendar context — today, tomorrow, next 7 days
+  const todayEvents    = store.calendarEvents.filter(e => e.date === today);
+  const tomorrowEvents = store.calendarEvents.filter(e => e.date === tomorrow);
+  const weekEvents     = store.calendarEvents.filter(e => e.date > today && e.date <= in7Days);
+
+  const formatEvent = (e: typeof store.calendarEvents[0]) => {
+    const time = e.allDay ? 'all day' : `${e.startTime}${e.endTime ? '–' + e.endTime : ''}`;
+    const type = classifyEvent(e.title, e.notes);
+    return `"${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [type: ${type}]${e.notes ? ' — notes: ' + e.notes : ''}`;
+  };
+
+  const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')    : 'nothing scheduled';
+  const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ') : 'nothing scheduled';
+  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ') : 'nothing scheduled';
+
+  // Classify today's activity for targeted advice
+  const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes));
+  const hasRunToday      = todayTypes.includes('running');
+  const hasGymToday      = todayTypes.includes('gym');
+  const hasEnduranceToday = todayTypes.some(t => ['running','cycling','swimming','hiking','sport'].includes(t));
+  const hasRestToday     = todayTypes.includes('rest');
+
   // Weight progress
-  const sortedWeights = [...store.weightLog].sort((a, b) => a.date.localeCompare(b.date));
-  const firstWeight   = sortedWeights[0];
-  const latestWeight  = sortedWeights[sortedWeights.length - 1];
+  const sortedWeights  = [...store.weightLog].sort((a, b) => a.date.localeCompare(b.date));
+  const firstWeight    = sortedWeights[0];
+  const latestWeight   = sortedWeights[sortedWeights.length - 1];
   const startingWeight = store.characterAppearance.startingWeight ?? 0;
   const currentWeight  = latestWeight?.weight ?? startingWeight;
   const weightChange   = firstWeight ? (currentWeight - firstWeight.weight) : 0;
@@ -38,30 +83,53 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 
   // Time on app
   const joinDate = store.accountCreatedDate;
-  const daysSinceJoin = joinDate
-    ? Math.floor((Date.now() - new Date(joinDate).getTime()) / 86400000)
-    : null;
+  const daysSinceJoin = joinDate ? Math.floor((Date.now() - new Date(joinDate).getTime()) / 86400000) : null;
   const timeOnApp = daysSinceJoin != null
     ? daysSinceJoin < 7 ? `${daysSinceJoin} days`
       : daysSinceJoin < 30 ? `${Math.floor(daysSinceJoin / 7)} weeks`
       : `${Math.floor(daysSinceJoin / 30)} months`
     : 'unknown';
 
+  // Compute TDEE-based calorie need for context
+  const weight = currentWeight || 75;
+  const height = store.characterAppearance.height || 175;
+  const age    = store.characterAppearance.age || 25;
+  const activityMultiplier: Record<string, number> = {
+    sedentary: 1.2, lightly_active: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9,
+  };
+  const bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  const tdee = Math.round(bmr * (activityMultiplier[store.characterAppearance.activityLevel ?? 'moderate'] ?? 1.55));
+  const tdeeWithActivity = hasEnduranceToday ? Math.round(tdee + 400) : hasGymToday ? Math.round(tdee + 250) : tdee;
+
   return `User profile:
 - Name: ${store.userName || 'User'}
-- Age: ${store.characterAppearance.age ?? 'unknown'}, Height: ${store.characterAppearance.height ?? '?'}cm
-- Current weight: ${currentWeight}kg | Starting weight: ${firstWeight?.weight ?? startingWeight}kg | Change: ${weightChangeTxt}
-- Weight history: ${sortedWeights.length > 0 ? sortedWeights.slice(-5).map(w => `${w.date}: ${w.weight}kg`).join(', ') : 'none yet'}
+- Age: ${age}, Height: ${height}cm, Current weight: ${currentWeight}kg (starting: ${firstWeight?.weight ?? startingWeight}kg, change: ${weightChangeTxt})
 - Activity level: ${store.characterAppearance.activityLevel ?? 'moderate'}
 - Goals: ${store.primaryGoals.length > 0 ? store.primaryGoals.join(', ') : 'not set'}
+- Estimated daily calorie need (TDEE): ~${tdee} kcal baseline${hasEnduranceToday ? ` / ~${tdeeWithActivity} kcal today (endurance activity)` : hasGymToday ? ` / ~${tdeeWithActivity} kcal today (gym)` : ''}
 - Time on GAINN: ${timeOnApp}
-- Level: ${store.stats.level}, XP: ${store.stats.xp}
-- Stats: STR ${store.stats.str}, CON ${store.stats.con}, DEX ${store.stats.dex}, GOLD ${store.stats.gold}
-- Step goal: ${store.stepGoal.toLocaleString()} — today: ${todaySteps.toLocaleString()} steps
+
+TODAY'S SCHEDULE (${today}):
+${todaySchedule}
+
+TOMORROW'S SCHEDULE (${tomorrow}):
+${tomorrowSchedule}
+
+THIS WEEK'S SCHEDULE:
+${weekSchedule}
+
+TODAY'S NUTRITION & HYDRATION:
+- Calories logged: ${totalCalories} kcal${totalCalories > 0 ? ` (${tdeeWithActivity - totalCalories > 0 ? tdeeWithActivity - totalCalories + ' kcal remaining to hit target' : 'target met'})` : ''}
+- Protein logged: ${totalProtein}g
+- Water logged: ${totalWater}ml of ${store.waterGoal}ml goal
+
+TODAY'S ACTIVITY:
+- Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
 - Sleep recent: ${recentSleep || 'no data'}
 - Habits completed this week: ${recentHabits.length}
-- Today's calories logged: ${totalCalories} kcal
 - Gym sessions total: ${store.gymSessions.length} | Recent: ${recentGym || 'none'}
+
+FINANCES:
 - Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved so far: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
 - Login streak: ${store.loginStreak} days`;
 }
