@@ -317,11 +317,16 @@ export default function AIAssistant() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed bottom-20 right-4 z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        className={`fixed bottom-20 right-4 z-50 w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 relative ${open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
         style={{ background: 'linear-gradient(135deg, #4285f4 0%, #34a853 50%, #16a34a 100%)' }}
         aria-label="Open AI assistant"
       >
         <span className="text-white text-lg">✦</span>
+        {/* Live pulse dot */}
+        <span className="absolute -top-1 -right-1 w-3 h-3">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-white" />
+        </span>
       </button>
     </>
   );
