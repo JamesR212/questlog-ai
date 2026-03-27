@@ -1972,6 +1972,7 @@ export default function TrainingHub() {
   const [viewingGymPlan,  setViewingGymPlan]  = useState<GymPlan | null>(null);
 
   // Habit state
+  const [trainingView, setTrainingView] = useState<'habits' | 'plans'>('habits');
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [editingHabit, setEditingHabit] = useState<HabitDef | null>(null);
 
@@ -2107,7 +2108,7 @@ export default function TrainingHub() {
         body: JSON.stringify({ mode: 'generate_gym_plan', context: { stats, gymLog: gymSessions, preferences } }),
       });
       const data = await res.json();
-      if (data.plan) { setAiPreview(data.plan); setActiveTab('training'); }
+      if (data.plan) { setAiPreview(data.plan); setActiveTab('training'); setTrainingView('plans'); }
       else setAiError(data.error ?? 'Failed to generate plan');
     } catch {
       setAiError('Connection lost — check your API key');
@@ -2227,11 +2228,23 @@ export default function TrainingHub() {
         ))}
       </div>
 
-      {/* ── Training tab (Habits + Plans merged) ── */}
+      {/* ── Training tab (Habits + Plans with toggle) ── */}
       {activeTab === 'training' && (
         <>
+          {/* Habits / Plans pill toggle */}
+          <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql -mt-1">
+            <button
+              onClick={() => setTrainingView('habits')}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${trainingView === 'habits' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
+            >✅ Habits</button>
+            <button
+              onClick={() => setTrainingView('plans')}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${trainingView === 'plans' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
+            >🏋️ Plans</button>
+          </div>
+
           {/* ── Habits section ── */}
-          {!disabledSections.includes('habits') && (
+          {trainingView === 'habits' && (
           <>
           <div className="flex items-center justify-between -mt-1">
             <p className="text-ql-3 text-xs">{habitDefs.length} active habits</p>
@@ -2321,7 +2334,7 @@ export default function TrainingHub() {
           )}
 
           {/* ── Plans section ── */}
-          {!disabledSections.includes('plans') && (
+          {trainingView === 'plans' && (
           <>
           {/* AI error */}
           {aiError && (
