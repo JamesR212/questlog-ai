@@ -531,27 +531,47 @@ export default function SettingsPage() {
         <p className="text-ql text-sm font-semibold">Training Background</p>
         <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
           {/* Gym experience */}
-          <div className="px-4 py-3.5 border-b border-ql">
-            <p className="text-ql text-sm font-medium mb-2">🏋️ Gym Experience</p>
-            <div className="flex flex-wrap gap-2">
-              {['Brand new', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'].map(opt => (
-                <button key={opt} onClick={() => setGymExperience(gymExperience === opt ? '' : opt)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${gymExperience === opt ? 'bg-ql-accent text-white border-ql-accent' : 'bg-ql-surface2 text-ql-3 border-ql'}`}
-                >{opt}</button>
-              ))}
-            </div>
-          </div>
+          {(() => {
+            const gymOpts = ['Brand new', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'];
+            const gymIdx = Math.max(0, gymOpts.indexOf(gymExperience));
+            return (
+              <div className="px-4 py-3.5 border-b border-ql">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-ql text-sm font-medium">🏋️ Gym Experience</p>
+                  <span className="text-ql-accent text-xs font-semibold">{gymOpts[gymIdx]}</span>
+                </div>
+                <input type="range" min={0} max={gymOpts.length - 1} step={1} value={gymIdx}
+                  onChange={e => setGymExperience(gymOpts[Number(e.target.value)])}
+                  className="w-full accent-ql-accent h-1.5 rounded-full cursor-pointer"
+                />
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-ql-3 text-[10px]">Brand new</span>
+                  <span className="text-ql-3 text-[10px]">4+ years</span>
+                </div>
+              </div>
+            );
+          })()}
           {/* Running experience */}
-          <div className="px-4 py-3.5">
-            <p className="text-ql text-sm font-medium mb-2">🏃 Running Experience</p>
-            <div className="flex flex-wrap gap-2">
-              {['Never run', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'].map(opt => (
-                <button key={opt} onClick={() => setRunExperience(runExperience === opt ? '' : opt)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${runExperience === opt ? 'bg-ql-accent text-white border-ql-accent' : 'bg-ql-surface2 text-ql-3 border-ql'}`}
-                >{opt}</button>
-              ))}
-            </div>
-          </div>
+          {(() => {
+            const runOpts = ['Never run', '< 6 months', '6–12 months', '1–2 years', '2–4 years', '4+ years'];
+            const runIdx = Math.max(0, runOpts.indexOf(runExperience));
+            return (
+              <div className="px-4 py-3.5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-ql text-sm font-medium">🏃 Running Experience</p>
+                  <span className="text-ql-accent text-xs font-semibold">{runOpts[runIdx]}</span>
+                </div>
+                <input type="range" min={0} max={runOpts.length - 1} step={1} value={runIdx}
+                  onChange={e => setRunExperience(runOpts[Number(e.target.value)])}
+                  className="w-full accent-ql-accent h-1.5 rounded-full cursor-pointer"
+                />
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-ql-3 text-[10px]">Never run</span>
+                  <span className="text-ql-3 text-[10px]">4+ years</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
