@@ -6,13 +6,19 @@ import NutritionPlan from './NutritionPlan';
 import WaterTracker from '../training/WaterTracker';
 
 export default function FoodDrink() {
-  const { nutritionTab, disabledSections } = useGameStore();
+  const { disabledSections } = useGameStore();
   const hydrationDisabled = disabledSections.includes('hydration');
-  const [activeTab, setActiveTab] = useState<'food' | 'drink'>(nutritionTab ?? 'food');
+  const [activeTab, setActiveTab] = useState<'food' | 'drink'>('food');
 
+  // On mount: consume any pending deep-link (e.g. from calendar → drink), then reset
+  // so the next direct navigation always opens on food
   useEffect(() => {
-    if (nutritionTab) setActiveTab(nutritionTab);
-  }, [nutritionTab]);
+    const { nutritionTab, setNutritionTab } = useGameStore.getState();
+    if (nutritionTab === 'drink') {
+      setActiveTab('drink');
+      setNutritionTab('food');
+    }
+  }, []);
 
   // If hydration is disabled and user is on drink tab, switch to food
   useEffect(() => {

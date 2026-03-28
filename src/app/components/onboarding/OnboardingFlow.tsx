@@ -65,18 +65,18 @@ const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji:
 type StepId = 'welcome' | 'money' | 'sleep' | 'fitness' | 'gym_exp' | 'run_exp' | 'nutrition' | 'theme' | 'sections' | 'coaching' | 'feedback' | 'gainn_ai' | 'terms';
 
 const ONBOARDING_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
-  { id: 'food',       label: 'Food',       icon: '🥗', desc: 'Meal logging & nutrition'         },
-  { id: 'hydration',  label: 'Hydration',  icon: '💧', desc: 'Daily water tracking'             },
-  { id: 'sleep',      label: 'Sleep',      icon: '🌙', desc: 'Sleep log & bedtime tracker'      },
-  { id: 'wake',       label: 'Wake Up',    icon: '🌅', desc: 'Morning check-in & wake quest'    },
-  { id: 'calendar',   label: 'Calendar',   icon: '📅', desc: 'Events & scheduling'              },
-  { id: 'vices',      label: 'Vices',      icon: '🚫', desc: 'Bad habit tracker'                },
-  { id: 'finance',    label: 'Finance',    icon: '💰', desc: 'Budget & spending tracker'        },
-  { id: 'habits',     label: 'Habits',     icon: '✅', desc: 'Daily habit tracking'             },
-  { id: 'plans',      label: 'Plans',      icon: '🏋️', desc: 'Workout plans & programmes'       },
-  { id: 'steps',      label: 'Steps',      icon: '👟', desc: 'Daily step counting'              },
-  { id: 'stats',      label: 'Stats',      icon: '📊', desc: 'Performance stats & metrics'      },
-  { id: 'track',      label: 'GPS Track',  icon: '🗺️', desc: 'GPS activity recording'           },
+  { id: 'food',      label: 'Food',      icon: '🥗', desc: 'Meal logging & nutrition'         },
+  { id: 'hydration', label: 'Hydration', icon: '💧', desc: 'Daily water tracking'             },
+  { id: 'sleep',     label: 'Sleep',     icon: '🌙', desc: 'Sleep log & bedtime tracker'      },
+  { id: 'wake',      label: 'Wake Up',   icon: '🌅', desc: 'Morning check-in & wake quest'    },
+  { id: 'vices',     label: 'Vices',     icon: '🚫', desc: 'Bad habit tracker'                },
+  { id: 'finance',   label: 'Finance',   icon: '💰', desc: 'Budget & spending tracker'        },
+  { id: 'habits',    label: 'Habits',    icon: '✅', desc: 'Daily habit tracking'             },
+  { id: 'gym',       label: 'Exercise',  icon: '🏃', desc: 'Workout sessions & gym tracker'   },
+  { id: 'plans',     label: 'Plans',     icon: '🏋️', desc: 'Workout plans & programmes'       },
+  { id: 'steps',     label: 'Steps',     icon: '👟', desc: 'Daily step counting'              },
+  { id: 'stats',     label: 'Stats',     icon: '📊', desc: 'Performance stats & metrics'      },
+  { id: 'track',     label: 'GPS Track', icon: '🗺️', desc: 'GPS activity recording'           },
 ];
 
 export default function OnboardingFlow() {
@@ -192,10 +192,10 @@ export default function OnboardingFlow() {
       hydration: ['nutrition', 'get_fit', 'track_life'],
       sleep:     ['wake_early', 'track_life'],
       wake:      ['wake_early', 'track_life'],
-      calendar:  ['get_fit', 'build_strength', 'wake_early', 'track_life', 'save_money'],
       vices:     ['quit_vices', 'save_money', 'track_life'],
       finance:   ['save_money', 'quit_vices', 'track_life'],
       habits:    ['get_fit', 'build_strength', 'wake_early', 'quit_vices', 'track_life'],
+      gym:       ['get_fit', 'build_strength', 'track_life'],
       plans:     ['get_fit', 'build_strength', 'track_life'],
       steps:     ['get_fit', 'track_life'],
       stats:     ['get_fit', 'build_strength', 'track_life'],

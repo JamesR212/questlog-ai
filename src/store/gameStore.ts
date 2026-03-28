@@ -58,7 +58,6 @@ interface GameStore {
   currencySymbol: string;
   hasOnboarded: boolean;
   accountCreatedDate: string | null;
-  competitionMode: boolean;
   financialMode: boolean;
   hiddenSections: string[];
   hiddenStats: string[];
@@ -103,7 +102,6 @@ interface GameStore {
   setGymExperience: (v: string) => void;
   runExperience: string;
   setRunExperience: (v: string) => void;
-  setCompetitionMode: (on: boolean) => void;
   setFinancialMode: (on: boolean) => void;
   toggleHiddenSection: (section: string) => void;
   toggleHiddenStat: (stat: string) => void;
@@ -375,7 +373,6 @@ const INITIAL_STATE = {
   aiIntensity: 50,
   gymExperience: '',
   runExperience: '',
-  competitionMode: true,
   financialMode: true,
   hiddenSections: [],
   hiddenStats: [],
@@ -474,7 +471,6 @@ export const useGameStore = create<GameStore>()(
       aiIntensity: 50,
       gymExperience: '',
       runExperience: '',
-      competitionMode: true,
       financialMode: true,
       hiddenSections: [],
       hiddenStats: [],
@@ -550,7 +546,6 @@ export const useGameStore = create<GameStore>()(
       setAiIntensity: (v) => set({ aiIntensity: Math.max(1, Math.min(100, v)) }),
       setGymExperience: (v) => set({ gymExperience: v }),
       setRunExperience: (v) => set({ runExperience: v }),
-      setCompetitionMode: (on) => set({ competitionMode: on }),
       setFinancialMode: (on) => set({ financialMode: on }),
       setDisabledSections: (sections) => set({ disabledSections: sections }),
       toggleDisabledSection: (section) =>

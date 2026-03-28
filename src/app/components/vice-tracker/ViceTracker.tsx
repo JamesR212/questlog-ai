@@ -1332,8 +1332,8 @@ function FinancesTab() {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ViceTracker() {
-  const { financialMode, disabledSections } = useGameStore();
-  const vicesDisabled  = disabledSections.includes('vices');
+  const { disabledSections } = useGameStore();
+  const vicesDisabled   = disabledSections.includes('vices');
   const financeDisabled = disabledSections.includes('finance');
   const [activeTab, setActiveTab] = useState<'vices' | 'finances'>('vices');
 
@@ -1343,17 +1343,17 @@ export default function ViceTracker() {
   }, [vicesDisabled, financeDisabled]);
 
   const showVicesTab   = !vicesDisabled;
-  const showFinanceTab = financialMode && !financeDisabled;
+  const showFinanceTab = !financeDisabled;
   const showTabBar     = showVicesTab && showFinanceTab;
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="text-ql text-xl font-bold">
-          {!financialMode || financeDisabled ? 'Vices' : 'Finance'}
+          {financeDisabled ? 'Vices' : 'Finance'}
         </h2>
         <p className="text-ql-3 text-xs mt-0.5">
-          {financialMode && !financeDisabled ? 'Track what you skip and manage your money' : 'Log what you skipped — earn gold and tokens'}
+          {!financeDisabled ? 'Track what you skip and manage your money' : 'Log what you skipped — earn gold and tokens'}
         </p>
       </div>
 

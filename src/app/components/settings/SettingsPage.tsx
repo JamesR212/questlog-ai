@@ -62,7 +62,8 @@ const TOGGLEABLE_SECTIONS = [
   { id: 'nutrition', label: 'Food',     icon: '🥗' },
   { id: 'calendar',  label: 'Calendar', icon: '📅' },
   { id: 'vices',     label: 'Finance',  icon: '💰' },
-  { id: 'habits',    label: 'Habits',   icon: '✅' },
+  { id: 'training',  label: 'Habits',   icon: '✅' },
+  { id: 'gym',       label: 'Exercise', icon: '🏃' },
 ];
 
 const ALL_SECTIONS: { id: string; label: string; icon: string; desc: string }[] = [
@@ -70,6 +71,7 @@ const ALL_SECTIONS: { id: string; label: string; icon: string; desc: string }[] 
   { id: 'hydration',  label: 'Hydration',  icon: '💧', desc: 'Daily water tracking'              },
   { id: 'sleep',      label: 'Sleep',      icon: '🌙', desc: 'Sleep log & bedtime tracking'      },
   { id: 'wake',       label: 'Wake Up',    icon: '🌅', desc: 'Morning check-in & wake quest'     },
+  { id: 'snapshot',   label: 'Weekly Snapshot', icon: '📊', desc: 'Weekly overview on the home page' },
   { id: 'calendar',   label: 'Calendar',   icon: '📅', desc: 'Events & scheduling'               },
   { id: 'vices',      label: 'Vices',      icon: '🚫', desc: 'Bad habit tracker'                 },
   { id: 'finance',    label: 'Finance',    icon: '💰', desc: 'Budget & spending tracker'         },
@@ -92,7 +94,6 @@ export default function SettingsPage() {
   const {
     theme, setTheme,
     aiIntensity, setAiIntensity,
-    competitionMode, setCompetitionMode,
     financialMode, setFinancialMode,
     hiddenSections, toggleHiddenSection,
     hiddenStats, toggleHiddenStat,
@@ -281,40 +282,35 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── Passive mode visibility (only when competition mode off) ── */}
-      {!competitionMode && (
-        <>
-          <div className="flex flex-col gap-2">
-            <div>
-              <p className="text-ql text-sm font-semibold">Visible Sections</p>
-              <p className="text-ql-3 text-xs mt-0.5">Choose which tabs appear in passive mode</p>
-            </div>
-            <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
-              {TOGGLEABLE_SECTIONS.map((s, i) => {
-                // Finance tab is actually hidden if EITHER hiddenSections OR both disabledSections block it
-                const isFinance = s.id === 'vices';
-                const hidden = isFinance
-                  ? hiddenSections.includes('vices') || (disabledSections.includes('finance') && disabledSections.includes('vices'))
-                  : hiddenSections.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSectionToggle(s.id, isFinance, hidden)}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{s.icon}</span>
-                      <span className={`text-sm font-medium ${hidden ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
-                    </div>
-                    <Toggle on={!hidden} onToggle={() => handleSectionToggle(s.id, isFinance, hidden)} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-        </>
-      )}
+      {/* ── Visible Sections ─────────────────────────────────────── */}
+      <div className="flex flex-col gap-2">
+        <div>
+          <p className="text-ql text-sm font-semibold">Visible Sections</p>
+          <p className="text-ql-3 text-xs mt-0.5">Choose which tabs appear in the navigation bar</p>
+        </div>
+        <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
+          {TOGGLEABLE_SECTIONS.map((s, i) => {
+            // Finance tab is actually hidden if EITHER hiddenSections OR both disabledSections block it
+            const isFinance = s.id === 'vices';
+            const hidden = isFinance
+              ? hiddenSections.includes('vices') || (disabledSections.includes('finance') && disabledSections.includes('vices'))
+              : hiddenSections.includes(s.id);
+            return (
+              <button
+                key={s.id}
+                onClick={() => handleSectionToggle(s.id, isFinance, hidden)}
+                className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-ql-surface2 ${i < TOGGLEABLE_SECTIONS.length - 1 ? 'border-b border-ql' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{s.icon}</span>
+                  <span className={`text-sm font-medium ${hidden ? 'text-ql-3 line-through' : 'text-ql'}`}>{s.label}</span>
+                </div>
+                <Toggle on={!hidden} onToggle={() => handleSectionToggle(s.id, isFinance, hidden)} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* ── Profile ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">

@@ -12,7 +12,7 @@ const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysSh
 ];
 
 export default function NavBar() {
-  const { activeSection, setActiveSection, stats, competitionMode, financialMode, hiddenSections, disabledSections } = useGameStore();
+  const { activeSection, setActiveSection, stats, hiddenSections, disabledSections } = useGameStore();
   const xpPct = Math.min(100, (stats.xp / stats.xpToNext) * 100);
 
   const trainingAllOff = ['habits','plans','steps','stats','track'].every(s => disabledSections.includes(s));
@@ -21,13 +21,14 @@ export default function NavBar() {
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.section === 'dashboard') return true;
     if (item.section === 'training') return !trainingAllOff;
-    // Hard-disabled via disabledSections
+    // Hard-disabled via disabledSections (not overridden by competition mode)
     if (item.section === 'gym'       && disabledSections.includes('gym')) return false;
     if (item.section === 'nutrition' && disabledSections.includes('food')) return false;
     if (item.section === 'calendar'  && disabledSections.includes('calendar')) return false;
     if (item.section === 'vices'     && disabledSections.includes('finance') && disabledSections.includes('vices')) return false;
-    // Competition mode / hidden sections (existing logic)
-    return item.alwaysShow || competitionMode || !hiddenSections.includes(item.section);
+    // hiddenSections (user-controlled visibility, not overridden by competition mode)
+    if (hiddenSections.includes(item.section)) return false;
+    return true;
   });
 
   return (
@@ -44,14 +45,12 @@ export default function NavBar() {
               }`}
             >
               <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : ''}`}>
-                {item.section === 'vices' && (!financialMode || disabledSections.includes('finance')) ? '🚫'
-                  : item.icon}
+                {item.section === 'vices' && disabledSections.includes('finance') ? '🚫' : item.icon}
               </span>
               <span className={`text-[10px] font-medium transition-colors duration-200 ${
                 active ? 'text-ql-accent' : 'text-ql-3'
               }`}>
-                {item.section === 'vices' && (!financialMode || disabledSections.includes('finance')) ? 'Vices'
-                  : item.label}
+                {item.section === 'vices' && disabledSections.includes('finance') ? 'Vices' : item.label}
               </span>
             </button>
           );

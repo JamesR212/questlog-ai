@@ -862,8 +862,8 @@ function WeeklySnapshotGrid() {
 
 // ─── Budget Tracker card (pinned items) ───────────────────────────────────────
 function BudgetTrackerCard() {
-  const { budgetItems, spendingLog, currencySymbol, setActiveSection, financialMode } = useGameStore();
-  if (!financialMode) return null;
+  const { budgetItems, spendingLog, currencySymbol, setActiveSection, disabledSections } = useGameStore();
+  if (disabledSections.includes('finance')) return null;
   const sym = currencySymbol;
   const pinned = budgetItems.filter(i => i.pinToHome);
   if (pinned.length === 0) return null;
@@ -1068,7 +1068,7 @@ export default function HomePage() {
     stats, habitLog, gymSessions, wakeQuest, vices,
     savingsGoal,
     userName, currencySymbol,
-    competitionMode, financialMode, hiddenStats, disabledSections,
+    hiddenStats, disabledSections,
     setActiveSection,
     loginStreak, recordAppOpen,
   } = useGameStore();
@@ -1089,28 +1089,18 @@ export default function HomePage() {
       </div>
 
       {/* Hero row: streak (or chill card) + savings circle */}
-      <div className={`grid gap-3 ${financialMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Streak or Chill */}
-        {competitionMode ? (
-          <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
-            <div className="text-2xl mb-1.5">🔥</div>
-            <div className="text-ql text-3xl font-bold tabular-nums">{streak}</div>
-            <div className="text-ql-3 text-xs font-medium mt-0.5">
-              {streak === 1 ? 'day in a row' : 'days in a row'}
-            </div>
+      <div className={`grid gap-3 ${!disabledSections.includes('finance') ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {/* Streak */}
+        <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
+          <div className="text-2xl mb-1.5">🔥</div>
+          <div className="text-ql text-3xl font-bold tabular-nums">{streak}</div>
+          <div className="text-ql-3 text-xs font-medium mt-0.5">
+            {streak === 1 ? 'day in a row' : 'days in a row'}
           </div>
-        ) : (
-          <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
-            <div className="text-2xl mb-1.5">🧘</div>
-            <div className="text-ql text-3xl font-bold tabular-nums">
-              {(gymSessions?.length ?? 0) + habitLog.length + wakeQuest.checkIns.filter(c => c.onTime).length}
-            </div>
-            <div className="text-ql-3 text-xs font-medium mt-0.5">total activities</div>
-          </div>
-        )}
+        </div>
 
         {/* Savings goal — compact circle */}
-        {financialMode && <button onClick={() => setActiveSection('vices')} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 flex flex-col items-center gap-2 w-full">
+        {!disabledSections.includes('finance') && <button onClick={() => setActiveSection('vices')} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 flex flex-col items-center gap-2 w-full">
           {(() => {
             const r = 30, cx = 38, cy = 38;
             const circ = 2 * Math.PI * r;
@@ -1150,7 +1140,7 @@ export default function HomePage() {
       )}
 
       {/* Weekly snapshot grid */}
-      <WeeklySnapshotGrid />
+      {!disabledSections.includes('snapshot') && <WeeklySnapshotGrid />}
 
       {/* Pinned budget allowances */}
       <BudgetTrackerCard />
@@ -1162,9 +1152,11 @@ export default function HomePage() {
       <AIAdvisor section="dashboard" />
 
       {/* ── Calendar ────────────────────────────────────────────── */}
-      <div className="border-t border-ql pt-2 -mx-0">
-        <CalendarPage />
-      </div>
+      {!disabledSections.includes('calendar') && (
+        <div className="border-t border-ql pt-2 -mx-0">
+          <CalendarPage />
+        </div>
+      )}
     </div>
   );
 }

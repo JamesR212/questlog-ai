@@ -2106,6 +2106,9 @@ export default function NutritionPlan() {
         );
       })()}
 
+      {/* Vitamins & Minerals */}
+      <VitaminsMineralsSection totals={microTotals} />
+
       {/* Today's meals */}
       <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
         <div className="flex items-center justify-between mb-3">
@@ -2155,9 +2158,6 @@ export default function NutritionPlan() {
           </div>
         )}
       </div>
-
-      {/* Vitamins & Minerals */}
-      <VitaminsMineralsSection totals={microTotals} />
 
       {/* Nutrition Calendar */}
       <NutritionCalendar
