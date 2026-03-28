@@ -47,34 +47,60 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const sleepSummary = recentSleepEntries.length === 0 ? 'no data'
     : `${sleepOnTimeCount}/${recentSleepEntries.length} nights on time (${sleepPct}%) — last 3: ${recentSleepEntries.slice(-3).map(s => s.onTime ? '✓' : '✗').join(' ')}`;
 
-  const yesterday     = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const sevenDaysAgo  = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-  const todayMeals    = store.mealLog.filter(m => m.date === today);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const todayMeals     = store.mealLog.filter(m => m.date === today);
   const yesterdayMeals = store.mealLog.filter(m => m.date === yesterday);
-  const totalCalories = todayMeals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
-  const totalProtein  = todayMeals.reduce((sum, m) => sum + (m.protein ?? 0), 0);
-  const totalCarbs    = todayMeals.reduce((sum, m) => sum + (m.carbs ?? 0), 0);
-  const totalFat      = todayMeals.reduce((sum, m) => sum + (m.fat ?? 0), 0);
-  const totalWater    = store.waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
+  const totalCalories  = todayMeals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
+  const totalProtein   = todayMeals.reduce((sum, m) => sum + (m.protein ?? 0), 0);
+  const totalCarbs     = todayMeals.reduce((sum, m) => sum + (m.carbs ?? 0), 0);
+  const totalFat       = todayMeals.reduce((sum, m) => sum + (m.fat ?? 0), 0);
+  const totalWater     = store.waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
 
-  // Meal history — last 7 days grouped by date
-  const recentMealDates = [...new Set(
-    store.mealLog.filter(m => m.date >= sevenDaysAgo && m.date < today).map(m => m.date)
-  )].sort().reverse();
-  const mealHistory = recentMealDates.map(date => {
+  // Full meal history grouped by date (most recent first)
+  const allMealDates = [...new Set(store.mealLog.filter(m => m.date < today).map(m => m.date))].sort().reverse();
+  const fullMealHistory = allMealDates.map(date => {
     const meals = store.mealLog.filter(m => m.date === date);
     const cals = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
     const prot = meals.reduce((s, m) => s + (m.protein ?? 0), 0);
-    return `  ${date}: ${meals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ')} — total: ${cals}kcal / ${prot}g protein`;
-  }).join('\n') || '  No meals logged in past 7 days';
+    const carbs = meals.reduce((s, m) => s + (m.carbs ?? 0), 0);
+    const fat  = meals.reduce((s, m) => s + (m.fat ?? 0), 0);
+    return `  ${date}: ${meals.map(m => `${m.name} (${m.calories}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g)`).join(', ')} | day total: ${cals}kcal P:${prot}g C:${carbs}g F:${fat}g`;
+  }).join('\n') || '  No meal history';
 
-  // Gym sessions — last 10
-  const recentGymSessions = store.gymSessions.slice(-10).reverse().map(s => {
+  // All gym sessions
+  const allGymSessions = [...store.gymSessions].reverse().map(s => {
     const plan = store.gymPlans.find(p => p.id === s.planId);
     return `  ${s.date}: ${plan?.name ?? s.planId ?? 'Session'}`;
   }).join('\n') || '  No gym sessions logged';
 
   const recentGym = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
+
+  // Full step log
+  const stepHistory = [...store.stepLog].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 90)
+    .map(s => `  ${s.date}: ${s.steps.toLocaleString()} steps`).join('\n') || '  No step data';
+
+  // Full sleep log
+  const fullSleepLog = [...store.sleepLog].reverse().slice(0, 90)
+    .map(s => `  ${s.date}: ${s.onTime ? 'on time' : 'late'}`).join('\n') || '  No sleep data';
+
+  // Full weight log
+  const fullWeightLog = [...store.weightLog].sort((a, b) => a.date.localeCompare(b.date))
+    .map(w => `  ${w.date}: ${w.weight}kg`).join('\n') || '  No weight data';
+
+  // Performance stats — all entries per stat
+  const perfStatsContext = store.performanceStats.length === 0 ? '  None tracked' :
+    store.performanceStats.map(stat => {
+      const entries = store.performanceLog
+        .filter(e => e.statId === stat.id)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      if (entries.length === 0) return `  ${stat.emoji} ${stat.name} (${stat.unit}): no entries yet`;
+      const best = stat.higherIsBetter
+        ? entries.reduce((b, e) => e.value > b.value ? e : b)
+        : entries.reduce((b, e) => e.value < b.value ? e : b);
+      const latest = entries[entries.length - 1];
+      const history = entries.map(e => `${e.date}:${e.value}${stat.unit}${e.secondaryValue ? '/'+e.secondaryValue+stat.secondaryUnit : ''}`).join(' ');
+      return `  ${stat.emoji} ${stat.name} (${stat.unit}): latest=${latest.value} on ${latest.date}, best=${best.value} on ${best.date} | history: ${history}`;
+    }).join('\n');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
 
   // Vice/spending analysis — last 30 days
@@ -98,26 +124,24 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   // Body composition history
   const latestBodyComp = store.bodyCompositionLog.slice(-1)[0];
 
-  // Calendar context — past 30 days + next 30 days
-  const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-  const in30Days          = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  const todayEvents    = store.calendarEvents.filter(e => e.date === today);
-  const tomorrowEvents = store.calendarEvents.filter(e => e.date === tomorrow);
-  const weekEvents     = store.calendarEvents.filter(e => e.date > today && e.date <= in7Days);
-  const futureEvents   = store.calendarEvents.filter(e => e.date > in7Days && e.date <= in30Days);
-  const pastEvents     = store.calendarEvents.filter(e => e.date >= thirtyDaysAgoDate && e.date < today);
-
+  // Full calendar — all events sorted by date
   const formatEvent = (e: typeof store.calendarEvents[0]) => {
     const time = e.allDay ? 'all day' : `${e.startTime}${e.endTime ? '–' + e.endTime : ''}`;
     const type = classifyEvent(e.title, e.notes);
-    return `"${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [type: ${type}]${e.notes ? ' — notes: ' + e.notes : ''}`;
+    return `"${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [${type}]${e.notes ? ' notes: ' + e.notes : ''}`;
   };
+  const sortedEvents   = [...store.calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
+  const todayEvents    = sortedEvents.filter(e => e.date === today);
+  const tomorrowEvents = sortedEvents.filter(e => e.date === tomorrow);
+  const weekEvents     = sortedEvents.filter(e => e.date > today && e.date <= in7Days);
+  const futureEvents   = sortedEvents.filter(e => e.date > in7Days);
+  const pastEvents     = sortedEvents.filter(e => e.date < today);
 
   const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')                           : 'nothing scheduled';
   const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ')                        : 'nothing scheduled';
   const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ')    : 'nothing scheduled';
-  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ') : 'nothing scheduled';
-  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ')   : 'none';
+  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${e.date}: ${formatEvent(e)}`).join('\n  ') : 'nothing scheduled';
+  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${e.date}: ${formatEvent(e)}`).join('\n  ')   : 'none';
 
   // Classify today's activity for targeted advice
   const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes));
@@ -174,24 +198,24 @@ ${tomorrowSchedule}
 CALENDAR — THIS WEEK:
 ${weekSchedule}
 
-CALENDAR — NEXT 30 DAYS:
-${futureSchedule}
+CALENDAR — UPCOMING (beyond this week):
+  ${futureSchedule}
 
-CALENDAR — PAST 30 DAYS:
-${pastSchedule}
+CALENDAR — PAST EVENTS (all time):
+  ${pastSchedule}
 
 TODAY'S NUTRITION (${today}):
-- Meals: ${todayMeals.length > 0 ? todayMeals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ') : 'nothing logged yet'}
+- Meals: ${todayMeals.length > 0 ? todayMeals.map(m => `${m.name} (${m.calories}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g)`).join(' | ') : 'nothing logged yet'}
 - Totals: ${totalCalories}kcal / P:${totalProtein}g / C:${totalCarbs}g / F:${totalFat}g${totalCalories > 0 ? ` — ${tdeeWithActivity - totalCalories > 0 ? (tdeeWithActivity - totalCalories) + ' kcal remaining' : 'calorie target met'}` : ''}
 - Water: ${totalWater}ml of ${store.waterGoal}ml goal
 
 YESTERDAY'S NUTRITION (${yesterday}):
 ${yesterdayMeals.length > 0
-  ? `- Meals: ${yesterdayMeals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ')}\n- Totals: ${yesterdayMeals.reduce((s,m)=>s+(m.calories??0),0)}kcal / P:${yesterdayMeals.reduce((s,m)=>s+(m.protein??0),0)}g`
+  ? `- Meals: ${yesterdayMeals.map(m => `${m.name} (${m.calories}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g)`).join(' | ')}\n- Totals: ${yesterdayMeals.reduce((s,m)=>s+(m.calories??0),0)}kcal / P:${yesterdayMeals.reduce((s,m)=>s+(m.protein??0),0)}g`
   : '- Nothing logged'}
 
-MEAL HISTORY (last 7 days):
-${mealHistory}
+FULL MEAL HISTORY (all time, most recent first):
+${fullMealHistory}
 
 TODAY'S ACTIVITY:
 - Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
@@ -200,13 +224,22 @@ TODAY'S ACTIVITY:
 - Gym experience: ${store.gymExperience || 'not set'}
 - GPS runs logged: ${store.gpsActivities.filter((a: {type: string}) => a.type === 'run').length}
 - Running experience: ${store.runExperience || 'not set'}
-- Use experience level to calibrate advice difficulty, exercise complexity, and expected recovery time. Brand new / Never run = very beginner-friendly language and simple progressions. 4+ years = technical, advanced programming language is appropriate.
+- Use experience level to calibrate advice difficulty. Brand new / Never run = beginner-friendly. 4+ years = technical/advanced.
 
-GYM SESSION HISTORY (last 10):
-${recentGymSessions}
+ALL GYM SESSIONS:
+${allGymSessions}
 
-SLEEP:
-- ${sleepSummary}
+STEP HISTORY (last 90 days):
+${stepHistory}
+
+SLEEP LOG (last 90 days):
+${fullSleepLog}
+
+WEIGHT LOG (all time):
+${fullWeightLog}
+
+PERFORMANCE STATS (all tracked metrics):
+${perfStatsContext}
 
 BODY COMPOSITION:
 ${latestBodyComp ? `- Last scan (${latestBodyComp.date}): est. body fat ${latestBodyComp.bodyFatLow ?? '?'}–${latestBodyComp.bodyFatHigh ?? '?'}%, build: ${latestBodyComp.build ?? 'unknown'}` : '- No body composition scans recorded yet'}
