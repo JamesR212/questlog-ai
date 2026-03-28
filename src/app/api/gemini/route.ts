@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 // ── Gemini File API upload (supports files up to 2GB) ─────────────────────────
 async function uploadToFileAPI(base64Data: string, mimeType: string, apiKey: string): Promise<{ uri: string; name: string }> {
@@ -82,7 +82,12 @@ export async function POST(req: NextRequest) {
 
     // ── Plan generation mode ─────────────────────────────────────────────────
     if (mode === 'generate_gym_plan') {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      // Disable thinking — plan generation only needs fast structured JSON, not extended reasoning
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+      });
       const prefs = context.preferences ?? {};
       const daysPerWeek = parseInt(prefs.daysPerWeek ?? '3', 10);
       const rawSplit = (prefs.split ?? '').toLowerCase().replace(/[^a-z]/g, '');
@@ -174,7 +179,11 @@ Rules:
     }
 
     if (mode === 'generate_meal_plan') {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+      });
       const goal = context.nutritionGoal ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
       const prefs = context.preferences ?? {};
       const isBulk = (prefs.cookingPref ?? '').toLowerCase().includes('bulk');
@@ -214,7 +223,11 @@ ${isBulk ? '- Include 4-6 "Bulk Cook" meals (large batch recipes that make multi
     }
 
     if (mode === 'suggest_meals') {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+      });
       const goal  = context.nutritionGoal ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
       const userPrompt = context.prompt ?? 'healthy meal ideas';
       const prompt = `You are a nutrition coach. A user is asking for meal suggestions.
@@ -260,7 +273,11 @@ Rules:
     }
 
     if (mode === 'analyze_food') {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+      });
       const foodDesc = context.foodDescription ?? '';
       const prompt = `You are a precise nutrition database. Analyze this food and return its full nutritional content.
 Food: "${foodDesc}"
