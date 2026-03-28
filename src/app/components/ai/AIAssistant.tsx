@@ -47,11 +47,34 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const sleepSummary = recentSleepEntries.length === 0 ? 'no data'
     : `${sleepOnTimeCount}/${recentSleepEntries.length} nights on time (${sleepPct}%) — last 3: ${recentSleepEntries.slice(-3).map(s => s.onTime ? '✓' : '✗').join(' ')}`;
 
+  const yesterday     = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const sevenDaysAgo  = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
   const todayMeals    = store.mealLog.filter(m => m.date === today);
+  const yesterdayMeals = store.mealLog.filter(m => m.date === yesterday);
   const totalCalories = todayMeals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
   const totalProtein  = todayMeals.reduce((sum, m) => sum + (m.protein ?? 0), 0);
+  const totalCarbs    = todayMeals.reduce((sum, m) => sum + (m.carbs ?? 0), 0);
+  const totalFat      = todayMeals.reduce((sum, m) => sum + (m.fat ?? 0), 0);
   const totalWater    = store.waterLog.filter(w => w.date === today).reduce((sum, w) => sum + w.amount, 0);
-  const recentGym     = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
+
+  // Meal history — last 7 days grouped by date
+  const recentMealDates = [...new Set(
+    store.mealLog.filter(m => m.date >= sevenDaysAgo && m.date < today).map(m => m.date)
+  )].sort().reverse();
+  const mealHistory = recentMealDates.map(date => {
+    const meals = store.mealLog.filter(m => m.date === date);
+    const cals = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
+    const prot = meals.reduce((s, m) => s + (m.protein ?? 0), 0);
+    return `  ${date}: ${meals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ')} — total: ${cals}kcal / ${prot}g protein`;
+  }).join('\n') || '  No meals logged in past 7 days';
+
+  // Gym sessions — last 10
+  const recentGymSessions = store.gymSessions.slice(-10).reverse().map(s => {
+    const plan = store.gymPlans.find(p => p.id === s.planId);
+    return `  ${s.date}: ${plan?.name ?? s.planId ?? 'Session'}`;
+  }).join('\n') || '  No gym sessions logged';
+
+  const recentGym = store.gymSessions.slice(-3).map(s => s.planId).join(', ');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
 
   // Vice/spending analysis — last 30 days
@@ -75,10 +98,14 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   // Body composition history
   const latestBodyComp = store.bodyCompositionLog.slice(-1)[0];
 
-  // Calendar context — today, tomorrow, next 7 days
+  // Calendar context — past 30 days + next 30 days
+  const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const in30Days          = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   const todayEvents    = store.calendarEvents.filter(e => e.date === today);
   const tomorrowEvents = store.calendarEvents.filter(e => e.date === tomorrow);
   const weekEvents     = store.calendarEvents.filter(e => e.date > today && e.date <= in7Days);
+  const futureEvents   = store.calendarEvents.filter(e => e.date > in7Days && e.date <= in30Days);
+  const pastEvents     = store.calendarEvents.filter(e => e.date >= thirtyDaysAgoDate && e.date < today);
 
   const formatEvent = (e: typeof store.calendarEvents[0]) => {
     const time = e.allDay ? 'all day' : `${e.startTime}${e.endTime ? '–' + e.endTime : ''}`;
@@ -86,9 +113,11 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
     return `"${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [type: ${type}]${e.notes ? ' — notes: ' + e.notes : ''}`;
   };
 
-  const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')    : 'nothing scheduled';
-  const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ') : 'nothing scheduled';
-  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ') : 'nothing scheduled';
+  const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')                           : 'nothing scheduled';
+  const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ')                        : 'nothing scheduled';
+  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ')    : 'nothing scheduled';
+  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ') : 'nothing scheduled';
+  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ')   : 'none';
 
   // Classify today's activity for targeted advice
   const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes));
@@ -136,28 +165,45 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 - Estimated daily calorie need (TDEE): ~${tdee} kcal baseline${hasEnduranceToday ? ` / ~${tdeeWithActivity} kcal today (endurance activity)` : hasGymToday ? ` / ~${tdeeWithActivity} kcal today (gym)` : ''}
 - Time on GAINN: ${timeOnApp}
 
-TODAY'S SCHEDULE (${today}):
+CALENDAR — TODAY (${today}):
 ${todaySchedule}
 
-TOMORROW'S SCHEDULE (${tomorrow}):
+CALENDAR — TOMORROW (${tomorrow}):
 ${tomorrowSchedule}
 
-THIS WEEK'S SCHEDULE:
+CALENDAR — THIS WEEK:
 ${weekSchedule}
 
-TODAY'S NUTRITION & HYDRATION:
-- Calories logged: ${totalCalories} kcal${totalCalories > 0 ? ` (${tdeeWithActivity - totalCalories > 0 ? tdeeWithActivity - totalCalories + ' kcal remaining to hit target' : 'target met'})` : ''}
-- Protein logged: ${totalProtein}g
-- Water logged: ${totalWater}ml of ${store.waterGoal}ml goal
+CALENDAR — NEXT 30 DAYS:
+${futureSchedule}
+
+CALENDAR — PAST 30 DAYS:
+${pastSchedule}
+
+TODAY'S NUTRITION (${today}):
+- Meals: ${todayMeals.length > 0 ? todayMeals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ') : 'nothing logged yet'}
+- Totals: ${totalCalories}kcal / P:${totalProtein}g / C:${totalCarbs}g / F:${totalFat}g${totalCalories > 0 ? ` — ${tdeeWithActivity - totalCalories > 0 ? (tdeeWithActivity - totalCalories) + ' kcal remaining' : 'calorie target met'}` : ''}
+- Water: ${totalWater}ml of ${store.waterGoal}ml goal
+
+YESTERDAY'S NUTRITION (${yesterday}):
+${yesterdayMeals.length > 0
+  ? `- Meals: ${yesterdayMeals.map(m => `${m.name} (${m.calories}kcal, P:${m.protein}g, C:${m.carbs}g, F:${m.fat}g)`).join(' | ')}\n- Totals: ${yesterdayMeals.reduce((s,m)=>s+(m.calories??0),0)}kcal / P:${yesterdayMeals.reduce((s,m)=>s+(m.protein??0),0)}g`
+  : '- Nothing logged'}
+
+MEAL HISTORY (last 7 days):
+${mealHistory}
 
 TODAY'S ACTIVITY:
 - Steps: ${todaySteps.toLocaleString()} of ${store.stepGoal.toLocaleString()} goal
 - Habits completed this week: ${recentHabits.length}
-- Gym sessions logged in app: ${store.gymSessions.length} | Recent plans: ${recentGym || 'none'}
-- Gym experience: ${store.gymExperience || 'not set'} (auto-progresses as sessions accumulate)
-- GPS runs logged in app: ${store.gpsActivities.filter((a: {type: string}) => a.type === 'run').length}
-- Running experience: ${store.runExperience || 'not set'} (auto-progresses as runs accumulate)
+- Gym sessions total: ${store.gymSessions.length}
+- Gym experience: ${store.gymExperience || 'not set'}
+- GPS runs logged: ${store.gpsActivities.filter((a: {type: string}) => a.type === 'run').length}
+- Running experience: ${store.runExperience || 'not set'}
 - Use experience level to calibrate advice difficulty, exercise complexity, and expected recovery time. Brand new / Never run = very beginner-friendly language and simple progressions. 4+ years = technical, advanced programming language is appropriate.
+
+GYM SESSION HISTORY (last 10):
+${recentGymSessions}
 
 SLEEP:
 - ${sleepSummary}
