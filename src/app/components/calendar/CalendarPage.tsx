@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { CalendarEvent, HabitDef } from '@/types';
 import HabitEmoji from '../shared/HabitEmoji';
+import { buildDailyBars, buildWeeklyBars, buildMonthlyBars } from '../training/StepTracker';
+import type { StepBar, StepPeriod } from '../training/StepTracker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAYS_SHORT  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -365,6 +367,54 @@ function SleepWakeCard({ date }: { date: string }) {
   );
 }
 
+// ─── Generic metric bar chart ─────────────────────────────────────────────────
+function MetricChart({ bars, goal, color = '#4a9eff', goalColor = '#22c55e' }: {
+  bars: StepBar[]; goal: number; color?: string; goalColor?: string;
+}) {
+  const W = 340, H = 140, PAD_L = 8, PAD_R = 44, PAD_T = 8, PAD_B = 20;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const maxVal = Math.max(goal > 0 ? goal * 1.1 : 1, ...bars.map(b => b.value), 1);
+  const mag = Math.pow(10, Math.floor(Math.log10(maxVal / 3)));
+  const tickStep = Math.ceil((maxVal / 3) / mag) * mag;
+  const ticks = Array.from({ length: Math.ceil(maxVal / tickStep) + 1 }, (_, i) => i * tickStep).filter(t => t <= maxVal * 1.05);
+  const yPct = (v: number) => 1 - v / maxVal;
+  const barW = Math.max(2, (chartW / bars.length) * 0.7);
+  const gap  = chartW / bars.length;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 160 }}>
+      {ticks.map(t => {
+        const y = PAD_T + yPct(t) * chartH;
+        return (
+          <g key={t}>
+            <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="var(--ql-surface-3)" strokeWidth="0.5" strokeDasharray="3 3" />
+            <text x={W - PAD_R + 4} y={y + 3} fill="var(--ql-tx)" fontSize="8" textAnchor="start">
+              {t >= 1000 ? `${(t/1000).toFixed(t % 1000 === 0 ? 0 : 1)}k` : t}
+            </text>
+          </g>
+        );
+      })}
+      {goal > 0 && (() => {
+        const y = PAD_T + yPct(goal) * chartH;
+        return <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke={goalColor} strokeWidth="1" strokeDasharray="4 2" opacity="0.6" />;
+      })()}
+      {bars.map((b, i) => {
+        const x  = PAD_L + i * gap + (gap - barW) / 2;
+        const bh = Math.max(b.value > 0 ? 2 : 0, yPct(0) * chartH - yPct(b.value) * chartH);
+        const by = PAD_T + yPct(b.value) * chartH;
+        const c  = b.isToday ? '#7c3aed' : (goal > 0 && b.value >= goal) ? goalColor : color;
+        return (
+          <g key={i}>
+            <rect x={x} y={by} width={barW} height={bh} rx="1.5" fill={c} opacity={b.value === 0 ? 0.25 : 1} />
+            {b.value === 0 && <rect x={x} y={PAD_T + chartH - 2} width={barW} height={2} rx="1" fill={c} opacity={0.3} />}
+            {b.showLabel && <text x={x + barW / 2} y={H - 3} fill="var(--ql-tx)" fontSize="8" textAnchor="middle">{b.label}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ─── Main calendar page ───────────────────────────────────────────────────────
 export default function CalendarPage() {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, habitDefs, habitLog, logHabit, unlogHabit, gymPlans, gymSessions, mealLog, nutritionGoal, wakeQuest, sleepLog, stepLog, stepGoal, waterLog, waterGoal, setActiveSection, setTrainingTab, setNutritionTab, disabledSections, clockFormat } = useGameStore();
@@ -380,6 +430,9 @@ export default function CalendarPage() {
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported'>('default');
   const [showFoodDetail,  setShowFoodDetail]  = useState(false);
   const [showWaterDetail, setShowWaterDetail] = useState(false);
+  const [foodMetric, setFoodMetric] = useState<'calories'|'protein'|'carbs'|'fat'>('calories');
+  const [foodPeriod, setFoodPeriod] = useState<StepPeriod>('W');
+  const [waterPeriod, setWaterPeriod] = useState<StepPeriod>('W');
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -925,16 +978,42 @@ export default function CalendarPage() {
 
     {/* ── Food Detail Sheet ── */}
     {showFoodDetail && (() => {
-      const allDates = [...new Set(mealLog.map(m => m.date))].sort().reverse();
-      const last7  = allDates.filter(d => d >= new Date(Date.now() - 7  * 86400000).toISOString().slice(0,10));
-      const last30 = allDates.filter(d => d >= new Date(Date.now() - 30 * 86400000).toISOString().slice(0,10));
-      const avg = (dates: string[], key: 'calories' | 'protein' | 'carbs' | 'fat') =>
-        dates.length === 0 ? 0 : Math.round(dates.reduce((s, d) =>
-          s + mealLog.filter(m => m.date === d).reduce((ss, m) => ss + (m[key] ?? 0), 0), 0) / dates.length);
-      const goalHitDays = allDates.filter(d => {
-        const cals = mealLog.filter(m => m.date === d).reduce((s, m) => s + m.calories, 0);
-        return nutritionGoal.calories > 0 && cals >= nutritionGoal.calories * 0.8;
-      }).length;
+      const PERIODS: StepPeriod[] = ['W', 'M', '6M', 'Y'];
+      const PERIOD_LABELS: Record<StepPeriod, string> = { W: 'Week', M: 'Month', '6M': '6 Months', Y: 'Year' };
+      const METRICS: { key: 'calories'|'protein'|'carbs'|'fat'; label: string; unit: string; color: string; goal: number }[] = [
+        { key: 'calories', label: 'Calories', unit: 'kcal', color: '#f97316', goal: nutritionGoal.calories },
+        { key: 'protein',  label: 'Protein',  unit: 'g',    color: '#4a9eff', goal: nutritionGoal.protein  },
+        { key: 'carbs',    label: 'Carbs',    unit: 'g',    color: '#a78bfa', goal: nutritionGoal.carbs    },
+        { key: 'fat',      label: 'Fat',      unit: 'g',    color: '#fb923c', goal: nutritionGoal.fat      },
+      ];
+      const m = METRICS.find(x => x.key === foodMetric)!;
+
+      // Build byDate for selected metric
+      const byDate: Record<string, number> = {};
+      mealLog.forEach(ml => {
+        byDate[ml.date] = (byDate[ml.date] ?? 0) + (ml[foodMetric] ?? 0);
+      });
+
+      const chartBars = foodPeriod === 'W' ? buildDailyBars(byDate, 7)
+                      : foodPeriod === 'M' ? buildDailyBars(byDate, 30)
+                      : foodPeriod === '6M' ? buildWeeklyBars(byDate, 26)
+                      : buildMonthlyBars(byDate, 12);
+
+      const activeBars = chartBars.filter(b => b.value > 0);
+      const chartAvg = activeBars.length ? Math.round(activeBars.reduce((s, b) => s + b.value, 0) / activeBars.length) : 0;
+      const goalHit  = chartBars.filter(b => m.goal > 0 && b.value >= m.goal).length;
+
+      const fmtDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const rangeEnd = new Date();
+      const rangeStart = new Date();
+      if (foodPeriod === 'W')  rangeStart.setDate(rangeStart.getDate() - 6);
+      if (foodPeriod === 'M')  rangeStart.setDate(rangeStart.getDate() - 29);
+      if (foodPeriod === '6M') rangeStart.setMonth(rangeStart.getMonth() - 6);
+      if (foodPeriod === 'Y')  rangeStart.setFullYear(rangeStart.getFullYear() - 1);
+      const rangeLabel = `${fmtDate(rangeStart)} – ${fmtDate(rangeEnd)}`;
+
+      const allDates = [...new Set(mealLog.map(ml => ml.date))].sort().reverse();
+
       return (
         <div className="fixed inset-0 z-50 flex flex-col bg-ql-bg">
           <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-ql shrink-0">
@@ -942,37 +1021,78 @@ export default function CalendarPage() {
             <button onClick={() => setShowFoodDetail(false)} className="text-ql-3 text-xs border border-ql rounded-xl px-3 py-1.5">Close</button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+
+            {/* Metric selector */}
+            <div className="flex gap-1.5 bg-ql-surface2 rounded-2xl p-1 border border-ql">
+              {METRICS.map(metric => (
+                <button key={metric.key} onClick={() => setFoodMetric(metric.key)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${foodMetric === metric.key ? 'bg-ql-accent text-white shadow-ql-sm' : 'text-ql-3'}`}>
+                  {metric.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Chart card */}
             <div className="bg-ql-surface rounded-2xl border border-ql p-4">
-              <p className="text-ql text-sm font-semibold mb-3">Averages</p>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {[
-                  { label: '7-day avg kcal',     val: avg(last7,  'calories'), unit: 'kcal', goal: nutritionGoal.calories },
-                  { label: '30-day avg kcal',    val: avg(last30, 'calories'), unit: 'kcal', goal: nutritionGoal.calories },
-                  { label: '7-day avg protein',  val: avg(last7,  'protein'),  unit: 'g',    goal: nutritionGoal.protein  },
-                  { label: '30-day avg protein', val: avg(last30, 'protein'),  unit: 'g',    goal: nutritionGoal.protein  },
-                  { label: '7-day avg carbs',    val: avg(last7,  'carbs'),    unit: 'g',    goal: nutritionGoal.carbs    },
-                  { label: '7-day avg fat',      val: avg(last7,  'fat'),      unit: 'g',    goal: nutritionGoal.fat      },
-                ].map(({ label, val, unit, goal }) => (
-                  <div key={label} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
-                    <p className="text-ql text-sm font-bold">{val}<span className="text-ql-3 text-[10px] font-normal ml-0.5">{unit}</span></p>
-                    {goal > 0 && <p className="text-ql-3 text-[10px]">{Math.round(val / goal * 100)}% of {goal}{unit} goal</p>}
-                    <p className="text-ql-3 text-[10px] mt-0.5">{label}</p>
-                  </div>
+              {/* Period toggle */}
+              <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql mb-4">
+                {PERIODS.map(p => (
+                  <button key={p} onClick={() => setFoodPeriod(p)}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${foodPeriod === p ? 'bg-ql-accent text-white' : 'text-ql-3'}`}>
+                    {p}
+                  </button>
                 ))}
               </div>
-              <div className="flex justify-between text-xs text-ql-3 mt-1">
-                <span>Goal hit rate: <span className="text-ql font-semibold">{allDates.length > 0 ? Math.round(goalHitDays / allDates.length * 100) : 0}%</span></span>
-                <span>{goalHitDays} of {allDates.length} days logged</span>
+
+              <p className="text-ql-3 text-[10px] uppercase tracking-wider font-semibold mb-0.5">Daily Average</p>
+              <div className="flex items-baseline gap-1.5 mb-0.5">
+                <span className="text-ql text-3xl font-bold tabular-nums">{chartAvg.toLocaleString()}</span>
+                <span className="text-ql-3 text-sm">{m.unit}</span>
+              </div>
+              <p className="text-ql-3 text-[11px] mb-3">{rangeLabel}</p>
+
+              <MetricChart bars={chartBars} goal={m.goal} color={m.color} />
+
+              <div className="flex items-center gap-4 mt-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-ql-3 text-[10px]">Goal hit</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span className="text-ql-3 text-[10px]">Today</span>
+                </div>
+                {m.goal > 0 && <span className="ml-auto text-ql-3 text-[10px]">Goal: {m.goal}{m.unit}</span>}
+              </div>
+
+              {/* Summary tiles */}
+              <div className="flex gap-2 mt-4">
+                <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                  <p className="text-ql text-sm font-bold tabular-nums">{chartAvg.toLocaleString()}</p>
+                  <p className="text-ql-3 text-[10px]">Avg ({PERIOD_LABELS[foodPeriod]})</p>
+                </div>
+                {m.goal > 0 && (
+                  <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                    <p className="text-ql text-sm font-bold">{goalHit}/{chartBars.length}</p>
+                    <p className="text-ql-3 text-[10px]">Goals hit</p>
+                  </div>
+                )}
+                <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                  <p className="text-ql text-sm font-bold tabular-nums">{allDates.length}</p>
+                  <p className="text-ql-3 text-[10px]">Days logged</p>
+                </div>
               </div>
             </div>
+
+            {/* Per-day meal log */}
             <div className="flex flex-col gap-3">
               {allDates.length === 0 && <p className="text-ql-3 text-sm text-center py-8">No meals logged yet</p>}
               {allDates.map(date => {
-                const meals   = mealLog.filter(m => m.date === date);
-                const totCal  = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
-                const totProt = meals.reduce((s, m) => s + (m.protein  ?? 0), 0);
-                const totCarb = meals.reduce((s, m) => s + (m.carbs    ?? 0), 0);
-                const totFat  = meals.reduce((s, m) => s + (m.fat      ?? 0), 0);
+                const meals   = mealLog.filter(ml => ml.date === date);
+                const totCal  = meals.reduce((s, ml) => s + (ml.calories ?? 0), 0);
+                const totProt = meals.reduce((s, ml) => s + (ml.protein  ?? 0), 0);
+                const totCarb = meals.reduce((s, ml) => s + (ml.carbs    ?? 0), 0);
+                const totFat  = meals.reduce((s, ml) => s + (ml.fat      ?? 0), 0);
                 const pct = nutritionGoal.calories > 0 ? Math.min(100, Math.round(totCal / nutritionGoal.calories * 100)) : null;
                 return (
                   <div key={date} className="bg-ql-surface rounded-2xl border border-ql p-3.5">
@@ -991,10 +1111,10 @@ export default function CalendarPage() {
                       <span>F: <span className="text-ql font-semibold">{totFat}g</span></span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {meals.map(m => (
-                        <div key={m.id} className="flex items-center justify-between">
-                          <span className="text-ql text-xs">{m.name}</span>
-                          <span className="text-ql-3 text-[10px]">{m.calories}kcal · P:{m.protein}g C:{m.carbs}g F:{m.fat}g</span>
+                      {meals.map(ml => (
+                        <div key={ml.id} className="flex items-center justify-between">
+                          <span className="text-ql text-xs">{ml.name}</span>
+                          <span className="text-ql-3 text-[10px]">{ml.calories}kcal · P:{ml.protein}g C:{ml.carbs}g F:{ml.fat}g</span>
                         </div>
                       ))}
                     </div>
@@ -1009,12 +1129,33 @@ export default function CalendarPage() {
 
     {/* ── Water Detail Sheet ── */}
     {showWaterDetail && (() => {
+      const PERIODS: StepPeriod[] = ['W', 'M', '6M', 'Y'];
+      const PERIOD_LABELS: Record<StepPeriod, string> = { W: 'Week', M: 'Month', '6M': '6 Months', Y: 'Year' };
+
+      const byDate: Record<string, number> = {};
+      waterLog.forEach(w => { byDate[w.date] = (byDate[w.date] ?? 0) + w.amount; });
+
+      const chartBars = waterPeriod === 'W' ? buildDailyBars(byDate, 7)
+                      : waterPeriod === 'M' ? buildDailyBars(byDate, 30)
+                      : waterPeriod === '6M' ? buildWeeklyBars(byDate, 26)
+                      : buildMonthlyBars(byDate, 12);
+
+      const activeBars = chartBars.filter(b => b.value > 0);
+      const chartAvg = activeBars.length ? Math.round(activeBars.reduce((s, b) => s + b.value, 0) / activeBars.length) : 0;
+      const goalHit  = chartBars.filter(b => waterGoal > 0 && b.value >= waterGoal).length;
+      const fmtMl    = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}L` : `${n}ml`;
+
+      const fmtDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const rangeEnd = new Date();
+      const rangeStart = new Date();
+      if (waterPeriod === 'W')  rangeStart.setDate(rangeStart.getDate() - 6);
+      if (waterPeriod === 'M')  rangeStart.setDate(rangeStart.getDate() - 29);
+      if (waterPeriod === '6M') rangeStart.setMonth(rangeStart.getMonth() - 6);
+      if (waterPeriod === 'Y')  rangeStart.setFullYear(rangeStart.getFullYear() - 1);
+      const rangeLabel = `${fmtDate(rangeStart)} – ${fmtDate(rangeEnd)}`;
+
       const allWaterDates = [...new Set(waterLog.map(w => w.date))].sort().reverse();
-      const last7w  = allWaterDates.filter(d => d >= new Date(Date.now() - 7  * 86400000).toISOString().slice(0,10));
-      const last30w = allWaterDates.filter(d => d >= new Date(Date.now() - 30 * 86400000).toISOString().slice(0,10));
-      const dailyTotal = (date: string) => waterLog.filter(w => w.date === date).reduce((s, w) => s + w.amount, 0);
-      const avgMl = (dates: string[]) => dates.length === 0 ? 0 : Math.round(dates.reduce((s, d) => s + dailyTotal(d), 0) / dates.length);
-      const goalHitDays = allWaterDates.filter(d => dailyTotal(d) >= waterGoal).length;
+
       return (
         <div className="fixed inset-0 z-50 flex flex-col bg-ql-bg">
           <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-ql shrink-0">
@@ -1022,38 +1163,68 @@ export default function CalendarPage() {
             <button onClick={() => setShowWaterDetail(false)} className="text-ql-3 text-xs border border-ql rounded-xl px-3 py-1.5">Close</button>
           </div>
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+
+            {/* Chart card */}
             <div className="bg-ql-surface rounded-2xl border border-ql p-4">
-              <p className="text-ql text-sm font-semibold mb-3">Averages</p>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {[
-                  { label: '7-day average',   val: avgMl(last7w)        },
-                  { label: '30-day average',  val: avgMl(last30w)       },
-                  { label: 'All-time average',val: avgMl(allWaterDates) },
-                  { label: 'Goal',            val: waterGoal            },
-                ].map(({ label, val }) => (
-                  <div key={label} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
-                    <p className="text-ql text-sm font-bold">{val >= 1000 ? `${(val / 1000).toFixed(1)}L` : `${val}ml`}</p>
-                    {label !== 'Goal' && waterGoal > 0 && <p className="text-ql-3 text-[10px]">{Math.round(val / waterGoal * 100)}% of goal</p>}
-                    <p className="text-ql-3 text-[10px] mt-0.5">{label}</p>
-                  </div>
+              {/* Period toggle */}
+              <div className="flex bg-ql-surface2 rounded-2xl p-1 border border-ql mb-4">
+                {PERIODS.map(p => (
+                  <button key={p} onClick={() => setWaterPeriod(p)}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${waterPeriod === p ? 'bg-ql-accent text-white' : 'text-ql-3'}`}>
+                    {p}
+                  </button>
                 ))}
               </div>
-              <div className="flex justify-between text-xs text-ql-3">
-                <span>Goal hit rate: <span className="text-ql font-semibold">{allWaterDates.length > 0 ? Math.round(goalHitDays / allWaterDates.length * 100) : 0}%</span></span>
-                <span>{goalHitDays} of {allWaterDates.length} days logged</span>
+
+              <p className="text-ql-3 text-[10px] uppercase tracking-wider font-semibold mb-0.5">Daily Average</p>
+              <div className="flex items-baseline gap-1.5 mb-0.5">
+                <span className="text-ql text-3xl font-bold tabular-nums">{fmtMl(chartAvg)}</span>
+              </div>
+              <p className="text-ql-3 text-[11px] mb-3">{rangeLabel}</p>
+
+              <MetricChart bars={chartBars} goal={waterGoal} color="#38bdf8" />
+
+              <div className="flex items-center gap-4 mt-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-ql-3 text-[10px]">Goal hit</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span className="text-ql-3 text-[10px]">Today</span>
+                </div>
+                {waterGoal > 0 && <span className="ml-auto text-ql-3 text-[10px]">Goal: {fmtMl(waterGoal)}</span>}
+              </div>
+
+              {/* Summary tiles */}
+              <div className="flex gap-2 mt-4">
+                <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                  <p className="text-ql text-sm font-bold tabular-nums">{fmtMl(chartAvg)}</p>
+                  <p className="text-ql-3 text-[10px]">Avg ({PERIOD_LABELS[waterPeriod]})</p>
+                </div>
+                <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                  <p className="text-ql text-sm font-bold">{goalHit}/{chartBars.length}</p>
+                  <p className="text-ql-3 text-[10px]">Goals hit</p>
+                </div>
+                <div className="bg-ql-surface2 rounded-xl border border-ql p-3 flex-1 text-center">
+                  <p className="text-ql text-sm font-bold tabular-nums">{allWaterDates.length}</p>
+                  <p className="text-ql-3 text-[10px]">Days logged</p>
+                </div>
               </div>
             </div>
+
+            {/* Per-day water log */}
             <div className="flex flex-col gap-2">
               {allWaterDates.length === 0 && <p className="text-ql-3 text-sm text-center py-8">No water logged yet</p>}
               {allWaterDates.map(date => {
-                const total = dailyTotal(date);
+                const total = waterLog.filter(w => w.date === date).reduce((s, w) => s + w.amount, 0);
                 const pct   = waterGoal > 0 ? Math.min(100, Math.round(total / waterGoal * 100)) : null;
                 const color = pct === null ? 'bg-ql-accent' : pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-500/70';
                 return (
                   <div key={date} className="bg-ql-surface rounded-2xl border border-ql p-3.5">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-ql text-sm font-semibold">{new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                      <span className="text-ql-3 text-xs">{total >= 1000 ? `${(total / 1000).toFixed(2)}L` : `${total}ml`}{pct !== null ? ` · ${pct}%` : ''}</span>
+                      <span className="text-ql-3 text-xs">{fmtMl(total)}{pct !== null ? ` · ${pct}%` : ''}</span>
                     </div>
                     {pct !== null && (
                       <div className="h-1.5 bg-ql-surface2 rounded-full overflow-hidden">
