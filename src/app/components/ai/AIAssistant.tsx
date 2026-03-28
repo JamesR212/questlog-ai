@@ -10,6 +10,17 @@ interface Message {
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
   loadingLabel?: string;
+  pendingFoodLog?: PendingFoodLog;
+}
+
+interface PendingMeal {
+  name: string; calories: number; protein: number; carbs: number; fat: number; sugar: number;
+}
+interface PendingFoodLog {
+  date: string;
+  dateLabel: string;
+  meals: PendingMeal[];
+  confirmed?: boolean;
 }
 
 // Classify a calendar event title into an activity type for advice purposes
@@ -548,16 +559,25 @@ export default function AIAssistant() {
       });
       const data = await res.json();
       const reply = data.reply ?? data.error ?? 'Sorry, something went wrong.';
-      addAiMsg(reply);
       // Release the input immediately so user can keep chatting
       setLoading(false);
-      if (data.action?.type === 'generate_gym_plan') {
-        // Fire plan generation in background — it posts its own status messages
-        generatePlan('gym', data.action.preferences ?? {});
-      } else if (data.action?.type === 'generate_meal_plan') {
-        generatePlan('meal', data.action.preferences ?? {});
-      } else if (data.action) {
-        executeAction(data.action, store);
+      if (data.action?.type === 'confirm_past_food_log') {
+        const action = data.action as Record<string, unknown>;
+        const pendingFoodLog: PendingFoodLog = {
+          date:      String(action.date      ?? ''),
+          dateLabel: String(action.dateLabel ?? action.date ?? ''),
+          meals:     (action.meals as PendingMeal[]) ?? [],
+        };
+        setMessages(prev => [...prev, { role: 'ai', text: reply, pendingFoodLog }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', text: reply }]);
+        if (data.action?.type === 'generate_gym_plan') {
+          generatePlan('gym', data.action.preferences ?? {});
+        } else if (data.action?.type === 'generate_meal_plan') {
+          generatePlan('meal', data.action.preferences ?? {});
+        } else if (data.action) {
+          executeAction(data.action, store);
+        }
       }
     } catch {
       addAiMsg('Having trouble connecting. Try again in a moment.');
@@ -804,7 +824,7 @@ export default function AIAssistant() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-3">
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl text-sm leading-relaxed overflow-hidden ${
                   m.role === 'user'
                     ? 'bg-ql-accent text-white rounded-br-sm'
@@ -818,6 +838,62 @@ export default function AIAssistant() {
                   )}
                   <p className="px-3 py-2 whitespace-pre-line">{m.text}</p>
                 </div>
+                {/* Past food log confirmation card */}
+                {m.pendingFoodLog && !m.pendingFoodLog.confirmed && (
+                  <div className="mt-2 w-[90%] bg-ql-surface rounded-2xl border border-ql p-3.5">
+                    <p className="text-ql text-xs font-semibold mb-2">📅 Log for {m.pendingFoodLog.dateLabel}</p>
+                    <div className="flex flex-col gap-1.5 mb-3">
+                      {m.pendingFoodLog.meals.map((meal, mi) => (
+                        <div key={mi} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
+                          <div className="flex items-center justify-between">
+                            <span className="text-ql text-xs font-semibold">{meal.name}</span>
+                            <span className="text-ql-3 text-[10px]">{meal.calories} kcal</span>
+                          </div>
+                          <div className="flex gap-2 text-[10px] text-ql-3 mt-0.5">
+                            <span>P: {meal.protein}g</span>
+                            <span>C: {meal.carbs}g</span>
+                            <span>F: {meal.fat}g</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const pfl = m.pendingFoodLog!;
+                          pfl.meals.forEach(meal => {
+                            store.logMeal({
+                              name: meal.name, calories: meal.calories,
+                              protein: meal.protein, carbs: meal.carbs,
+                              fat: meal.fat, sugar: meal.sugar ?? 0,
+                            }, pfl.date);
+                          });
+                          setMessages(prev => prev.map((msg, idx) =>
+                            idx === i && msg.pendingFoodLog
+                              ? { ...msg, pendingFoodLog: { ...msg.pendingFoodLog, confirmed: true } }
+                              : msg
+                          ));
+                          setMessages(prev => [...prev, { role: 'ai', text: `✅ Done! Added ${pfl.meals.length === 1 ? pfl.meals[0].name : `${pfl.meals.length} meals`} to ${pfl.dateLabel}.` }]);
+                        }}
+                        className="flex-1 py-2 bg-ql-accent text-white text-xs font-semibold rounded-xl"
+                      >Yes, log it</button>
+                      <button
+                        onClick={() => {
+                          setMessages(prev => prev.map((msg, idx) =>
+                            idx === i && msg.pendingFoodLog
+                              ? { ...msg, pendingFoodLog: { ...msg.pendingFoodLog, confirmed: true } }
+                              : msg
+                          ));
+                          setMessages(prev => [...prev, { role: 'ai', text: `No problem, I won't add it.` }]);
+                        }}
+                        className="flex-1 py-2 bg-ql-surface2 border border-ql text-ql text-xs font-semibold rounded-xl"
+                      >Cancel</button>
+                    </div>
+                  </div>
+                )}
+                {m.pendingFoodLog?.confirmed && (
+                  <p className="text-ql-3 text-[10px] mt-1 px-1">Logged to {m.pendingFoodLog.dateLabel}</p>
+                )}
               </div>
             ))}
             {loading && (

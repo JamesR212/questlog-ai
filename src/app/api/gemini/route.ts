@@ -596,6 +596,9 @@ Log a single food/meal (always include micros with your best estimate — use nu
 Log multiple foods at once — IMPORTANT: if the user mentions more than one food item or meal in a single message (e.g. "I had eggs for breakfast, a sandwich for lunch and pasta for dinner"), you MUST use this action to log each as a separate entry. Never combine multiple foods into one log_food entry:
 { "type": "log_food_multiple", "meals": [ { "name": "Scrambled eggs", "calories": 220, "protein": 18, "carbs": 2, "fat": 14, "sugar": 0, "micros": { "vitA": 90, "vitC": 0, "vitD": 1.1, "vitE": 1.0, "vitK": 0.4, "vitB6": 0.2, "vitB12": 0.9, "folate": 28, "calcium": 56, "iron": 1.8, "magnesium": 12, "zinc": 1.3, "potassium": 140, "sodium": 180 } }, { "name": "Tuna sandwich", "calories": 380, "protein": 28, "carbs": 40, "fat": 8, "sugar": 3, "micros": { "vitA": 10, "vitC": 2, "vitD": 0.5, "vitE": 0.8, "vitK": 5, "vitB6": 0.4, "vitB12": 1.2, "folate": 30, "calcium": 80, "iron": 2.5, "magnesium": 30, "zinc": 1.0, "potassium": 280, "sodium": 520 } } ] }
 
+Log food for a PAST date (when user says they forgot to log, or mentions food they had yesterday / a specific past day) — DO NOT use log_food/log_food_multiple for past dates. Use this action instead so the app can show a confirmation before writing. The "date" must be YYYY-MM-DD. Your reply must ask the user to confirm, e.g. "I'll add [meals] to [day] — shall I go ahead?":
+{ "type": "confirm_past_food_log", "date": "2026-03-27", "dateLabel": "yesterday (27 Mar)", "meals": [ { "name": "Chicken burger", "calories": 600, "protein": 30, "carbs": 40, "fat": 20, "sugar": 5 } ] }
+
 Log water (ml):
 { "type": "log_water", "amount": 500 }
 
@@ -665,6 +668,7 @@ Rules:
 - For plan generation: gather info conversationally — don't ask all questions at once. 1-2 questions per message. Once you have enough to build a great plan, trigger the action immediately
 - When triggering generate_gym_plan or generate_meal_plan, your reply should be a very short confirmation like "Perfect, I have everything I need!" — keep it to one sentence, the app will show the timing and auto-save message itself
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
+- When the user mentions food they had on a PAST day (yesterday, "last Tuesday", "3 days ago", etc.), ALWAYS use confirm_past_food_log — never use log_food for past dates. Calculate the exact YYYY-MM-DD date from today (${today}) and set dateLabel to a human-friendly string like "yesterday (27 Mar)"
 - When asked "how am I doing?" or progress questions, reference their actual goals, weight change, time on app, gym sessions, and habit streak — be specific with real numbers
 - If the user mentions new goals they want to work on, update them with set_goals
 - When the user asks to add/schedule/plan something ("add a gym session", "put a run in my calendar", "schedule rest day"), use add_calendar_event immediately — confirm the date/time first if not stated
