@@ -350,22 +350,6 @@ export default function StepTracker({ belowStats }: { belowStats?: React.ReactNo
           </div>
         )}
 
-        {/* Milestone chips */}
-        <div className="flex gap-2 w-full">
-          {[
-            { steps: 5000,  label: '5k',  reward: '🏅' },
-            { steps: 10000, label: '10k', reward: '🏅🏅' },
-            { steps: 15000, label: '15k', reward: '🏅🏅🏅' },
-          ].map(m => {
-            const hit = todaySteps >= m.steps;
-            return (
-              <div key={m.steps} className={`flex-1 text-center py-1.5 rounded-xl border text-[10px] font-semibold transition-all ${hit ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-ql text-ql-3'}`}>
-                <div>{m.label}</div>
-                <div className="opacity-70">{m.reward}</div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* ── Manual entry ── */}
