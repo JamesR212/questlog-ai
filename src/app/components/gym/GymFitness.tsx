@@ -1318,7 +1318,7 @@ function FemaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) 
 }
 
 function RecoverySection() {
-  const { gymSessions, gymPlans, calendarEvents, sleepLog, characterAppearance, gpsActivities, stepLog, stepGoal } = useGameStore();
+  const { gymSessions, gymPlans, calendarEvents, sleepLog, gpsActivities, stepLog, stepGoal } = useGameStore();
 
   // Build work events from all activity sources
   // Each event has: muscle group, timestamp (ms), and recoveryHours (time to full recovery)
@@ -1476,35 +1476,22 @@ function RecoverySection() {
         </div>
       )}
 
-      <div className="flex gap-3 px-4 py-4">
-        {/* SVG body diagram */}
-        <div className="shrink-0">
-          {characterAppearance.gender === 'feminine'
-            ? <FemaleBodyMap recovery={recovery} />
-            : <MaleBodyMap recovery={recovery} />
-          }
-          <div className="flex gap-2 text-[9px] text-ql-3 justify-center -mt-1">
-            <span>Ready</span><span>Part.</span><span>Fatigued</span>
-          </div>
-        </div>
-
-        {/* Muscle cards 2×3 grid */}
-        <div className="flex-1 grid grid-cols-2 gap-2">
-          {(['Chest', 'Back', 'Shoulders', 'Arms', 'Abs', 'Legs'] as MuscleGroup[]).map(muscle => {
-            const pct = recovery[muscle];
-            const color = recoveryColor(pct);
-            return (
-              <div key={muscle} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
-                <p className="text-ql text-[11px] font-semibold mb-1.5">{muscle}</p>
-                <div className="h-1.5 bg-ql-surface3 rounded-full overflow-hidden mb-1">
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%`, backgroundColor: color }} />
-                </div>
-                <p className="text-[10px] font-bold tabular-nums" style={{ color }}>{pct}%</p>
+      {/* Muscle cards 2×3 grid */}
+      <div className="grid grid-cols-2 gap-2 px-4 py-4">
+        {(['Chest', 'Back', 'Shoulders', 'Arms', 'Abs', 'Legs'] as MuscleGroup[]).map(muscle => {
+          const pct = recovery[muscle];
+          const color = recoveryColor(pct);
+          return (
+            <div key={muscle} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
+              <p className="text-ql text-[11px] font-semibold mb-1.5">{muscle}</p>
+              <div className="h-1.5 bg-ql-surface3 rounded-full overflow-hidden mb-1">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, backgroundColor: color }} />
               </div>
-            );
-          })}
-        </div>
+              <p className="text-[10px] font-bold tabular-nums" style={{ color }}>{pct}%</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
