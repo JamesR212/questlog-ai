@@ -88,8 +88,6 @@ function WeeklySnapshotGrid() {
   const addedOptional  = new Set(snapshotAddedOptional);
   const [showEdit, setShowEdit]           = useState(false);
   const [showYear, setShowYear]           = useState(false);
-  const [showFoodDetail, setShowFoodDetail]   = useState(false);
-  const [showWaterDetail, setShowWaterDetail] = useState(false);
   const [viewYear,  setViewYear]  = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth()); // 0-based
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -396,14 +394,10 @@ function WeeklySnapshotGrid() {
           <div key={row.id} className="flex items-center gap-1">
             {/* Row label */}
             <div
-              className={`w-24 shrink-0 flex items-center gap-1.5 min-w-0 pr-1 ${row.type === 'nutrition' || row.type === 'hydration' ? 'cursor-pointer active:opacity-70' : ''}`}
-              onClick={() => {
-                if (row.type === 'nutrition') setShowFoodDetail(true);
-                else if (row.type === 'hydration') setShowWaterDetail(true);
-              }}
+              className="w-24 shrink-0 flex items-center gap-1.5 min-w-0 pr-1"
             >
               <HabitEmoji emoji={row.emoji} className="text-sm shrink-0" />
-              <span className={`text-[10px] font-medium truncate ${row.type === 'nutrition' || row.type === 'hydration' ? 'text-ql-accent underline underline-offset-2' : 'text-ql-3'}`}>{row.label}</span>
+              <span className="text-[10px] font-medium truncate text-ql-3">{row.label}</span>
             </div>
             {/* Day cells */}
             {weekDates.map(ds => {
@@ -865,155 +859,6 @@ function WeeklySnapshotGrid() {
         </div>
       )}
 
-      {/* ── Food Detail Sheet ── */}
-      {showFoodDetail && (() => {
-        const allDates = [...new Set(mealLog.map(m => m.date))].sort().reverse();
-        const last7  = allDates.filter(d => d >= new Date(Date.now() - 7  * 86400000).toISOString().slice(0,10));
-        const last30 = allDates.filter(d => d >= new Date(Date.now() - 30 * 86400000).toISOString().slice(0,10));
-        const avg = (dates: string[], key: 'calories' | 'protein' | 'carbs' | 'fat') =>
-          dates.length === 0 ? 0 : Math.round(dates.reduce((s, d) =>
-            s + mealLog.filter(m => m.date === d).reduce((ss, m) => ss + (m[key] ?? 0), 0), 0) / dates.length);
-        const goalHitDays = allDates.filter(d => {
-          const cals = mealLog.filter(m => m.date === d).reduce((s, m) => s + m.calories, 0);
-          return nutritionGoal.calories > 0 && cals >= nutritionGoal.calories * 0.8;
-        }).length;
-        return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-ql-bg">
-            <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-ql shrink-0">
-              <h2 className="text-ql font-bold text-base">🥗 Food History</h2>
-              <button onClick={() => setShowFoodDetail(false)} className="text-ql-3 text-xs border border-ql rounded-xl px-3 py-1.5">Close</button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-              {/* Averages */}
-              <div className="bg-ql-surface rounded-2xl border border-ql p-4">
-                <p className="text-ql text-sm font-semibold mb-3">Averages</p>
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  {[
-                    { label: '7-day avg kcal',  val: avg(last7,  'calories'), unit: 'kcal', goal: nutritionGoal.calories },
-                    { label: '30-day avg kcal', val: avg(last30, 'calories'), unit: 'kcal', goal: nutritionGoal.calories },
-                    { label: '7-day avg protein',  val: avg(last7,  'protein'), unit: 'g', goal: nutritionGoal.protein },
-                    { label: '30-day avg protein', val: avg(last30, 'protein'), unit: 'g', goal: nutritionGoal.protein },
-                    { label: '7-day avg carbs',  val: avg(last7,  'carbs'), unit: 'g', goal: nutritionGoal.carbs },
-                    { label: '7-day avg fat',    val: avg(last7,  'fat'),   unit: 'g', goal: nutritionGoal.fat   },
-                  ].map(({ label, val, unit, goal }) => (
-                    <div key={label} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
-                      <p className="text-ql text-sm font-bold">{val}<span className="text-ql-3 text-[10px] font-normal ml-0.5">{unit}</span></p>
-                      {goal > 0 && <p className="text-ql-3 text-[10px]">{Math.round(val / goal * 100)}% of {goal}{unit} goal</p>}
-                      <p className="text-ql-3 text-[10px] mt-0.5">{label}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between text-xs text-ql-3 mt-1">
-                  <span>Goal hit rate: <span className="text-ql font-semibold">{allDates.length > 0 ? Math.round(goalHitDays / allDates.length * 100) : 0}%</span></span>
-                  <span>{goalHitDays} of {allDates.length} days logged</span>
-                </div>
-              </div>
-              {/* Per-day meal log */}
-              <div className="flex flex-col gap-3">
-                {allDates.length === 0 && <p className="text-ql-3 text-sm text-center py-8">No meals logged yet</p>}
-                {allDates.map(date => {
-                  const meals = mealLog.filter(m => m.date === date);
-                  const totCal  = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
-                  const totProt = meals.reduce((s, m) => s + (m.protein ?? 0), 0);
-                  const totCarb = meals.reduce((s, m) => s + (m.carbs ?? 0), 0);
-                  const totFat  = meals.reduce((s, m) => s + (m.fat ?? 0), 0);
-                  const pct = nutritionGoal.calories > 0 ? Math.min(100, Math.round(totCal / nutritionGoal.calories * 100)) : null;
-                  return (
-                    <div key={date} className="bg-ql-surface rounded-2xl border border-ql p-3.5">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-ql text-sm font-semibold">{new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                        <span className="text-ql-3 text-xs">{totCal} kcal{pct !== null ? ` · ${pct}%` : ''}</span>
-                      </div>
-                      {pct !== null && (
-                        <div className="h-1.5 bg-ql-surface2 rounded-full mb-2 overflow-hidden">
-                          <div className="h-full bg-ql-accent rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                      )}
-                      <div className="flex gap-3 text-[10px] text-ql-3 mb-2">
-                        <span>P: <span className="text-ql font-semibold">{totProt}g</span></span>
-                        <span>C: <span className="text-ql font-semibold">{totCarb}g</span></span>
-                        <span>F: <span className="text-ql font-semibold">{totFat}g</span></span>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        {meals.map(m => (
-                          <div key={m.id} className="flex items-center justify-between">
-                            <span className="text-ql text-xs">{m.name}</span>
-                            <span className="text-ql-3 text-[10px]">{m.calories}kcal · P:{m.protein}g C:{m.carbs}g F:{m.fat}g</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Water Detail Sheet ── */}
-      {showWaterDetail && (() => {
-        const allWaterDates = [...new Set(waterLog.map(w => w.date))].sort().reverse();
-        const last7w  = allWaterDates.filter(d => d >= new Date(Date.now() - 7  * 86400000).toISOString().slice(0,10));
-        const last30w = allWaterDates.filter(d => d >= new Date(Date.now() - 30 * 86400000).toISOString().slice(0,10));
-        const dailyTotal = (date: string) => waterLog.filter(w => w.date === date).reduce((s, w) => s + w.amount, 0);
-        const avgMl = (dates: string[]) => dates.length === 0 ? 0 : Math.round(dates.reduce((s, d) => s + dailyTotal(d), 0) / dates.length);
-        const goalHitDays = allWaterDates.filter(d => dailyTotal(d) >= waterGoal).length;
-        return (
-          <div className="fixed inset-0 z-50 flex flex-col bg-ql-bg">
-            <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-ql shrink-0">
-              <h2 className="text-ql font-bold text-base">💧 Hydration History</h2>
-              <button onClick={() => setShowWaterDetail(false)} className="text-ql-3 text-xs border border-ql rounded-xl px-3 py-1.5">Close</button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-              {/* Averages */}
-              <div className="bg-ql-surface rounded-2xl border border-ql p-4">
-                <p className="text-ql text-sm font-semibold mb-3">Averages</p>
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  {[
-                    { label: '7-day average',  val: avgMl(last7w)  },
-                    { label: '30-day average', val: avgMl(last30w) },
-                    { label: 'All-time average', val: avgMl(allWaterDates) },
-                    { label: 'Goal', val: waterGoal },
-                  ].map(({ label, val }) => (
-                    <div key={label} className="bg-ql-surface2 rounded-xl p-2.5 border border-ql">
-                      <p className="text-ql text-sm font-bold">{val >= 1000 ? `${(val / 1000).toFixed(1)}L` : `${val}ml`}</p>
-                      {label !== 'Goal' && waterGoal > 0 && <p className="text-ql-3 text-[10px]">{Math.round(val / waterGoal * 100)}% of goal</p>}
-                      <p className="text-ql-3 text-[10px] mt-0.5">{label}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between text-xs text-ql-3">
-                  <span>Goal hit rate: <span className="text-ql font-semibold">{allWaterDates.length > 0 ? Math.round(goalHitDays / allWaterDates.length * 100) : 0}%</span></span>
-                  <span>{goalHitDays} of {allWaterDates.length} days logged</span>
-                </div>
-              </div>
-              {/* Per-day log */}
-              <div className="flex flex-col gap-2">
-                {allWaterDates.length === 0 && <p className="text-ql-3 text-sm text-center py-8">No water logged yet</p>}
-                {allWaterDates.map(date => {
-                  const total = dailyTotal(date);
-                  const pct   = waterGoal > 0 ? Math.min(100, Math.round(total / waterGoal * 100)) : null;
-                  const color = pct === null ? 'bg-ql-accent' : pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-500/70';
-                  return (
-                    <div key={date} className="bg-ql-surface rounded-2xl border border-ql p-3.5">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-ql text-sm font-semibold">{new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                        <span className="text-ql-3 text-xs">{total >= 1000 ? `${(total / 1000).toFixed(2)}L` : `${total}ml`}{pct !== null ? ` · ${pct}%` : ''}</span>
-                      </div>
-                      {pct !== null && (
-                        <div className="h-1.5 bg-ql-surface2 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
     </div>
   );
