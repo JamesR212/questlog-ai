@@ -1318,35 +1318,81 @@ function FemaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) 
 }
 
 function RecoverySection() {
-  const { gymSessions, gymPlans, calendarEvents, sleepLog, characterAppearance } = useGameStore();
+  const { gymSessions, gymPlans, calendarEvents, sleepLog, characterAppearance, gpsActivities, stepLog, stepGoal } = useGameStore();
 
-  // Calculate recovery per muscle group
-  const now = Date.now();
-  const recovery: Record<MuscleGroup, number> = {
-    Chest: 100, Back: 100, Shoulders: 100, Arms: 100, Abs: 100, Legs: 100,
-  };
+  // Build work events from all activity sources
+  // Each event has: muscle group, timestamp (ms), and recoveryHours (time to full recovery)
+  type WorkEvent = { muscle: MuscleGroup; timestamp: number; recoveryHours: number; source: string };
+  const workEvents: WorkEvent[] = [];
 
-  // Find last time each muscle was worked
-  const lastWorked: Record<MuscleGroup, number> = {
-    Chest: 0, Back: 0, Shoulders: 0, Arms: 0, Abs: 0, Legs: 0,
-  };
-
+  // Gym sessions → muscle groups from exercise names (72h recovery)
   for (const session of gymSessions) {
     const plan = gymPlans.find(p => p.id === session.planId);
     if (!plan) continue;
-    const sessionMs = new Date(session.date).getTime();
+    const ts = new Date(session.date).getTime();
     for (const ex of plan.exercises) {
       for (const muscle of exerciseToMuscles(ex.name)) {
-        if (sessionMs > lastWorked[muscle]) lastWorked[muscle] = sessionMs;
+        workEvents.push({ muscle, timestamp: ts, recoveryHours: 72, source: 'gym' });
       }
     }
   }
 
-  for (const muscle of MUSCLE_GROUPS) {
-    if (lastWorked[muscle] === 0) { recovery[muscle] = 100; continue; }
-    const hoursSince = (now - lastWorked[muscle]) / (1000 * 60 * 60);
-    recovery[muscle] = Math.min(100, Math.round((hoursSince / 72) * 100));
+  // GPS runs → Legs + light core (48h recovery — high impact)
+  // GPS cycles → Legs (36h recovery — lower impact than running)
+  // GPS walks → Legs (24h recovery — light load)
+  for (const act of gpsActivities ?? []) {
+    const ts = new Date(act.startTime).getTime();
+    if (act.type === 'run') {
+      workEvents.push({ muscle: 'Legs', timestamp: ts, recoveryHours: 48, source: 'run' });
+      // Long runs (>10km) also stress core
+      if (act.distance >= 10) {
+        workEvents.push({ muscle: 'Abs', timestamp: ts, recoveryHours: 24, source: 'run' });
+      }
+    } else if (act.type === 'cycle') {
+      workEvents.push({ muscle: 'Legs', timestamp: ts, recoveryHours: 36, source: 'cycle' });
+    } else if (act.type === 'walk') {
+      workEvents.push({ muscle: 'Legs', timestamp: ts, recoveryHours: 24, source: 'walk' });
+    }
   }
+
+  // High step days → Legs (36h for 15k+, 24h for 10k+)
+  const stepThreshold = stepGoal > 0 ? stepGoal : 10000;
+  for (const entry of stepLog ?? []) {
+    if (entry.steps >= 15000 || entry.steps >= stepThreshold * 1.5) {
+      const ts = new Date(entry.date + 'T20:00:00').getTime(); // Approximate end-of-day
+      workEvents.push({ muscle: 'Legs', timestamp: ts, recoveryHours: 36, source: 'steps' });
+    } else if (entry.steps >= 10000 || entry.steps >= stepThreshold) {
+      const ts = new Date(entry.date + 'T20:00:00').getTime();
+      workEvents.push({ muscle: 'Legs', timestamp: ts, recoveryHours: 24, source: 'steps' });
+    }
+  }
+
+  // Compute recovery: each event independently contributes fatigue; worst (lowest) wins per muscle
+  const now = Date.now();
+  const recovery: Record<MuscleGroup, number> = {
+    Chest: 100, Back: 100, Shoulders: 100, Arms: 100, Abs: 100, Legs: 100,
+  };
+  for (const evt of workEvents) {
+    const hoursSince = (now - evt.timestamp) / 3600000;
+    if (hoursSince < 0) continue; // Future event (shouldn't happen)
+    const pct = Math.min(100, Math.round((hoursSince / evt.recoveryHours) * 100));
+    recovery[evt.muscle] = Math.min(recovery[evt.muscle], pct);
+  }
+
+  // Identify the most recent cardio activity for contextual banners
+  const recentCardio = [...(gpsActivities ?? [])]
+    .sort((a, b) => b.startTime.localeCompare(a.startTime))[0];
+  const recentCardioHoursAgo = recentCardio
+    ? (now - new Date(recentCardio.startTime).getTime()) / 3600000
+    : null;
+  const showCardioLegBanner = recentCardioHoursAgo !== null && recentCardioHoursAgo < 48;
+
+  // Recent high step day (today or yesterday)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const recentHighStepDay = (stepLog ?? []).find(e =>
+    (e.date === todayStr || e.date === yesterdayStr) && e.steps >= (stepThreshold * 0.9)
+  );
 
   // Calendar: workout today or tomorrow?
   const today = new Date().toISOString().slice(0, 10);
@@ -1401,6 +1447,31 @@ function RecoverySection() {
           <span className="text-xs">{lastSleep.onTime ? '😴' : '⚠️'}</span>
           <p className={`text-xs font-medium ${lastSleep.onTime ? 'text-green-400' : 'text-amber-400'}`}>
             {lastSleep.onTime ? 'Good sleep logged — recovery boosted ✓' : 'Poor sleep slows muscle recovery'}
+          </p>
+        </div>
+      )}
+
+      {/* Cardio fatigue banners */}
+      {showCardioLegBanner && recentCardio && (
+        <div className="mx-4 mt-2 flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-1.5">
+          <span className="text-xs">
+            {recentCardio.type === 'run' ? '🏃' : recentCardio.type === 'cycle' ? '🚴' : '🚶'}
+          </span>
+          <p className="text-xs font-medium text-blue-400">
+            {recentCardio.type === 'run'
+              ? `${recentCardio.distance.toFixed(1)}km run — legs are recovering (${Math.round(recentCardioHoursAgo!)}h ago)`
+              : recentCardio.type === 'cycle'
+              ? `${recentCardio.distance.toFixed(1)}km cycle — legs fatigued (${Math.round(recentCardioHoursAgo!)}h ago)`
+              : `${recentCardio.distance.toFixed(1)}km walk — light leg load (${Math.round(recentCardioHoursAgo!)}h ago)`
+            }
+          </p>
+        </div>
+      )}
+      {recentHighStepDay && !showCardioLegBanner && (
+        <div className="mx-4 mt-2 flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl px-3 py-1.5">
+          <span className="text-xs">👟</span>
+          <p className="text-xs font-medium text-orange-400">
+            {recentHighStepDay.steps.toLocaleString()} steps {recentHighStepDay.date === todayStr ? 'today' : 'yesterday'} — legs carrying extra load
           </p>
         </div>
       )}
