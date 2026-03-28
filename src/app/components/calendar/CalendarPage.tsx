@@ -430,7 +430,8 @@ export default function CalendarPage() {
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported'>('default');
   const [showFoodDetail,  setShowFoodDetail]  = useState(false);
   const [showWaterDetail, setShowWaterDetail] = useState(false);
-  const [foodMetric, setFoodMetric] = useState<'calories'|'protein'|'carbs'|'fat'>('calories');
+  const [foodMetric, setFoodMetric] = useState<'calories'|'protein'|'carbs'|'fat'|'sugar'>('calories');
+  const [foodLogDate, setFoodLogDate] = useState('');
   const [foodPeriod, setFoodPeriod] = useState<StepPeriod>('W');
   const [waterPeriod, setWaterPeriod] = useState<StepPeriod>('W');
 
@@ -980,11 +981,12 @@ export default function CalendarPage() {
     {showFoodDetail && (() => {
       const PERIODS: StepPeriod[] = ['W', 'M', '6M', 'Y'];
       const PERIOD_LABELS: Record<StepPeriod, string> = { W: 'Week', M: 'Month', '6M': '6 Months', Y: 'Year' };
-      const METRICS: { key: 'calories'|'protein'|'carbs'|'fat'; label: string; unit: string; color: string; goal: number }[] = [
+      const METRICS: { key: 'calories'|'protein'|'carbs'|'fat'|'sugar'; label: string; unit: string; color: string; goal: number }[] = [
         { key: 'calories', label: 'Calories', unit: 'kcal', color: '#f97316', goal: nutritionGoal.calories },
         { key: 'protein',  label: 'Protein',  unit: 'g',    color: '#4a9eff', goal: nutritionGoal.protein  },
         { key: 'carbs',    label: 'Carbs',    unit: 'g',    color: '#a78bfa', goal: nutritionGoal.carbs    },
         { key: 'fat',      label: 'Fat',      unit: 'g',    color: '#fb923c', goal: nutritionGoal.fat      },
+        { key: 'sugar',    label: 'Sugar',    unit: 'g',    color: '#ec4899', goal: 0                      },
       ];
       const m = METRICS.find(x => x.key === foodMetric)!;
 
@@ -1084,44 +1086,84 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            {/* Per-day meal log */}
-            <div className="flex flex-col gap-3">
-              {allDates.length === 0 && <p className="text-ql-3 text-sm text-center py-8">No meals logged yet</p>}
-              {allDates.map(date => {
-                const meals   = mealLog.filter(ml => ml.date === date);
-                const totCal  = meals.reduce((s, ml) => s + (ml.calories ?? 0), 0);
-                const totProt = meals.reduce((s, ml) => s + (ml.protein  ?? 0), 0);
-                const totCarb = meals.reduce((s, ml) => s + (ml.carbs    ?? 0), 0);
-                const totFat  = meals.reduce((s, ml) => s + (ml.fat      ?? 0), 0);
-                const pct = nutritionGoal.calories > 0 ? Math.min(100, Math.round(totCal / nutritionGoal.calories * 100)) : null;
-                return (
-                  <div key={date} className="bg-ql-surface rounded-2xl border border-ql p-3.5">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-ql text-sm font-semibold">{new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                      <span className="text-ql-3 text-xs">{totCal} kcal{pct !== null ? ` · ${pct}%` : ''}</span>
-                    </div>
-                    {pct !== null && (
-                      <div className="h-1.5 bg-ql-surface2 rounded-full mb-2 overflow-hidden">
-                        <div className="h-full bg-ql-accent rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                    )}
-                    <div className="flex gap-3 text-[10px] text-ql-3 mb-2">
-                      <span>P: <span className="text-ql font-semibold">{totProt}g</span></span>
-                      <span>C: <span className="text-ql font-semibold">{totCarb}g</span></span>
-                      <span>F: <span className="text-ql font-semibold">{totFat}g</span></span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {meals.map(ml => (
-                        <div key={ml.id} className="flex items-center justify-between">
-                          <span className="text-ql text-xs">{ml.name}</span>
-                          <span className="text-ql-3 text-[10px]">{ml.calories}kcal · P:{ml.protein}g C:{ml.carbs}g F:{ml.fat}g</span>
+            {/* Day-by-day food log with scrollable date picker */}
+            {allDates.length === 0
+              ? <p className="text-ql-3 text-sm text-center py-8">No meals logged yet</p>
+              : (() => {
+                  const logDate = foodLogDate && allDates.includes(foodLogDate) ? foodLogDate : allDates[0];
+                  const logIdx  = allDates.indexOf(logDate);
+                  const meals   = mealLog.filter(ml => ml.date === logDate);
+                  const totCal  = meals.reduce((s, ml) => s + (ml.calories ?? 0), 0);
+                  const totProt = meals.reduce((s, ml) => s + (ml.protein  ?? 0), 0);
+                  const totCarb = meals.reduce((s, ml) => s + (ml.carbs    ?? 0), 0);
+                  const totFat  = meals.reduce((s, ml) => s + (ml.fat      ?? 0), 0);
+                  const totSug  = meals.reduce((s, ml) => s + (ml.sugar    ?? 0), 0);
+                  const calPct  = nutritionGoal.calories > 0 ? Math.min(100, Math.round(totCal / nutritionGoal.calories * 100)) : null;
+                  return (
+                    <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
+                      {/* Date scroll strip */}
+                      <div className="border-b border-ql px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <button disabled={logIdx >= allDates.length - 1}
+                            onClick={() => setFoodLogDate(allDates[logIdx + 1])}
+                            className="text-ql-3 text-lg disabled:opacity-20 px-1">‹</button>
+                          <div className="flex-1 overflow-x-auto flex gap-1.5 scrollbar-none">
+                            {allDates.map(d => (
+                              <button key={d} onClick={() => setFoodLogDate(d)}
+                                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${d === logDate ? 'bg-ql-accent text-white' : 'bg-ql-surface2 text-ql-3 border border-ql'}`}>
+                                {new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              </button>
+                            ))}
+                          </div>
+                          <button disabled={logIdx <= 0}
+                            onClick={() => setFoodLogDate(allDates[logIdx - 1])}
+                            className="text-ql-3 text-lg disabled:opacity-20 px-1">›</button>
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Day totals */}
+                      <div className="px-4 pt-3 pb-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="text-ql text-sm font-bold">{totCal} kcal</p>
+                          {calPct !== null && <span className="text-ql-3 text-xs">{calPct}% of goal</span>}
+                        </div>
+                        {calPct !== null && (
+                          <div className="h-1.5 bg-ql-surface2 rounded-full mb-2.5 overflow-hidden">
+                            <div className="h-full bg-ql-accent rounded-full" style={{ width: `${calPct}%` }} />
+                          </div>
+                        )}
+                        <div className="flex gap-3 text-[11px] text-ql-3 mb-3">
+                          <span>P <span className="text-ql font-semibold">{totProt}g</span></span>
+                          <span>C <span className="text-ql font-semibold">{totCarb}g</span></span>
+                          <span>F <span className="text-ql font-semibold">{totFat}g</span></span>
+                          <span>S <span className="text-ql font-semibold">{totSug}g</span></span>
+                        </div>
+
+                        {/* Meal list */}
+                        {meals.length === 0
+                          ? <p className="text-ql-3 text-xs text-center py-4">Nothing logged this day</p>
+                          : <div className="flex flex-col divide-y divide-ql">
+                              {meals.map(ml => (
+                                <div key={ml.id} className="py-2.5">
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-ql text-sm font-semibold">{ml.name}</span>
+                                    <span className="text-ql-3 text-xs font-semibold">{ml.calories} kcal</span>
+                                  </div>
+                                  <div className="flex gap-3 text-[10px] text-ql-3">
+                                    <span>P: {ml.protein}g</span>
+                                    <span>C: {ml.carbs}g</span>
+                                    <span>F: {ml.fat}g</span>
+                                    <span>S: {ml.sugar ?? 0}g</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                        }
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })()
+            }
           </div>
         </div>
       );
