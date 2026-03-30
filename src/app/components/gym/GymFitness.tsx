@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { GymPlan, GymExercise, WeekPlan, PerformanceStat, PerformanceEntry } from '@/types';
 import AIAdvisor from '../shared/AIAdvisor';
@@ -1643,6 +1643,31 @@ function RecoverySection() {
   );
 }
 
+// ─── Study session bell (Web Audio API, no external file needed) ──────────────
+function playBell() {
+  try {
+    const ctx = new AudioContext();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.8);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.8);
+  } catch { /* audio not supported */ }
+}
+
+interface StudyTimer {
+  planId:       string;
+  blocks:       Array<{ name: string; durationSecs: number }>;
+  currentIdx:   number;
+  secsLeft:     number;
+  running:      boolean;
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function GymFitness() {
   const {
@@ -1669,6 +1694,32 @@ export default function GymFitness() {
   const [expandedProgramme, setExpandedProgramme] = useState<string | null>(null);
   const [selectedWeekByProg, setSelectedWeekByProg] = useState<Record<string, number>>({});
   const [expandedDayByProg,  setExpandedDayByProg]  = useState<Record<string, string | null>>({});
+  const [studyTimer, setStudyTimer] = useState<StudyTimer | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Study session countdown ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!studyTimer?.running) {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      return;
+    }
+    timerIntervalRef.current = setInterval(() => {
+      setStudyTimer(prev => {
+        if (!prev) return null;
+        if (prev.secsLeft <= 1) {
+          playBell();
+          const nextIdx = prev.currentIdx + 1;
+          if (nextIdx >= prev.blocks.length) {
+            clearInterval(timerIntervalRef.current!);
+            return { ...prev, secsLeft: 0, running: false };
+          }
+          return { ...prev, currentIdx: nextIdx, secsLeft: prev.blocks[nextIdx].durationSecs };
+        }
+        return { ...prev, secsLeft: prev.secsLeft - 1 };
+      });
+    }, 1000);
+    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
+  }, [studyTimer?.running]);
 
   const GYM_QUIZ: QuizQuestion[] = [
     {
@@ -2158,6 +2209,23 @@ export default function GymFitness() {
                                     </div>
                                   ))
                                 )}
+                                {/* Study session timer button */}
+                                {plan.split === 'study' && plan.wantsSessionAlerts && exs.length > 0 && (
+                                  <button
+                                    onClick={() => {
+                                      playBell();
+                                      setStudyTimer({
+                                        planId: plan.id,
+                                        blocks: exs.map(e => ({ name: e.name, durationSecs: Math.max(1, e.targetReps) * 60 })),
+                                        currentIdx: 0,
+                                        secsLeft: Math.max(1, exs[0].targetReps) * 60,
+                                        running: true,
+                                      });
+                                    }}
+                                    className="mt-2 w-full py-2 rounded-xl text-xs font-semibold text-white text-center transition-colors"
+                                    style={{ backgroundColor: plan.color }}
+                                  >🔔 Start Session Timer</button>
+                                )}
                                 {sessionToday(plan.id) && (
                                   <button
                                     onClick={() => { const s = todaySession(plan.id); if (s) removeGymSession(s.id); }}
@@ -2389,6 +2457,98 @@ export default function GymFitness() {
 
       {/* FormAnalyzer hidden — use GAINN AI floating assistant instead */}
       <AIAdvisor section="gym" />
+
+      {/* ── Study Session Timer Modal ── */}
+      {studyTimer && (() => {
+        const block      = studyTimer.blocks[studyTimer.currentIdx];
+        const totalSecs  = block?.durationSecs ?? 0;
+        const secsLeft   = studyTimer.secsLeft;
+        const mm         = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+        const ss         = String(secsLeft % 60).padStart(2, '0');
+        const pct        = totalSecs > 0 ? Math.round(((totalSecs - secsLeft) / totalSecs) * 100) : 0;
+        const isDone     = !studyTimer.running && studyTimer.secsLeft === 0 && studyTimer.currentIdx >= studyTimer.blocks.length - 1;
+        const isBreak    = block?.name.toLowerCase().includes('break') || block?.name.toLowerCase().includes('lunch');
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-6 gap-6">
+            <div className="w-full max-w-sm bg-ql-surface rounded-3xl p-6 flex flex-col gap-5 shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <p className="text-ql text-sm font-bold">
+                  {isBreak ? '☕ Break Time' : '📚 Study Session'}
+                </p>
+                <button
+                  onClick={() => { setStudyTimer(null); if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); }}
+                  className="text-ql-3 hover:text-ql text-xl leading-none"
+                >✕</button>
+              </div>
+
+              {/* Current block name */}
+              <p className="text-ql text-base font-semibold text-center leading-snug">{block?.name ?? 'Done!'}</p>
+
+              {/* Big countdown */}
+              <div className="text-center">
+                <p className="text-5xl font-black font-mono text-ql tabular-nums tracking-tight">
+                  {isDone ? '🎉' : `${mm}:${ss}`}
+                </p>
+                {isDone && <p className="text-ql-2 text-sm mt-2 font-semibold">Session Complete!</p>}
+              </div>
+
+              {/* Progress bar */}
+              {!isDone && (
+                <div className="w-full h-2 rounded-full bg-ql-surface2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${pct}%`, backgroundColor: isBreak ? '#f59e0b' : '#7c3aed' }}
+                  />
+                </div>
+              )}
+
+              {/* Block progress */}
+              <p className="text-ql-3 text-xs text-center">
+                {isDone
+                  ? 'All blocks complete — great work! 🏆'
+                  : `Block ${studyTimer.currentIdx + 1} of ${studyTimer.blocks.length}`
+                }
+              </p>
+
+              {/* Controls */}
+              {!isDone && (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStudyTimer(prev => prev ? { ...prev, running: !prev.running } : null)}
+                    className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition-colors"
+                    style={{ backgroundColor: studyTimer.running ? '#6b7280' : '#7c3aed' }}
+                  >{studyTimer.running ? '⏸ Pause' : '▶ Resume'}</button>
+                  <button
+                    onClick={() => {
+                      const nextIdx = studyTimer.currentIdx + 1;
+                      if (nextIdx >= studyTimer.blocks.length) {
+                        setStudyTimer(prev => prev ? { ...prev, running: false, secsLeft: 0 } : null);
+                      } else {
+                        playBell();
+                        setStudyTimer(prev => prev ? {
+                          ...prev,
+                          currentIdx: nextIdx,
+                          secsLeft: prev.blocks[nextIdx].durationSecs,
+                          running: true,
+                        } : null);
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-2xl font-semibold text-sm border border-ql text-ql-2 transition-colors"
+                  >Skip →</button>
+                </div>
+              )}
+              {isDone && (
+                <button
+                  onClick={() => { setStudyTimer(null); }}
+                  className="w-full py-3 rounded-2xl font-semibold text-sm text-white"
+                  style={{ backgroundColor: '#16a34a' }}
+                >Done ✓</button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

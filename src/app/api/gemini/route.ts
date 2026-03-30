@@ -263,13 +263,23 @@ recoveryNotes = rest and recovery guidance.`;
           ? `REQUIRED SPLIT: Body Part — generate EXACTLY 5 plans (one muscle group per day):
   Chest [1], Back [2], Shoulders [3], Arms [4], Legs [5]. One day each per week.`
           : `REQUIRED SPLIT: Full Body — generate 1 plan scheduled ${daysPerWeek <= 2 ? 'with rest days between (e.g. [1,4])' : 'Mon/Wed/Fri [1,3,5]'}. Hit all major muscle groups each session.`;
+        const modificationBlock = prefs.existingPlan
+          ? `\nMODIFICATION — the user already has this plan and wants specific changes:
+Current exercises: ${prefs.existingPlan}
+Change requested: ${prefs.editRequest ?? 'Apply the changes described in goal/focus above'}
+RULES FOR MODIFICATION:
+- Keep ALL exercises that were NOT mentioned in the change request — same name, same weights, same reps, same sets.
+- Only modify the exercises/days/weights that were explicitly asked to change.
+- Do NOT randomly swap or rename exercises the user did not ask to change.
+- If scaling weights (e.g. "+20kg"), apply that change to every week proportionally (wk1 base+0, wk2 base+5, etc.).`
+          : '';
         planInstructions = `Training type: ${prefs.type ?? 'Weights and gym training'}
 Goal: ${prefs.goal ?? 'General fitness'}
 Experience: ${prefs.experience ?? 'Some experience'}
 Days per week: ${daysPerWeek}
 Focus area: ${prefs.focus ?? 'Full body'}
 Stats: STR=${context.stats?.str ?? 10}, CON=${context.stats?.con ?? 10}, Level=${context.stats?.level ?? 1}
-
+${modificationBlock}
 ${splitInstructions}
 
 RECOVERY RULES: Never schedule the same muscle group on consecutive days. No two plans may share a scheduleDays value. recoveryNotes must explain the recovery logic.
@@ -883,42 +893,46 @@ STEP 2 — Clarify if needed: if the user's message already says exactly what to
 STEP 3 — Apply the change using the correct action below.
 
 ── WHICH ACTION TO USE ──────────────────────────────────────────────────────
-USE update_gym_plan when:
-  • Changing exercise weights, reps, sets (e.g. "increase bench to 80kg")
-  • Swapping or adding/removing individual exercises
-  • Changing the plan name, emoji, color, split, recoveryNotes
-  • Changing training days WITHOUT changing the total number of days
-    (e.g. "move my Monday session to Tuesday" — same count, different day)
+USE update_gym_plan ONLY for pure metadata changes (no exercise work, no day changes):
+  • Plan name, emoji, color, split label, recoveryNotes
+  • scheduleTime, scheduleEndTime (the time of day, NOT which days to train)
+  Examples: "rename this plan", "change the color", "update recovery notes"
 
-USE generate_gym_plan (full rebuild) when:
-  • The NUMBER of training days changes (e.g. "add 2 more days", "drop to 3 days", "rebuild with 5 days")
-  • The user says "rebuild", "redo", "start fresh", "make me a new one"
-  • The plan structure fundamentally changes (e.g. switching from full-body to PPL)
+USE generate_gym_plan (smart regeneration) for ALL other changes:
+  • ANY exercise change — weights, reps, sets, adding, removing, swapping exercises
+  • ANY schedule/day change — moving days, adding days, removing days, changing day count
+  • Structural changes — full body → PPL, 3 days → 5 days, etc.
+  • User says "rebuild", "redo", "start fresh", "update the exercises"
+  → ALWAYS pass existingPlanId + existingPlan (copy exercises from "ALL GYM PLANS") + editRequest
+  → The generate route will keep unchanged exercises and only apply the requested change
 
-── update_gym_plan FORMAT ───────────────────────────────────────────────────
+── generate_gym_plan FOR EDITS FORMAT ───────────────────────────────────────
+{ "type": "generate_gym_plan", "preferences": {
+    "planType": "<same as existing plan type>",
+    "goal": "<existing or updated goal>",
+    "experience": "<user's gym experience>",
+    "daysPerWeek": "<number of training days after the change>",
+    "existingPlanId": "<use [id:...] from context — REQUIRED for edits>",
+    "existingPlan": "<copy the full exercise list EXACTLY as shown in ALL GYM PLANS above>",
+    "editRequest": "<exactly what the user wants to change in plain English>"
+  }
+}
+The generate route will see existingPlan + editRequest and apply only the requested changes.
+
+── update_gym_plan FORMAT (metadata only) ───────────────────────────────────
 { "type": "update_gym_plan", "planId": "<use [id:...] from context>", "patch": { <only the fields that change> } }
 
-Patchable fields — include ONLY the ones that actually change:
+Patchable fields (metadata only — no exercises/weeks):
   • "name": "New Plan Name"
   • "emoji": "💪"
   • "color": "#hex"
   • "split": "Push/Pull/Legs"
   • "recoveryNotes": "Rest 48h between sessions"
-  • "scheduleDays": [1,3,5]   ← numbers only: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
   • "scheduleTime": "07:00"   ← HH:MM
   • "scheduleEndTime": "08:00"
-  • "exercises": [...]        ← FULL list, every exercise, unchanged ones copied exactly with their [id:...] values
-  • "weeks": [...]            ← FULL list of ALL weeks. Copy every unchanged week exactly. Only modify the specific week(s) changing.
-
-EXERCISES / WEEKS RULES — READ CAREFULLY:
-1. Always copy exercises with their exact [id:...] value from context (e.g. [id:abc1234] → "id": "abc1234")
-2. Include EVERY exercise — not just the changed ones. Omitting an exercise does NOT delete it, but sending an incomplete list may.
-3. For progressive plans (has weeks): if you patch "exercises", also patch "weeks" with the same changes applied to every week.
-4. For weight/rep changes across all weeks, scale proportionally (e.g. wk1 was 60kg→wk8 was 90kg, adding 20kg across board → wk1 60→80kg, wk8 90→110kg).
-5. NEVER send exercises:[] or weeks:[] — empty arrays are ignored as a safety measure.
 
 ── DELETED PLAN RULE ────────────────────────────────────────────────────────
-If the user says "I deleted it", "it's gone", "can you rebuild it" — NEVER use update_gym_plan. Use generate_gym_plan instead.
+If the user says "I deleted it", "it's gone", "can you rebuild it" — NEVER use update_gym_plan. Use generate_gym_plan without existingPlan (fresh build).
 
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
 
@@ -944,15 +958,17 @@ Q1: "Which subjects (or modules) are you revising, and when's your exam?" — al
 Q2: "How many hours a day are you looking to study?" — always ask, do not assume.
 Q3: "How long do you like to work before taking a break? (e.g. 25 mins, 45 mins, 1 hour — there's no wrong answer, it's whatever works best for you!)" — always ask, used to build the timetable.
 Q4: "Do you prefer to focus on one subject per day, or mix multiple topics in a session? (Some people find it easier to deep-focus on one thing at a time — totally fine either way!)" — always ask, important for personalisation.
-Q5 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
+Q5: "Would you like session alerts — like a school bell that rings when it's time to start, when your break begins, and when it's time to get back to work? 🔔" — always ask. Store as wantsSessionAlerts: "yes" or "no".
+Q6 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
 
-Once you know subjects + exam date + daily hours + study block length + focus style → trigger immediately.
-{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "studyBlockMins": "45", "focusStyle": "one subject per day", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+Once you know subjects + exam date + daily hours + study block length + focus style + alerts preference → trigger immediately.
+{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "studyBlockMins": "45", "focusStyle": "one subject per day", "wantsSessionAlerts": "yes", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
 - subjects: comma-separated — use EXACTLY what the user said, do not add or assume extra subjects
 - weeksUntilExam: convert any date/month to weeks from today (${today})
 - hoursPerDay: hours per day the user wants to study
 - studyBlockMins: how long (in minutes) the user wants to work before a break — use EXACTLY what they said, converted to a number (e.g. "25 mins" → "25", "1 hour" → "60")
 - focusStyle: "one subject per day" or "mixed topics" — drives how sessions are structured
+- wantsSessionAlerts: "yes" if user wants bell alerts, "no" if not
 - daysPerWeek: total study days per week (ask if not stated, default 5)
 - planType: "Study – [subject]" or "Revision – [exam name]" matching what they said
 
@@ -987,6 +1003,7 @@ Rules:
   WRONG: { "reply": "Perfect, building your plan!", "action": null }
   CORRECT: { "reply": "Perfect, building your plan!", "action": { "type": "generate_gym_plan", "preferences": { ... } } }
   The reply should be a single short sentence. The action must be fully populated.
+- CALENDAR CONFLICT CHECK — BEFORE finalising the scheduleDays for a new or edited plan, check the user's CALENDAR in context. Look for recurring events, work days, sports nights, or busy days that fall on the proposed training days. If you spot a conflict (e.g. user has football every Tuesday but you want to schedule on [2,4,6]), mention it briefly in your reply and pick days that avoid it. If it's unclear whether it matters, still flag it ("I noticed you have football on Tuesdays — I've moved that session to Wednesday. Let me know if that doesn't work!"). Do NOT block plan generation for this — just adjust and mention it.
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
 - When the user mentions food they had on a PAST day (yesterday, "last Tuesday", "3 days ago", etc.), ALWAYS use confirm_past_food_log — never use log_food for past dates. Calculate the exact YYYY-MM-DD date from today (${today}) and set dateLabel to a human-friendly string like "yesterday (27 Mar)"
 - When asked "how am I doing?" or progress questions, reference their actual goals, weight change, time on app, gym sessions, and habit streak — be specific with real numbers

@@ -771,6 +771,11 @@ export default function AIAssistant() {
         const rawPlans: Record<string, unknown>[] = data.plans ?? (data.plan ? [data.plan] : []);
         console.log('[GymPlan] rawPlans received:', JSON.stringify(rawPlans, null, 2));
         if (rawPlans.length > 0) {
+          // If regenerating an existing plan (edit flow), remove the old plan by ID first
+          if (preferences.existingPlanId) {
+            s.removeGymPlan(preferences.existingPlanId);
+          }
+
           rawPlans.forEach(p => {
             const mapEx = (ex: Record<string, unknown>) => ({
               id:           Math.random().toString(36).slice(2, 9),
@@ -779,19 +784,20 @@ export default function AIAssistant() {
               targetReps:   Number(ex.targetReps   ?? 10),
               targetWeight: Number(ex.targetWeight ?? 0),
             });
-            // 1-to-1 swap: remove any existing plan with the same name so we don't accumulate duplicates
+            // 1-to-1 swap by name (catches cases without existingPlanId)
             const newName = String(p.name ?? '').toLowerCase().trim();
             const duplicate = useGameStore.getState().gymPlans.find(
               existing => existing.name.toLowerCase().trim() === newName
             );
             if (duplicate) s.removeGymPlan(duplicate.id);
             const newPlanId = s.addGymPlan({
-              name:          p.name          as string,
-              emoji:         p.emoji         as string,
-              color:         p.color         as string,
-              split:         p.split         as string | undefined,
-              recoveryNotes: p.recoveryNotes as string | undefined,
-              isRepeating:   Boolean(p.isRepeating),
+              name:               p.name          as string,
+              emoji:              p.emoji         as string,
+              color:              p.color         as string,
+              split:              p.split         as string | undefined,
+              recoveryNotes:      p.recoveryNotes as string | undefined,
+              isRepeating:        Boolean(p.isRepeating),
+              wantsSessionAlerts: preferences.wantsSessionAlerts === 'yes',
               exercises: ((p.exercises as Record<string, unknown>[]) ?? []).map(mapEx),
               weeks: Array.isArray(p.weeks)
                 ? (p.weeks as Record<string, unknown>[]).map(w => ({
