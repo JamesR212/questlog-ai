@@ -55,9 +55,10 @@ interface ExerciseRowProps {
   ex: GymExercise;
   onChange: (ex: GymExercise) => void;
   onRemove: () => void;
+  isStudyPlan?: boolean;
 }
 
-function ExerciseRow({ ex, onChange, onRemove }: ExerciseRowProps) {
+function ExerciseRow({ ex, onChange, onRemove, isStudyPlan = false }: ExerciseRowProps) {
   return (
     <div className="bg-ql-surface2 rounded-xl p-3 border border-ql flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -70,32 +71,34 @@ function ExerciseRow({ ex, onChange, onRemove }: ExerciseRowProps) {
         />
         <button onClick={onRemove} className="text-ql-3 hover:text-red-500 text-sm transition-colors px-1">✕</button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-ql-3 text-[10px]">Sets</span>
-          <input type="number" min={1} max={20} value={ex.sets}
-            onChange={e => onChange({ ...ex, sets: Number(e.target.value) })}
-            onFocus={e => e.target.select()}
-            className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
-          />
+      {!isStudyPlan && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-ql-3 text-[10px]">Sets</span>
+            <input type="number" min={1} max={20} value={ex.sets}
+              onChange={e => onChange({ ...ex, sets: Number(e.target.value) })}
+              onFocus={e => e.target.select()}
+              className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
+            />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-ql-3 text-[10px]">Reps</span>
+            <input type="number" min={1} max={100} value={ex.targetReps}
+              onChange={e => onChange({ ...ex, targetReps: Number(e.target.value) })}
+              onFocus={e => e.target.select()}
+              className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
+            />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-ql-3 text-[10px]">kg (0 = bodyweight)</span>
+            <input type="number" min={0} max={500} value={ex.targetWeight}
+              onChange={e => onChange({ ...ex, targetWeight: Number(e.target.value) })}
+              onFocus={e => e.target.select()}
+              className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-ql-3 text-[10px]">Reps</span>
-          <input type="number" min={1} max={100} value={ex.targetReps}
-            onChange={e => onChange({ ...ex, targetReps: Number(e.target.value) })}
-            onFocus={e => e.target.select()}
-            className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
-          />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-ql-3 text-[10px]">kg (0 = bodyweight)</span>
-          <input type="number" min={0} max={500} value={ex.targetWeight}
-            onChange={e => onChange({ ...ex, targetWeight: Number(e.target.value) })}
-            onFocus={e => e.target.select()}
-            className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -111,6 +114,7 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
   const [name,        setName]        = useState(initial?.name      ?? '');
   const [emoji,       setEmoji]       = useState(initial?.emoji     ?? '💪');
   const [color,       setColor]       = useState(initial?.color     ?? '#ff3b30');
+  const isStudyPlan = initial?.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(initial?.name ?? '');
   const [days,        setDays]        = useState<number[]>(initial?.scheduleDays ?? []);
   const [dayTimes,    setDayTimes]    = useState<Record<string, string>>(initial?.dayTimes    ?? {});
   const [dayEndTimes, setDayEndTimes] = useState<Record<string, string>>(initial?.dayEndTimes ?? {});
@@ -235,7 +239,7 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
           <p className="text-ql-3 text-xs font-medium mb-2">Exercises</p>
           <div className="flex flex-col gap-2 mb-2">
             {exercises.map(ex => (
-              <ExerciseRow key={ex.id} ex={ex}
+              <ExerciseRow key={ex.id} ex={ex} isStudyPlan={isStudyPlan}
                 onChange={updated => updateExercise(ex.id, updated)}
                 onRemove={() => setExercises(exercises.filter(e => e.id !== ex.id))}
               />

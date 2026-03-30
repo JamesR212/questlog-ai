@@ -1356,7 +1356,9 @@ export default function TrainingHub() {
                   {plan.exercises.slice(0, 3).map(ex => (
                     <div key={ex.id} className="flex items-center justify-between text-xs text-ql-3">
                       <span>{ex.name}</span>
-                      <span className="tabular-nums">{ex.sets}×{ex.targetReps}{ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}</span>
+                      {plan.split !== 'study' && !/study|revision|revise|exam|a-level|gcse/i.test(plan.name) && (
+                        <span className="tabular-nums">{ex.sets}×{ex.targetReps}{ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}</span>
+                      )}
                     </div>
                   ))}
                   {plan.exercises.length > 3 && <p className="text-ql-3 text-[10px]">+{plan.exercises.length - 3} more</p>}
