@@ -54,6 +54,22 @@ export default function Home() {
   const hydratedUid                   = useRef<string | null>(null);
   // SAFETY: only allow cloud push after a clean pull — prevents empty-state overwriting cloud data
   const pullOk                        = useRef<boolean>(false);
+  // Track when this device last made a LOCAL change (not from applying a remote snapshot)
+  const localModifiedAtRef            = useRef<number>(0);
+  // Flag set while we're applying a remote snapshot so the store subscription ignores it
+  const applyingRemoteRef             = useRef<boolean>(false);
+
+  // ── Track local store changes ────────────────────────────────────────────
+  // Whenever the store changes and it's NOT us applying a remote snapshot,
+  // stamp the time so we can reject stale incoming snapshots.
+  useEffect(() => {
+    const unsub = useGameStore.subscribe(() => {
+      if (!applyingRemoteRef.current) {
+        localModifiedAtRef.current = Date.now();
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // ── Auth listener ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -209,11 +225,23 @@ export default function Home() {
       if (!snap.exists()) return;
       const { _updatedAt, ...cloudData } = snap.data() as Record<string, unknown>;
       if (!_updatedAt) return;
-      // Skip if this snapshot is the echo of our own last push
+      // Skip our own push echo
       const lastPush = localStorage.getItem('questlog-last-push');
       if (_updatedAt === lastPush) return;
-      // Another device pushed — apply their state directly so deletions propagate
+      // Skip if this device made a local change MORE recently than this snapshot.
+      // e.g. laptop deletes at T=0, phone pushes at T=400ms (still has the item),
+      // snapshot arrives at T=400ms — laptop's localModifiedAt (T=0 ms ago) > snap time,
+      // so we reject it and let our own 800ms push win instead.
+      const snapTime = new Date(_updatedAt as string).getTime();
+      if (localModifiedAtRef.current > snapTime) {
+        console.log('[sync] skipping snapshot — local changes are newer (local:', localModifiedAtRef.current, 'snap:', snapTime, ')');
+        return;
+      }
+      // Apply remote state — use the flag so the store subscription doesn't
+      // misidentify this as a local change
+      applyingRemoteRef.current = true;
       useGameStore.setState(cloudData);
+      applyingRemoteRef.current = false;
       localStorage.setItem('questlog-last-push', _updatedAt as string);
       console.log('[sync] real-time update from another device — applied (ts:', _updatedAt, ')');
     }, (err) => {
