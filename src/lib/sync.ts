@@ -1,10 +1,10 @@
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Keys that should NOT be synced (device-specific)
+// Keys that should NOT be synced (device-specific UI state)
 const EXCLUDE_KEYS = new Set([
   'activeSection', 'showLevelUp', 'levelUpMessage',
-  'trainingTab', 'googleFitTokens',
+  'trainingTab', 'nutritionTab', 'googleFitTokens',
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,19 +22,100 @@ const LAST_PUSH_KEY   = 'questlog-last-push';
 const BACKUP_KEY      = 'questlog-backup';      // survives resetGameStore
 
 // ── Data richness score ────────────────────────────────────────────────────
-// Higher = more user data. Used to choose between local and cloud when
-// timestamps alone are ambiguous, and to guard against pushing empty state.
+// Higher = more user data. Used to guard against pushing empty state.
 export function dataScore(state: StoreData): number {
   return (
-    ((state.gymPlans       as unknown[])?.length ?? 0) * 10 +
-    ((state.habitDefs      as unknown[])?.length ?? 0) * 10 +
-    ((state.calendarEvents as unknown[])?.length ?? 0) *  3 +
-    ((state.gpsActivities  as unknown[])?.length ?? 0) *  3 +
-    ((state.gymSessions    as unknown[])?.length ?? 0) *  2 +
-    ((state.mealLog        as unknown[])?.length ?? 0) *  1 +
-    ((state.performanceLog as unknown[])?.length ?? 0) *  1 +
-    ((state.vices          as unknown[])?.length ?? 0) *  1
+    ((state.gymPlans        as unknown[])?.length ?? 0) * 10 +
+    ((state.habitDefs       as unknown[])?.length ?? 0) * 10 +
+    ((state.calendarEvents  as unknown[])?.length ?? 0) *  3 +
+    ((state.gpsActivities   as unknown[])?.length ?? 0) *  3 +
+    ((state.gymSessions     as unknown[])?.length ?? 0) *  2 +
+    ((state.habitLog        as unknown[])?.length ?? 0) *  2 +
+    ((state.mealLog         as unknown[])?.length ?? 0) *  1 +
+    ((state.stepLog         as unknown[])?.length ?? 0) *  1 +
+    ((state.sleepLog        as unknown[])?.length ?? 0) *  1 +
+    ((state.waterLog        as unknown[])?.length ?? 0) *  1 +
+    ((state.weightLog       as unknown[])?.length ?? 0) *  1 +
+    ((state.performanceLog  as unknown[])?.length ?? 0) *  1 +
+    ((state.vices           as unknown[])?.length ?? 0) *  1 +
+    ((state.stats as StoreData)?.xp  as number  ?? 0) / 100  // XP as tiebreaker
   );
+}
+
+// ── Smart merge ────────────────────────────────────────────────────────────
+// Instead of picking local OR cloud (all-or-nothing), merge them so that
+// log entries from both devices are preserved. Arrays are unioned by `id`
+// (or `date` for date-keyed entries). Scalar preferences prefer cloud.
+// This is the correct behaviour for one user on multiple devices.
+export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
+  // Helper: union two arrays deduplicating by a key field
+  const unionBy = (a: StoreData[], b: StoreData[], key: string): StoreData[] => {
+    const map = new Map<string, StoreData>();
+    // cloud entries first, then local overrides (local is more recent on this device)
+    [...(a ?? []), ...(b ?? [])].forEach(item => {
+      const k = item?.[key] as string;
+      if (k) map.set(k, item);
+    });
+    return Array.from(map.values());
+  };
+
+  // Arrays that are log entries — union both sides so nothing is lost
+  const LOG_ARRAYS_BY_ID: string[] = [
+    'gymSessions', 'habitLog', 'mealLog', 'sleepLog', 'vices',
+    'calendarEvents', 'gpsActivities', 'performanceLog',
+    'bodyCompositionLog', 'wakeQuest',
+  ];
+  const LOG_ARRAYS_BY_DATE: string[] = ['stepLog', 'waterLog', 'weightLog'];
+
+  // Definition arrays — union so neither device loses a plan/habit
+  const DEF_ARRAYS_BY_ID: string[] = [
+    'gymPlans', 'habitDefs', 'performanceStats',
+    'subscriptions', 'budgetItems', 'spendingLog', 'paycheckLog',
+    'viceDefs', 'savedMeals',
+  ];
+
+  const merged: StoreData = { ...cloud }; // start with cloud as base
+
+  LOG_ARRAYS_BY_ID.forEach(key => {
+    const c = cloud[key] as StoreData[] | undefined;
+    const l = local[key] as StoreData[] | undefined;
+    if (Array.isArray(c) || Array.isArray(l)) {
+      merged[key] = unionBy(c ?? [], l ?? [], 'id');
+    }
+  });
+
+  LOG_ARRAYS_BY_DATE.forEach(key => {
+    const c = cloud[key] as StoreData[] | undefined;
+    const l = local[key] as StoreData[] | undefined;
+    if (Array.isArray(c) || Array.isArray(l)) {
+      merged[key] = unionBy(c ?? [], l ?? [], 'date');
+    }
+  });
+
+  DEF_ARRAYS_BY_ID.forEach(key => {
+    const c = cloud[key] as StoreData[] | undefined;
+    const l = local[key] as StoreData[] | undefined;
+    if (Array.isArray(c) || Array.isArray(l)) {
+      merged[key] = unionBy(c ?? [], l ?? [], 'id');
+    }
+  });
+
+  // Stats: take the higher values — XP/level/stats only ever go up
+  const cs = (cloud.stats ?? {}) as StoreData;
+  const ls = (local.stats ?? {}) as StoreData;
+  if (cs || ls) {
+    merged.stats = {
+      ...cs,
+      xp:    Math.max(Number(cs.xp    ?? 0), Number(ls.xp    ?? 0)),
+      level: Math.max(Number(cs.level ?? 1), Number(ls.level ?? 1)),
+      str:   Math.max(Number(cs.str   ?? 0), Number(ls.str   ?? 0)),
+      con:   Math.max(Number(cs.con   ?? 0), Number(ls.con   ?? 0)),
+      dex:   Math.max(Number(cs.dex   ?? 0), Number(ls.dex   ?? 0)),
+      gold:  Math.max(Number(cs.gold  ?? 0), Number(ls.gold  ?? 0)),
+    };
+  }
+
+  return merged;
 }
 
 // ── Backup helpers ─────────────────────────────────────────────────────────

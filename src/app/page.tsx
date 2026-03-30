@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile, dataScore, saveBackup, loadBackup } from '@/lib/sync';
+import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile, dataScore, saveBackup, loadBackup, mergeStates } from '@/lib/sync';
 import { updatePublicProfile } from '@/lib/friends';
 import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
@@ -112,23 +112,35 @@ export default function Home() {
       pullOk.current = true;
       const cloudData = result.data;
       if (cloudData) {
-        const cloudScore   = dataScore(cloudData);
-        const localScore   = dataScore(localFallback);
-        const backupScore  = dataScore(loadBackup() ?? {});
+        const cloudScore  = dataScore(cloudData);
+        const localScore  = dataScore(localFallback);
+        const backup      = loadBackup();
+        const backupScore = dataScore(backup ?? {});
 
-        // ── Layer 2: pick the richest, most recent source ──────────────
-        // Prefer local only if it's genuinely newer AND has comparable data.
-        // "Comparable" = local has at least 80% as much data as cloud.
-        // This prevents an empty/stale local from overwriting good cloud data.
-        const localNewer = localIsNewer(result.cloudUpdatedAt) && localScore >= cloudScore * 0.8;
-
-        if (localNewer) {
-          console.log('[sync] local is newer and comparable — keeping local (local:', localScore, 'cloud:', cloudScore, ')');
-          useGameStore.setState(localFallback);
+        // ── Layer 2: smart merge — never throw away data from either device ─
+        // Union all log/definition arrays by ID so both devices keep their entries.
+        // For new users or empty cloud, just use local. For returning users,
+        // merge cloud + local so nothing is lost.
+        let finalState;
+        if (cloudScore === 0 && localScore === 0) {
+          // Both empty — nothing to merge
+          finalState = cloudData;
+          console.log('[sync] both empty — using cloud defaults');
+        } else if (cloudScore === 0) {
+          // New device / first login — local has real data, cloud is empty
+          finalState = localFallback;
+          console.log('[sync] cloud empty — using local (score:', localScore, ')');
+        } else if (localScore === 0 && !localIsNewer(result.cloudUpdatedAt)) {
+          // Local is genuinely empty and not recently pushed — pure cloud
+          finalState = cloudData;
+          console.log('[sync] local empty — using cloud (score:', cloudScore, ')');
         } else {
-          console.log('[sync] using cloud data (cloud:', cloudScore, 'local:', localScore, ')');
-          useGameStore.setState(cloudData);
+          // Both have data — merge so neither device loses log entries
+          finalState = mergeStates(cloudData, localFallback);
+          console.log('[sync] merged cloud+local (cloud:', cloudScore, 'local:', localScore, 'merged:', dataScore(finalState), ')');
         }
+
+        useGameStore.setState(finalState);
 
         // ── Layer 3: backup rescue ─────────────────────────────────────
         // After applying state, if we ended up with suspiciously empty store
@@ -136,7 +148,7 @@ export default function Home() {
         const appliedScore = dataScore(useGameStore.getState() as unknown as Record<string, unknown>);
         if (appliedScore === 0 && backupScore > 20) {
           console.warn('[sync] applied state is empty but backup has data — restoring backup (score:', backupScore, ')');
-          useGameStore.setState(loadBackup()!);
+          useGameStore.setState(backup!);
         }
       }
       setCloudReady(true);
