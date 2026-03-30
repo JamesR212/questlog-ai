@@ -799,7 +799,11 @@ DELETED PLAN RULE: If the user says they deleted a plan (e.g. "I deleted it", "c
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
 
 ─── GYM / FITNESS PLANS ───
-TRIGGER when you know: (1) goal, (2) days per week. That's all. Max 1 question before triggering.
+TRIGGER when you know: (1) goal, (2) days per week, (3) focus/muscle group preference. Max 2 questions before triggering.
+For gym plans — if the user hasn't mentioned a focus area, ask: "Are you looking to train the full body, or focus on specific areas like upper body, legs, chest, back, or a push/pull/legs split?"
+- If they say "general", "not sure", "whatever", "full body" → use Full Body split
+- If they mention specific muscles or a split → use that
+- Do NOT ask about focus for running, cycling, swimming, or other non-gym activities
 Progressive vs repeating — infer from context, only ask if genuinely unclear:
 - "same each week" / "keep it simple" → progressive = "no"
 - "get harder" / "build up" / "progress" → progressive = "yes"
