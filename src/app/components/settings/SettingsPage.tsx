@@ -284,6 +284,8 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Visible Sections ─────────────────────────────────────── */}
+      {/* Hidden: sections are managed via the nav bar directly */}
+      {false && (
       <div className="flex flex-col gap-2">
         <div>
           <p className="text-ql text-sm font-semibold">Visible Sections</p>
@@ -312,6 +314,7 @@ export default function SettingsPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* ── Profile ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
