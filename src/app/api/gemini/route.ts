@@ -903,46 +903,58 @@ STEP 2 — Clarify if needed: if the user's message already says exactly what to
 STEP 3 — Apply the change using the correct action below.
 
 ── WHICH ACTION TO USE ──────────────────────────────────────────────────────
-USE update_gym_plan ONLY for pure metadata changes (no exercise work, no day changes):
+
+USE update_gym_plan for:
+  • Changing training days (moving, adding, removing days) — "move Monday to Tuesday", "swap Wednesday for Friday", "train on Mon/Wed/Fri instead"
   • Plan name, emoji, color, split label, recoveryNotes
-  • scheduleTime, scheduleEndTime (the time of day, NOT which days to train)
-  Examples: "rename this plan", "change the color", "update recovery notes"
+  • scheduleTime, scheduleEndTime
 
-USE generate_gym_plan (smart regeneration) for ALL other changes:
-  • ANY exercise change — weights, reps, sets, adding, removing, swapping exercises
-  • ANY schedule/day change — moving days, adding days, removing days, changing day count
-  • Structural changes — full body → PPL, 3 days → 5 days, etc.
-  • User says "rebuild", "redo", "start fresh", "update the exercises"
-  → ALWAYS pass existingPlanId + existingPlan (copy exercises from "ALL GYM PLANS") + editRequest
-  → The generate route will keep unchanged exercises and only apply the requested change
+USE generate_gym_plan (full rebuild) for:
+  • ANY exercise change — weights, reps, sets, swapping exercises, adding/removing exercises
+  • The user says "rebuild", "redo", "start fresh", "make me a new plan"
+  • Completely new split type (e.g. full body → Push/Pull/Legs)
+  → ALWAYS pass existingPlanId + editRequest
 
-── generate_gym_plan FOR EDITS FORMAT ───────────────────────────────────────
-{ "type": "generate_gym_plan", "preferences": {
-    "planType": "<same as existing plan type>",
-    "goal": "<existing or updated goal>",
-    "experience": "<user's gym experience>",
-    "daysPerWeek": "<number of training days after the change>",
-    "existingPlanId": "<use [id:...] from context — REQUIRED for edits>",
-    "existingPlan": "<copy the full exercise list EXACTLY as shown in ALL GYM PLANS above>",
-    "editRequest": "<exactly what the user wants to change in plain English>"
-  }
-}
-The generate route will see existingPlan + editRequest and apply only the requested changes.
-
-── update_gym_plan FORMAT (metadata only) ───────────────────────────────────
+── update_gym_plan FORMAT ───────────────────────────────────────────────────
 { "type": "update_gym_plan", "planId": "<use [id:...] from context>", "patch": { <only the fields that change> } }
 
-Patchable fields (metadata only — no exercises/weeks):
+Patchable fields:
   • "name": "New Plan Name"
   • "emoji": "💪"
   • "color": "#hex"
   • "split": "Push/Pull/Legs"
   • "recoveryNotes": "Rest 48h between sessions"
-  • "scheduleTime": "07:00"   ← HH:MM
-  • "scheduleEndTime": "08:00"
+
+  • "scheduleDays": [1,3,5]
+    ← NUMBERS ONLY: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+    CRITICAL: send the COMPLETE new array, sorted ascending. DO NOT send day names.
+    Step-by-step: look up plan's current scheduleDays from "ALL GYM PLANS" → apply the change → return the result.
+    Examples:
+      Current [1,3,5], "move Wednesday to Thursday"  → remove 3, add 4 → [1,4,5]
+      Current [1,3,5], "remove Monday"               → remove 1       → [3,5]
+      Current [1,3,5], "add Saturday"                → add 6          → [1,3,5,6]
+      Current [1,3],   "train Mon, Wed, Fri instead" → replace all    → [1,3,5]
+      Current [2,4],   "swap Tuesday for Thursday"   → remove 2, add 4 (already there) → [4]... wait recalculate properly
+    Always double-check: count the days in your result matches what the user asked for.
+
+  • "scheduleTime": "07:00"     ← HH:MM 24-hour. Use for "change start time to 7am" etc.
+  • "scheduleEndTime": "08:30"  ← HH:MM 24-hour. Recalculate when start time changes.
+    Example: plan is 07:00–08:00 (1 hour), user says "move to 6am" → scheduleTime:"06:00", scheduleEndTime:"07:00"
+    Example: plan is 07:00–08:30 (1.5 hours), user says "move to 5:30am" → scheduleTime:"05:30", scheduleEndTime:"07:00"
+
+── generate_gym_plan FOR EXERCISE EDITS FORMAT ──────────────────────────────
+{ "type": "generate_gym_plan", "preferences": {
+    "planType": "<same as existing plan type>",
+    "goal": "<existing or updated goal>",
+    "experience": "<user's gym experience>",
+    "daysPerWeek": "<number of training days>",
+    "existingPlanId": "<use [id:...] from context — REQUIRED>",
+    "editRequest": "<exactly what the user wants to change>"
+  }
+}
 
 ── DELETED PLAN RULE ────────────────────────────────────────────────────────
-If the user says "I deleted it", "it's gone", "can you rebuild it" — NEVER use update_gym_plan. Use generate_gym_plan without existingPlan (fresh build).
+If the user says "I deleted it", "it's gone", "can you rebuild it" — use generate_gym_plan without existingPlanId (fresh build).
 
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
 
