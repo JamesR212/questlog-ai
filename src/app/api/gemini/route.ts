@@ -795,12 +795,15 @@ General rules for accurate advice:
 - Base protein recommendations on their actual body weight
 - If they ask how to prepare for a specific event, give a 24hr plan
 
-CRITICAL OUTPUT RULE — YOU MUST ALWAYS RETURN VALID JSON. NEVER return plain text, explanations, or conversational prose. Every single response — whether you are logging data, updating a plan, answering a question, or just chatting — must be wrapped in this exact JSON envelope:
-{
-  "reply": "your friendly message to the user",
-  "action": { ... } or null
-}
-No exceptions. Not even once. If you cannot perform an action, still return JSON with action: null. If you return plain text instead of JSON, the app will break.
+CRITICAL OUTPUT RULE — YOU MUST ALWAYS RETURN VALID JSON. NEVER return plain text, explanations, or conversational prose. Every single response must be one of these two formats:
+
+Single action:
+{ "reply": "your message", "action": { ... } or null }
+
+Multiple actions (when you need to do more than one thing):
+{ "reply": "your message", "actions": [ {...}, {...}, ... ] }
+
+No exceptions. Not even once. If you cannot perform an action, return JSON with action: null. If you return plain text instead of JSON, the app will break.
 
 LOGGING CAPABILITIES — when the user asks you to log, track, record, update, or change anything, set "action" to the appropriate object below.
 
@@ -897,6 +900,41 @@ For all-day events (no specific time):
 
 Remove a calendar event (use the event id from the user's calendar context above):
 { "type": "delete_calendar_event", "id": "abc1234" }
+
+Remove multiple calendar events at once (pass all IDs in one action):
+{ "type": "delete_calendar_events_multiple", "ids": ["abc1234", "def5678", "ghi9012"] }
+
+── MULTI-STEP TASKS (multiple actions in one response) ──────────────────────
+When a task requires more than one action (e.g. delete events AND update a plan), use the "actions" array instead of "action":
+{
+  "reply": "Done! I've cleared Tuesday and moved your sessions to Monday and Wednesday.",
+  "actions": [
+    { "type": "delete_calendar_events_multiple", "ids": ["abc1234", "def5678"] },
+    { "type": "update_gym_plan", "planId": "xyz999", "patch": { "scheduleDays": [1, 3, 5] } }
+  ]
+}
+RULES for multi-step:
+- Use "actions" (array) NOT "action" (single) when you need more than one operation.
+- You can mix any action types in the array — they run in order.
+- Always include a clear "reply" explaining what you did.
+- NEVER leave any action out — if the user asked for 3 things, do all 3 in the array.
+
+── CLEAR A DAY PATTERN ────────────────────────────────────────────────────────
+When the user says "clear my [day]", "cancel [day]'s sessions", "I have a conflict on [date]", or "free up [day]":
+STEP 1 — Find all calendar events on that date from CALENDAR context above. Note their [id:...] values.
+STEP 2 — Ask "Just to confirm — I'll remove [list of events] from [date]. Want me to also spread those sessions across the rest of your week?" if unclear. Skip if user already said what they want.
+STEP 3 — Delete events with delete_calendar_events_multiple (all IDs at once).
+STEP 4 — If user wants sessions redistributed: use update_gym_plan to add the freed day's sessions to other days.
+STEP 5 — Combine everything in a single "actions" array so it all happens at once.
+
+Example — user says "I have a meeting on Tuesday, clear my study sessions and spread them across the week":
+{
+  "reply": "Done — I've cleared your Tuesday sessions and spread the work across Monday, Wednesday and Thursday instead.",
+  "actions": [
+    { "type": "delete_calendar_events_multiple", "ids": ["id_of_tuesday_session_1", "id_of_tuesday_session_2"] },
+    { "type": "update_gym_plan", "planId": "study_plan_id", "patch": { "scheduleDays": [1, 3, 4] } }
+  ]
+}
 
 ─── EDITING AN EXISTING PLAN ───
 When the user wants to change, update, adjust, or rebuild any existing plan, follow this flow:
@@ -1136,11 +1174,18 @@ Just ask me anything — I'm here to coach you! 🏆"`,
       }
       try {
         const parsed = JSON.parse(raw);
-        console.log('[Assistant] action type:', parsed.action?.type ?? 'null');
-        return NextResponse.json({ reply: parsed.reply ?? raw, action: parsed.action ?? null });
+        const actionTypes = Array.isArray(parsed.actions)
+          ? parsed.actions.map((a: Record<string, unknown>) => a.type).join(', ')
+          : (parsed.action?.type ?? 'null');
+        console.log('[Assistant] action type(s):', actionTypes);
+        return NextResponse.json({
+          reply:   parsed.reply ?? raw,
+          action:  parsed.action  ?? null,
+          actions: parsed.actions ?? null,
+        });
       } catch (e) {
         console.log('[Assistant] JSON parse failed:', e, 'raw:', raw.slice(0, 300));
-        return NextResponse.json({ reply: raw, action: null });
+        return NextResponse.json({ reply: raw, action: null, actions: null });
       }
     }
 

@@ -489,6 +489,12 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     const eventId = String(action.id ?? '');
     if (eventId) store.deleteCalendarEvent(eventId);
 
+  } else if (type === 'delete_calendar_events_multiple') {
+    const ids = action.ids as unknown;
+    if (Array.isArray(ids)) {
+      (ids as unknown[]).forEach(id => { if (id) store.deleteCalendarEvent(String(id)); });
+    }
+
   } else if (type === 'log_body_composition') {
     store.logBodyComposition({
       date:         today,
@@ -1041,6 +1047,21 @@ export default function AIAssistant() {
           }
         } else if (data.action) {
           executeAction(data.action, store);
+        }
+        // Multi-action support — run each action in sequence
+        if (Array.isArray(data.actions)) {
+          (data.actions as Record<string, unknown>[]).forEach(a => {
+            if (!a || !a.type) return;
+            if (a.type === 'generate_gym_plan') {
+              generatePlan('gym', (a.preferences as Record<string, string>) ?? {});
+            } else if (a.type === 'generate_meal_plan') {
+              generatePlan('meal', (a.preferences as Record<string, string>) ?? {});
+            } else if (a.type === 'update_gym_plan') {
+              executeAction(a, store);
+            } else {
+              executeAction(a, store);
+            }
+          });
         }
       }
     } catch {
