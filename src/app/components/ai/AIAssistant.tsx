@@ -745,6 +745,23 @@ export default function AIAssistant() {
 
     try {
       if (type === 'gym') {
+        // If this is an edit (existingPlanId set), build the existingPlan string from the
+        // store ourselves — never trust the AI to copy it correctly (it may return an object
+        // which becomes "[object Object]" in the prompt and breaks JSON parsing).
+        let resolvedExistingPlan = preferences.existingPlan;
+        if (preferences.existingPlanId) {
+          const existingPlan = s.gymPlans.find(p => p.id === preferences.existingPlanId);
+          if (existingPlan) {
+            const fmtEx = (e: import('@/types').GymExercise) =>
+              `${e.name} ${e.sets}x${e.targetReps}${e.targetWeight > 0 ? `@${e.targetWeight}kg` : '(bw)'}[id:${e.id}]`;
+            const exList = (existingPlan.exercises ?? []).map(fmtEx).join('; ');
+            const weekSum = existingPlan.weeks && existingPlan.weeks.length > 0
+              ? ` | weeks: ${existingPlan.weeks.map(w => `wk${w.weekNumber}: ${(w.exercises ?? []).map(fmtEx).join('; ')}`).join(' | ')}`
+              : '';
+            resolvedExistingPlan = `${existingPlan.name} — ${exList}${weekSum}`;
+          }
+        }
+
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -758,13 +775,16 @@ export default function AIAssistant() {
                 // Always use stored experience so it's accurate regardless of what the assistant captured
                 experience: preferences.experience || s.gymExperience || 'Some experience',
                 runExperience: s.runExperience || preferences.runExperience || '',
+                // Always use the store-built string (never the AI's copy which may be an object)
+                ...(resolvedExistingPlan !== undefined ? { existingPlan: resolvedExistingPlan } : {}),
               },
             },
           }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          finishProgress(false, `Plan generation failed: ${data.error ?? res.status}. Try again in a moment.`);
+          const errMsg = typeof data.error === 'string' ? data.error : 'Something went wrong generating the plan';
+          finishProgress(false, `${errMsg}. Try again in a moment.`);
           return;
         }
         // Support both legacy { plan } and new { plans: [...] }

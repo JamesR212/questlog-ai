@@ -263,9 +263,13 @@ recoveryNotes = rest and recovery guidance.`;
           ? `REQUIRED SPLIT: Body Part — generate EXACTLY 5 plans (one muscle group per day):
   Chest [1], Back [2], Shoulders [3], Arms [4], Legs [5]. One day each per week.`
           : `REQUIRED SPLIT: Full Body — generate 1 plan scheduled ${daysPerWeek <= 2 ? 'with rest days between (e.g. [1,4])' : 'Mon/Wed/Fri [1,3,5]'}. Hit all major muscle groups each session.`;
-        const modificationBlock = prefs.existingPlan
+        // Always coerce existingPlan to a string (it may arrive as an object if the AI sent it that way)
+        const existingPlanStr = prefs.existingPlan
+          ? (typeof prefs.existingPlan === 'string' ? prefs.existingPlan : JSON.stringify(prefs.existingPlan))
+          : null;
+        const modificationBlock = existingPlanStr
           ? `\nMODIFICATION — the user already has this plan and wants specific changes:
-Current exercises: ${prefs.existingPlan}
+Current exercises: ${existingPlanStr}
 Change requested: ${prefs.editRequest ?? 'Apply the changes described in goal/focus above'}
 RULES FOR MODIFICATION:
 - Keep ALL exercises that were NOT mentioned in the change request — same name, same weights, same reps, same sets.
@@ -332,14 +336,20 @@ ${formatRules}`;
       console.log('[GymPlan] planType:', isStudy ? 'study' : isEndurance ? 'endurance' : isYoga ? 'yoga' : isSport ? 'sport' : 'gym');
       const result = await model.generateContent(prompt);
       let text = result.response.text().trim();
-      console.log('[GymPlan] raw Gemini response:', text.slice(0, 300));
+      console.log('[GymPlan] raw Gemini response:', text.slice(0, 500));
       // Strip code fences anywhere
       text = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
       // Extract array: find first [ to last ]
       const arrStart = text.indexOf('[');
       const arrEnd   = text.lastIndexOf(']');
       if (arrStart !== -1 && arrEnd > arrStart) text = text.slice(arrStart, arrEnd + 1);
-      const plans = JSON.parse(text);
+      let plans: unknown;
+      try {
+        plans = JSON.parse(text);
+      } catch {
+        console.error('[GymPlan] JSON parse failed. Raw text:', text.slice(0, 500));
+        return NextResponse.json({ error: 'Plan generation failed — the AI returned an unexpected response. Please try again.' }, { status: 500 });
+      }
       console.log('[GymPlan] parsed plans count:', Array.isArray(plans) ? plans.length : 'not array');
       return NextResponse.json({ plans: Array.isArray(plans) ? plans : [plans] });
     }
