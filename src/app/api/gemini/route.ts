@@ -279,24 +279,47 @@ ${formatRules}`;
     }
 
     if (mode === 'generate_meal_plan') {
+      // Enable thinking for meal plans — accuracy matters more than speed here
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as any,
+        generationConfig: { thinkingConfig: { thinkingBudget: 8000 } } as any,
       });
       const goal = context.nutritionGoal ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
       const prefs = context.preferences ?? {};
-      const isBulk = (prefs.cookingPref ?? '').toLowerCase().includes('bulk');
-      const prompt = `You are a nutrition coach creating a large personalised meal options library.
-Daily goals: ${goal.calories} kcal, ${goal.protein}g protein, ${goal.carbs}g carbs, ${goal.fat}g fat, ${goal.sugar ?? 50}g sugar
+      const isBulk = (prefs.cookingPref ?? '').toLowerCase().includes('bulk') || (prefs.cookingPref ?? '').toLowerCase().includes('batch') || (prefs.cookingPref ?? '').toLowerCase().includes('prep');
+      const budget = prefs.weeklyBudget ?? '';
+      const allergies = prefs.allergies ?? '';
+      const cuisine = prefs.cuisinePreference ?? '';
+      const dietType = prefs.dietType ?? 'No restrictions';
+      const cookingPref = prefs.cookingPref ?? 'Happy to cook';
 
-User preferences:
-- Nutrition goal: ${prefs.nutritionGoal ?? 'Maintain'}
-- Diet type: ${prefs.dietType ?? 'No restrictions'}
-- Meals per day: ${prefs.mealsPerDay ?? '4'}
-- Cooking preference: ${prefs.cookingPref ?? 'Happy to cook'}
+      // Budget guidance for meal pricing
+      const budgetGuidance = budget.includes('low') || budget.includes('tight') || budget.includes('cheap') || budget.includes('£') && parseInt(budget.replace(/[^0-9]/g,''),10) < 40
+        ? 'BUDGET: User has a tight/low budget. Use cheap staples: eggs, oats, rice, pasta, lentils, tinned beans, frozen veg, chicken thighs, tuna. Avoid expensive cuts, exotic ingredients, or premium products.'
+        : budget.includes('high') || budget.includes('flexible') || budget.includes('£') && parseInt(budget.replace(/[^0-9]/g,''),10) > 80
+        ? 'BUDGET: User has a flexible budget. Include a good variety including quality proteins (salmon, lean beef, chicken breast), fresh produce, and varied wholesome ingredients.'
+        : 'BUDGET: Mid-range. Balance cost and quality — use chicken breast, eggs, oats, rice, pasta, fresh veg, Greek yoghurt, etc.';
 
-Generate a large library of meal OPTIONS the user can pick from — not a fixed day plan.
+      const prompt = `You are a world-class nutrition coach creating a highly personalised meal options library. Think carefully before generating — accuracy and personalisation matter more than speed.
+
+Daily targets: ${goal.calories} kcal | ${goal.protein}g protein | ${goal.carbs}g carbs | ${goal.fat}g fat | ${goal.sugar ?? 50}g sugar
+
+User profile:
+- Nutrition goal: ${prefs.nutritionGoal ?? 'Maintain weight / healthy eating'}
+- Diet type: ${dietType}
+- Allergies / intolerances: ${allergies || 'None stated'}
+- Cuisine preferences: ${cuisine || 'No preference — include variety'}
+- Weekly food budget: ${budget || 'Mid-range'}
+- Meals per day: ${prefs.mealsPerDay ?? '3-4'}
+- Cooking preference: ${cookingPref}
+
+${budgetGuidance}
+${allergies ? `ALLERGY CRITICAL: Absolutely no ${allergies} in ANY meal. Double-check every ingredient.` : ''}
+${cuisine ? `CUISINE: Lean heavily towards ${cuisine} — but include some variety too.` : ''}
+${dietType !== 'No restrictions' ? `DIET STRICT: Every single meal must comply with ${dietType}. No exceptions.` : ''}
+
+Generate a large, genuinely varied meal options library the user can pick from throughout the week.
 Return ONLY a raw JSON object (no markdown, no code fences) in this exact shape:
 {
   "meals": [
@@ -304,16 +327,16 @@ Return ONLY a raw JSON object (no markdown, no code fences) in this exact shape:
   ]
 }
 Rules:
-- Return AT LEAST 20 meals total, ideally 24-28
-- Spread across categories: "Breakfast", "Lunch", "Dinner", "Snack"${isBulk ? ', "Bulk Cook"' : ''}
-- At least 4-6 options per category
-${isBulk ? '- Include 4-6 "Bulk Cook" meals (large batch recipes that make multiple servings — label them clearly e.g. "Chicken & Rice Batch (x6)")' : ''}
-- Respect the diet type strictly (${prefs.dietType ?? 'no restrictions'})
-- Match the cooking preference (${prefs.cookingPref ?? 'any'})
-- Real food names, realistic macros
-- sugar is grams of total sugar (subset of carbs) — include it for every meal
-- Each meal should be sized as a single serving (not a full day)
-- Vary the options so the user has genuine choice`;
+- Return AT LEAST 24 meals total, ideally 28-32
+- Spread across: "Breakfast" (6-7), "Lunch" (7-8), "Dinner" (7-8), "Snack" (4-6)${isBulk ? ', "Bulk Cook" (4-6)' : ''}
+${isBulk ? '- "Bulk Cook" = large batch meals that make 4-6 servings (label clearly e.g. "Batch Chicken & Rice (×5 servings)")' : ''}
+- Each meal must respect ALL dietary restrictions and allergies above
+- Macros must add up realistically — cross-check protein+carbs+fat → calories (4/4/9 kcal per gram)
+- Name meals naturally, the way real people say them (e.g. "Scrambled Eggs on Toast" not "Protein Egg Dish")
+- Vary cooking styles, ingredients, and flavours — real variety, not 10 versions of chicken and rice
+- Size each as a single serving
+- sugar = total sugar in grams (subset of carbs)
+- Scale meal sizes realistically to the user's daily calorie target (${goal.calories} kcal)`;
 
       const result = await model.generateContent(prompt);
       let text = result.response.text().trim();
@@ -795,8 +818,17 @@ Once you know subjects + time until exam → trigger immediately. Confidence is 
 - daysPerWeek: total study days per week (ask if not stated, default 5)
 - Set type to match what they said: "Study – [subjects]" or "Revision – [exam name]"
 
-Build a full meal plan / meal library — ask the user about: nutrition goal, diet type, meals per day, cooking preference. Once you have enough info, trigger:
-{ "type": "generate_meal_plan", "preferences": { "nutritionGoal": "Lose weight", "dietType": "No restrictions", "mealsPerDay": "3", "cookingPref": "Happy to cook" } }
+─── MEAL PLAN / MEAL LIBRARY ───
+When a user asks for a meal plan, ask up to 3 focused questions before triggering. Ask in groups of 2 max. Be conversational — one exchange at a time.
+Questions to gather (ask only what you don't already know):
+1. "Do you have any allergies or dietary requirements? E.g. vegetarian, vegan, gluten-free, nut allergy, dairy-free?"
+2. "What's your weekly food budget roughly — are you working with a tight budget, mid-range, or do you have flexibility?"
+3. "Do you have a favourite cuisine or any foods you love? E.g. Asian, Italian, Mexican, Mediterranean?"
+4. Cooking preference — quick/easy meals, love to cook, meal prep/batch cook?
+5. Meals per day (if not obvious from context)
+The user's nutrition goal is already in context — don't ask again unless unclear.
+Once you know allergies + budget + cuisine preference → trigger immediately. The rest can be inferred.
+{ "type": "generate_meal_plan", "preferences": { "nutritionGoal": "Lose weight", "dietType": "Vegetarian", "allergies": "Nuts", "weeklyBudget": "mid-range", "cuisinePreference": "Asian and Mediterranean", "mealsPerDay": "3", "cookingPref": "Quick and easy meals" } }
 
 If the user is NOT asking to log or change anything, return:
 { "reply": "your message here", "action": null }

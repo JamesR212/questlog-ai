@@ -12,6 +12,7 @@ interface Message {
   loadingLabel?: string;
   pendingFoodLog?: PendingFoodLog;
   isPlanBuilding?: boolean; // shows construction progress animation
+  planBuildingType?: 'gym' | 'meal'; // controls animation labels/emojis
 }
 
 interface PendingMeal {
@@ -581,7 +582,7 @@ export default function AIAssistant() {
     }, 250);
 
     // Add the building message with animation flag
-    setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true }]);
+    setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true, planBuildingType: type }]);
 
     const finishProgress = (success: boolean, successMsg: string) => {
       if (buildTimerRef.current) clearInterval(buildTimerRef.current);
@@ -1049,24 +1050,28 @@ export default function AIAssistant() {
                               style={{ transition: 'stroke-dashoffset 0.4s ease' }}
                             />
                           </svg>
-                          {/* Hard hat emoji centred */}
+                          {/* Icon centred */}
                           <div className="absolute inset-0 flex items-center justify-center" style={{ fontSize: 16 }}>
-                            {buildProgress >= 100 ? '✅' : '🏗️'}
+                            {buildProgress >= 100 ? '✅' : m.planBuildingType === 'meal' ? '🍽️' : '🏗️'}
                           </div>
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <p className="text-ql text-xs font-semibold">
-                            {buildProgress >= 100 ? 'Plan complete!' : 'Building your plan…'}
+                            {buildProgress >= 100
+                              ? (m.planBuildingType === 'meal' ? 'Meal library ready!' : 'Plan complete!')
+                              : (m.planBuildingType === 'meal' ? 'Crafting your meal library…' : 'Building your plan…')}
                           </p>
                           <p className="text-ql-3 text-[10px]">
-                            {buildProgress >= 100 ? 'Saving to your Plans tab' : `${Math.round(Math.min(buildProgress, 100))}% — hang tight, takes ~15 sec`}
+                            {buildProgress >= 100
+                              ? (m.planBuildingType === 'meal' ? 'Saving to your Food tab' : 'Saving to your Plans tab')
+                              : `${Math.round(Math.min(buildProgress, 100))}% — hang tight, this one's worth the wait`}
                           </p>
                         </div>
                       </div>
-                      {/* Animated construction dots */}
+                      {/* Animated dots */}
                       {buildProgress < 100 && (
                         <div className="flex gap-1.5 px-1">
-                          {['🧱','⚙️','📐','🔩','🏋️'].map((e, di) => (
+                          {(m.planBuildingType === 'meal' ? ['🥗','🍳','🥩','🥦','🍚'] : ['🧱','⚙️','📐','🔩','🏋️']).map((e, di) => (
                             <span
                               key={di}
                               className="text-sm"

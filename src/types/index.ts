@@ -104,6 +104,8 @@ export interface NutritionGoal {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat?: number;
+  unsaturatedFat?: number;
   sugar: number;
 }
 
@@ -132,6 +134,8 @@ export interface SavedMealItem {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat?: number;
+  unsaturatedFat?: number;
   sugar: number;
   micros?: Micros;
   ingredients?: string; // free-text ingredient list
@@ -145,6 +149,8 @@ export interface MealEntry {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat?: number;
+  unsaturatedFat?: number;
   sugar: number;
   date: string; // YYYY-MM-DD
   micros?: Micros;
@@ -158,12 +164,20 @@ export interface GymExercise {
   targetWeight: number; // 0 = bodyweight
 }
 
+export interface WeekPlan {
+  weekNumber: number;
+  label?: string; // e.g. "Deload Week"
+  exercises: GymExercise[];
+}
+
 export interface GymPlan {
   id: string;
   name: string;
   emoji: string;
   color: string;
-  exercises: GymExercise[];
+  exercises: GymExercise[];                 // Used when no weeks[] — flat/repeating plan
+  weeks?: WeekPlan[];                       // Progressive weekly plan; if present, overrides exercises[]
+  isRepeating?: boolean;                    // true = same workout every week (no progressive overload)
   scheduleDays: number[];                   // 0=Sun..6=Sat
   scheduleTime: string;                     // 'HH:MM' or '' (legacy / fallback)
   scheduleEndTime: string;                  // 'HH:MM' or '' (legacy / fallback)
@@ -284,6 +298,7 @@ export interface Subscription {
   amount: number;
   cycle: 'weekly' | 'monthly' | 'annual';
   category: SubscriptionCategory;
+  needsWants?: 'need' | 'want'; // manual classification
   startDate?: string; // YYYY-MM-DD
   syncToCalendar?: boolean;
   linkedCalendarEventIds?: string[];
