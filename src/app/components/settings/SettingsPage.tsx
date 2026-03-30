@@ -152,11 +152,13 @@ export default function SettingsPage() {
   };
 
   const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError,   setPortalError]   = useState('');
   const handleManageSubscription = async () => {
     const { auth } = await import('@/lib/firebase');
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     setPortalLoading(true);
+    setPortalError('');
     try {
       const res  = await fetch('/api/stripe/portal', {
         method: 'POST',
@@ -165,16 +167,26 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       console.log('[portal] response:', JSON.stringify(data));
-      if (data.url) window.location.href = data.url;
-      else alert(`Portal error: ${data.error || 'No URL returned'}`);
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        const msg = data.error || 'No URL returned';
+        console.error('[portal] error:', msg);
+        setPortalError(msg);
+      }
     } catch (e) {
-      console.error('[portal] error:', e);
-      alert(`Portal error: ${e}`);
+      console.error('[portal] fetch error:', e);
+      setPortalError('Network error — please try again');
     }
     setPortalLoading(false);
   };
 
   const picRef = useRef<HTMLInputElement>(null);
+
+  const [userEmail,    setUserEmail]    = useState('');
+  useEffect(() => {
+    import('@/lib/firebase').then(({ auth }) => setUserEmail(auth.currentUser?.email ?? ''));
+  }, []);
 
   const [nameVal,      setNameVal]      = useState(userName);
   const [nameError,    setNameError]    = useState('');
@@ -355,6 +367,14 @@ export default function SettingsPage() {
             {nameError && <p className="text-red-400 text-xs text-right">{nameError}</p>}
             <p className="text-ql-3 text-[10px]">Usernames must be unique across all GAINN users</p>
           </div>
+
+          {/* Email */}
+          {userEmail && (
+            <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
+              <span className="text-ql-3 text-sm w-24 shrink-0">Email</span>
+              <span className="flex-1 text-ql text-sm text-right truncate">{userEmail}</span>
+            </div>
+          )}
 
           {/* Currency */}
           <div className="flex items-center px-4 py-3.5 border-b border-ql gap-4">
@@ -623,6 +643,12 @@ export default function SettingsPage() {
       {/* ── Account ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
         <p className="text-ql text-sm font-semibold">Account</p>
+        {portalError && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3">
+            <p className="text-red-400 text-xs font-medium">Subscription portal error</p>
+            <p className="text-red-300 text-[10px] mt-0.5 break-words">{portalError}</p>
+          </div>
+        )}
         <div className="bg-ql-surface rounded-2xl border border-ql overflow-hidden">
           <button
             onClick={handleManageSubscription}

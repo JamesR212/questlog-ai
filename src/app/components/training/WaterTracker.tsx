@@ -28,12 +28,13 @@ export default function WaterTracker() {
   const pct          = Math.min(1, todayTotal / waterGoal);
   const goalMet      = todayTotal >= waterGoal;
 
-  const [custom, setCustom]       = useState('');
-  const [editGoal, setEditGoal]   = useState(false);
-  const [goalInput, setGoalInput] = useState(String(waterGoal));
+  const [custom,     setCustom]     = useState('');
+  const [drinkLabel, setDrinkLabel] = useState('');
+  const [editGoal,   setEditGoal]   = useState(false);
+  const [goalInput,  setGoalInput]  = useState(String(waterGoal));
 
-  const addAmount = (ml: number) => {
-    if (ml > 0) addWaterEntry(today, ml);
+  const addAmount = (ml: number, label?: string) => {
+    if (ml > 0) addWaterEntry(today, ml, label || undefined);
   };
 
   const saveGoal = () => {
@@ -115,28 +116,46 @@ export default function WaterTracker() {
       {/* Quick-add buttons */}
       <div className="grid grid-cols-4 gap-2">
         {QUICK_AMOUNTS.map(ml => (
-          <button key={ml} onClick={() => addAmount(ml)}
+          <button key={ml} onClick={() => addAmount(ml, drinkLabel.trim() || undefined)}
             className="bg-ql-surface border border-ql rounded-xl py-2.5 text-center text-ql text-sm font-semibold hover:border-ql-accent/50 transition-colors active:scale-95">
             +{ml}ml
           </button>
         ))}
       </div>
 
-      {/* Custom amount */}
-      <div className="flex gap-2">
+      {/* Custom drink name + amount */}
+      <div className="flex flex-col gap-2">
         <input
-          type="text" value={custom}
-          onChange={e => setCustom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { addAmount(parseInt(custom.replace(/[^0-9]/g, ''))); setCustom(''); } }}
-          placeholder="Custom amount e.g. 400 or 400ml…"
-          className="flex-1 bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+          type="text" value={drinkLabel}
+          onChange={e => setDrinkLabel(e.target.value)}
+          placeholder="Drink name (e.g. Matcha, Coffee) — optional"
+          style={{ fontSize: 16 }}
+          className="w-full bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
         />
-        <button
-          onClick={() => { addAmount(parseInt(custom.replace(/[^0-9]/g, ''))); setCustom(''); }}
-          className="px-4 py-2.5 bg-ql-accent text-white rounded-xl text-sm font-semibold"
-        >
-          Add
-        </button>
+        <div className="flex gap-2">
+          <input
+            type="text" value={custom}
+            onChange={e => setCustom(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                addAmount(parseInt(custom.replace(/[^0-9]/g, '')), drinkLabel.trim() || undefined);
+                setCustom(''); setDrinkLabel('');
+              }
+            }}
+            placeholder="Amount e.g. 400 or 400ml…"
+            style={{ fontSize: 16 }}
+            className="flex-1 bg-ql-surface border border-ql rounded-xl px-4 py-2.5 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+          />
+          <button
+            onClick={() => {
+              addAmount(parseInt(custom.replace(/[^0-9]/g, '')), drinkLabel.trim() || undefined);
+              setCustom(''); setDrinkLabel('');
+            }}
+            className="px-4 py-2.5 bg-ql-accent text-white rounded-xl text-sm font-semibold"
+          >
+            Add
+          </button>
+        </div>
       </div>
 
       {/* Today's log */}
@@ -148,7 +167,10 @@ export default function WaterTracker() {
               <div key={entry.id} className="flex items-center justify-between px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-base">💧</span>
-                  <span className="text-ql text-sm font-medium">{entry.amount} ml</span>
+                  <div>
+                    {entry.label && <p className="text-ql text-sm font-medium leading-tight">{entry.label}</p>}
+                    <p className={`tabular-nums ${entry.label ? 'text-ql-3 text-xs' : 'text-ql text-sm font-medium'}`}>{entry.amount} ml</p>
+                  </div>
                 </div>
                 <button onClick={() => deleteWaterEntry(entry.id)}
                   className="text-ql-3 hover:text-red-400 text-sm transition-colors px-1">✕</button>

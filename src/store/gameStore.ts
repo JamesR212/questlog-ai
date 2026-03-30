@@ -206,7 +206,7 @@ interface GameStore {
   // Water intake tracking
   waterLog: WaterEntry[];
   waterGoal: number;
-  addWaterEntry: (date: string, amount: number) => void;
+  addWaterEntry: (date: string, amount: number, label?: string) => void;
   deleteWaterEntry: (id: string) => void;
   setWaterGoal: (goal: number) => void;
 
@@ -220,6 +220,7 @@ export interface WaterEntry {
   id: string;
   date: string;   // YYYY-MM-DD
   amount: number; // ml
+  label?: string; // optional drink name (e.g. "Matcha", "Coffee")
 }
 
 export interface GpsActivity {
@@ -964,8 +965,8 @@ export const useGameStore = create<GameStore>()(
       setStepGoal: (goal) => set({ stepGoal: goal }),
       setFloorsGoal: (goal) => set({ floorsGoal: goal }),
 
-      addWaterEntry: (date, amount) => set(state => {
-        const entry: WaterEntry = { id: generateId(), date, amount };
+      addWaterEntry: (date, amount, label) => set(state => {
+        const entry: WaterEntry = { id: generateId(), date, amount, ...(label ? { label } : {}) };
         const newLog = [...state.waterLog, entry];
         // Auto-complete any "drink water" habit scheduled for today
         const today = new Date().toISOString().slice(0, 10);

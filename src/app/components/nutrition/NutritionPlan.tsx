@@ -2014,9 +2014,11 @@ export default function NutritionPlan() {
       protein: acc.protein + m.protein,
       carbs: acc.carbs + m.carbs,
       fat: acc.fat + m.fat,
+      saturatedFat: acc.saturatedFat + (m.saturatedFat ?? 0),
+      unsaturatedFat: acc.unsaturatedFat + (m.unsaturatedFat ?? 0),
       sugar: acc.sugar + (m.sugar ?? 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, saturatedFat: 0, unsaturatedFat: 0, sugar: 0 }
   );
 
   return (
@@ -2136,6 +2138,12 @@ export default function NutritionPlan() {
               <MacroBar label="Protein"  current={todayTotals.protein}  target={nutritionGoal.protein}          color="bg-blue-400"  overIsGood />
               <MacroBar label="Carbs"    current={todayTotals.carbs}    target={nutritionGoal.carbs}            color="bg-amber-400" />
               <MacroBar label="Fat"      current={todayTotals.fat}      target={nutritionGoal.fat}              color="bg-emerald-500" />
+              {(todayTotals.saturatedFat > 0 || todayTotals.unsaturatedFat > 0) && (
+                <div className="flex gap-3 pl-1">
+                  {todayTotals.saturatedFat > 0 && <span className="text-ql-3 text-[10px] tabular-nums">↳ Saturated: {todayTotals.saturatedFat}g</span>}
+                  {todayTotals.unsaturatedFat > 0 && <span className="text-ql-3 text-[10px] tabular-nums">Unsaturated: {todayTotals.unsaturatedFat}g</span>}
+                </div>
+              )}
               <MacroBar label="Sugar"    current={todayTotals.sugar}    target={nutritionGoal.sugar ?? 50}      color="bg-pink-400" />
             </div>
           </div>
