@@ -704,7 +704,7 @@ export default function AIAssistant() {
       const history = historySnapshot
         .slice(1)  // skip the opening greeting
         .slice(-30) // keep last 30 messages for context
-        .filter(m => !m.mediaUrl) // skip pure-media messages
+        .filter(m => !m.mediaUrl && m.text.trim() !== '') // skip media-only and empty messages (e.g. isPlanBuilding placeholders)
         .map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const res = await fetch('/api/gemini', {
         method: 'POST',

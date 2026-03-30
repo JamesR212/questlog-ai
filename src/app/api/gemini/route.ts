@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       });
       const prefs = context.preferences ?? {};
       const daysPerWeek = parseInt(prefs.daysPerWeek ?? '3', 10);
-      const rawType  = (prefs.type  ?? '').toLowerCase();
+      const rawType  = (prefs.planType ?? prefs.type ?? '').toLowerCase();
       const rawSplit = (prefs.split ?? '').toLowerCase().replace(/[^a-z]/g, '');
 
       // ── Detect activity category ────────────────────────────────────────
@@ -808,7 +808,8 @@ Progressive vs repeating — infer from context, only ask if genuinely unclear:
 - "same each week" / "keep it simple" → progressive = "no"
 - "get harder" / "build up" / "progress" → progressive = "yes"
 - Default: gym → "yes", endurance/sport/other → "no"
-{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience", "daysPerWeek": "3", "focus": "Full body", "split": "Full Body", "progressive": "no" } }
+{ "type": "generate_gym_plan", "preferences": { "planType": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience", "daysPerWeek": "3", "focus": "Full body", "split": "Full Body", "progressive": "no" } }
+NOTE: use "planType" (not "type") inside preferences to avoid field name collision.
 For gym/weights the "split" field: infer from daysPerWeek if not stated (1-3→Full Body, 4→Upper/Lower, 5-6→Push/Pull/Legs). Use the user's gymExperience/runExperience from context for "experience".
 
 ─── STUDY / REVISION PLANS ───
@@ -816,11 +817,11 @@ When a user asks for a revision plan, study plan, or exam prep — ask up to 2 f
 Q1 (if not mentioned): "What subjects are you studying, and when's your exam?" — covers both in one.
 Q2 (if not mentioned after Q1): "How confident are you in each subject — strong, average, or weak?"
 Once you know subjects + time until exam → trigger immediately. Confidence is optional but helpful.
-{ "type": "generate_gym_plan", "preferences": { "type": "Study – A-Level Revision", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+{ "type": "generate_gym_plan", "preferences": { "planType": "Study – A-Level Revision", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
 - subjects: comma-separated list of subjects
 - weeksUntilExam: number of weeks until exam (convert "June" or a date to weeks from today: ${today})
 - daysPerWeek: total study days per week (ask if not stated, default 5)
-- Set type to match what they said: "Study – [subjects]" or "Revision – [exam name]"
+- Set planType to match what they said: "Study – [subjects]" or "Revision – [exam name]"
 
 ─── MEAL PLAN / MEAL LIBRARY ───
 When a user asks for a meal plan, ask up to 3 focused questions before triggering. Ask in groups of 2 max. Be conversational — one exchange at a time.
