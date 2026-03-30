@@ -141,36 +141,74 @@ export async function POST(req: NextRequest) {
         const hoursPerDay = parseFloat(prefs.hoursPerDay ?? '2');
         const focusStyle = (prefs.focusStyle ?? '').toLowerCase();
         const oneSubjectPerDay = focusStyle.includes('one') || focusStyle.includes('single') || focusStyle.includes('focus');
-        const needsBreaks = hoursPerDay > 2;
-        const breakNote = needsBreaks
-          ? `IMPORTANT: User is studying ${hoursPerDay}h/day — recoveryNotes MUST recommend a 5–10 min break every 45–60 mins and a longer 20–30 min break after every 2 hours. Mention this in the plan.`
-          : '';
+        const needsBreaks = hoursPerDay > 2; // kept for reference, breaks now built into timetable blocks
 
         // Study-specific progressive block — uses exam timeline
         const studyProgressiveBlock = wantsProgressive
           ? `- isRepeating = false. Generate ${weeksUntilExam} progressive weeks. Early weeks: content review and notes. Mid weeks: practice questions and topic tests. Final 2 weeks: past papers only, timed conditions. Final week label: "Exam Week – Past Papers Only". exercises[] = Week 1 sessions (used as fallback).`
           : `- isRepeating = true. Do NOT include weeks[]. exercises[] = the full weekly session rotation.`;
 
-        planInstructions = `Create a structured revision plan for: ${prefs.planType ?? 'exam preparation'}.
+        // Build the timetable block instructions
+        const studyBlockMins = 45;
+        const shortBreakMins = 10;
+        const longBreakMins  = 30;
+        const totalMins      = Math.round(hoursPerDay * 60);
+        // How many 45-min blocks fit? Insert a long break around the midpoint.
+        const startHour = 9; // default 09:00
+        const timetableExample = (() => {
+          const lines: string[] = [];
+          let mins = startHour * 60;
+          let studied = 0;
+          let blockNum = 0;
+          let longBreakDone = false;
+          while (studied < totalMins) {
+            const blockEnd = Math.min(studyBlockMins, totalMins - studied);
+            const hh = (h: number) => String(Math.floor(h / 60)).padStart(2,'0') + ':' + String(h % 60).padStart(2,'0');
+            lines.push(`"${subjectList[0]} – Block ${++blockNum}  ${hh(mins)}–${hh(mins + blockEnd)}" (${blockEnd} min study)`);
+            mins    += blockEnd;
+            studied += blockEnd;
+            if (studied >= totalMins) break;
+            // Long break at midpoint (around 12:00–13:00) if not done yet
+            if (!longBreakDone && mins >= 12 * 60 && mins <= 13 * 60) {
+              lines.push(`"🍽️ Lunch Break  ${hh(mins)}–${hh(mins + longBreakMins)}" (${longBreakMins} min)`);
+              mins += longBreakMins;
+              longBreakDone = true;
+            } else {
+              lines.push(`"☕ Break  ${hh(mins)}–${hh(mins + shortBreakMins)}" (${shortBreakMins} min)`);
+              mins += shortBreakMins;
+            }
+          }
+          return lines.slice(0, 8).join('\n  ');
+        })();
+
+        planInstructions = `Create a structured revision timetable for: ${prefs.planType ?? 'exam preparation'}.
 Goal: ${prefs.goal ?? 'Pass exams with strong grades'}
 Subjects: ${subjectList.join(', ')} — use EXACTLY these subjects, do not add extras.
 Weeks until exam: ${weeksUntilExam}
 Study days per week: ${daysPerWeek}
-Hours per day: ${hoursPerDay}
+Hours per day: ${hoursPerDay} (= ${totalMins} minutes of actual study time)
 ${confidence ? `Confidence per subject: ${confidence}` : ''}
-${breakNote}
 
 Generate EXACTLY ${subjectCount} plan${subjectCount > 1 ? 's' : ''} — one plan per subject, named exactly after the subject (e.g. "${subjectList[0]} Revision").
-Focus style: ${oneSubjectPerDay ? 'ONE SUBJECT PER DAY — each day is dedicated fully to one subject. Do not mix subjects on the same day.' : 'MIXED — each session can cover multiple topics or subjects in one day.'}
-Each "exercise" = one study session type for that subject. Name it descriptively: e.g. "Topic Review – ${hoursPerDay}h", "Past Papers – ${hoursPerDay}h", "Flashcard Drill – ${hoursPerDay}h". Do NOT use gym language.
+Focus style: ${oneSubjectPerDay ? 'ONE SUBJECT PER DAY — each day is dedicated fully to one subject. Do not mix subjects on the same day.' : 'MIXED — sessions cover multiple topics per day.'}
 ${confidence ? 'Weaker subjects get more days per week. Stronger subjects get fewer.' : 'Spread days evenly across subjects.'}
-Use "sets" = 1. "targetReps" = 0. "targetWeight" = 0. NEVER show weight or reps to the user — this is a study plan not a gym plan.
-Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.
-recoveryNotes = spaced repetition tips, rest day advice, burnout prevention${needsBreaks ? ', AND mandatory break schedule (5–10 min every 45–60 mins, 20–30 min break after 2h)' : ''}.`;
+
+TIMETABLE FORMAT — CRITICAL: Each "exercise" is a TIMED BLOCK, not a vague label.
+Build the day block-by-block, calculating cumulative times from scheduleTime (default 09:00):
+- Study blocks: ${studyBlockMins} minutes each. Name format: "Subject – Session Type  HH:MM–HH:MM"
+- Short break after each study block: ${shortBreakMins} minutes. Name: "☕ Break  HH:MM–HH:MM"
+- Long/lunch break: ${longBreakMins} minutes, placed around midday (12:00–13:00) if the session spans it. Name: "🍽️ Lunch  HH:MM–HH:MM"
+- Session types vary by week: Week 1–2 = Topic Review, Week 3–4 = Practice Questions, Week 5+ = Past Papers / Timed Conditions
+- Example layout for ${hoursPerDay}h/day starting 09:00:
+  ${timetableExample}
+All exercises: sets=1, targetReps=duration in minutes, targetWeight=0. NEVER use gym language.
+scheduleEndTime = start time + ${totalMins} study minutes + all break minutes combined.
+recoveryNotes = spaced repetition tips, rest day advice, burnout prevention. Do NOT repeat the break schedule here — it is already in the timetable.
+Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.`;
 
         formatRules = `${studyProgressiveBlock}
-- scheduleTime/scheduleEndTime: realistic study slot (e.g. 09:00–11:00).
-- targetWeight always 0. targetReps always 0.
+- scheduleTime: when the session starts (default "09:00"). scheduleEndTime: calculated end including all breaks.
+- targetWeight always 0. targetReps = block duration in minutes.
 - No two plans may share the same scheduleDays values.`;
       } else if (isEndurance) {
         const activityName = isCycling ? 'Cycling' : isSwimming ? 'Swimming' : 'Running';
