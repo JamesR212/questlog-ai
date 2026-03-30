@@ -57,6 +57,8 @@ interface GameStore {
   weightUnit: 'kg' | 'st_lbs' | 'lbs';
   currencySymbol: string;
   hasOnboarded: boolean;
+  gainnIntroSeen: boolean;
+  setGainnIntroSeen: () => void;
   accountCreatedDate: string | null;
   financialMode: boolean;
   hiddenSections: string[];
@@ -369,6 +371,7 @@ const INITIAL_STATE = {
   weightUnit: 'kg',
   currencySymbol: '£',
   hasOnboarded: false,
+  gainnIntroSeen: false,
   accountCreatedDate: null,
   aiIntensity: 50,
   gymExperience: '',
@@ -467,6 +470,7 @@ export const useGameStore = create<GameStore>()(
       weightUnit: 'kg',
       currencySymbol: '£',
       hasOnboarded: false,
+      gainnIntroSeen: false,
       accountCreatedDate: null,
       aiIntensity: 50,
       gymExperience: '',
@@ -543,6 +547,7 @@ export const useGameStore = create<GameStore>()(
         hasOnboarded: true,
         accountCreatedDate: state.accountCreatedDate ?? new Date().toISOString().slice(0, 10),
       })),
+      setGainnIntroSeen: () => set({ gainnIntroSeen: true }),
       setAiIntensity: (v) => set({ aiIntensity: Math.max(1, Math.min(100, v)) }),
       setGymExperience: (v) => set({ gymExperience: v }),
       setRunExperience: (v) => set({ runExperience: v }),
