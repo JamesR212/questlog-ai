@@ -537,21 +537,39 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       }
 
       if (Array.isArray(patch.weeks) && (patch.weeks as unknown[]).length > 0) {
-        patch.weeks = (patch.weeks as Record<string, unknown>[]).map(pw => {
-          const existingWeek = (existing.weeks ?? []).find(ew => ew.weekNumber === Number(pw.weekNumber));
+        const patchWeeksList = patch.weeks as Record<string, unknown>[];
+        // CRITICAL: keep ALL existing weeks — only update weeks explicitly mentioned in patch.
+        // Without this, sending week 1 only would delete weeks 2-8, causing "🔒 Not yet" locks.
+        patch.weeks = (existing.weeks ?? []).map(ew => {
+          const pw = patchWeeksList.find(p => Number(p.weekNumber) === ew.weekNumber);
+          if (!pw) return ew; // not in patch — keep exactly as is
           const patchedExs = Array.isArray(pw.exercises) ? pw.exercises as Record<string, unknown>[] : [];
           return {
-            ...(existingWeek ?? {}),
+            ...ew,
             ...pw,
-            exercises: existingWeek ? mergeExercises(existingWeek.exercises ?? [], patchedExs) : patchedExs,
+            exercises: patchedExs.length > 0 ? mergeExercises(ew.exercises ?? [], patchedExs) : ew.exercises,
           };
         });
+        // Append genuinely new weeks the AI added (week numbers not in existing)
+        const existingNums = new Set((existing.weeks ?? []).map(w => w.weekNumber));
+        const newWeeks = patchWeeksList
+          .filter(pw => !existingNums.has(Number(pw.weekNumber)))
+          .map(pw => ({
+            weekNumber: Number(pw.weekNumber),
+            label:      pw.label as string | undefined,
+            exercises:  Array.isArray(pw.exercises)
+              ? mergeExercises([], pw.exercises as Record<string, unknown>[])
+              : [],
+          }));
+        if (newWeeks.length > 0) {
+          (patch.weeks as unknown[]).push(...newWeeks);
+        }
       } else if (Array.isArray(patch.weeks)) {
         delete patch.weeks; // never wipe with empty array
       }
 
-      // If the AI only patched exercises (not weeks), mirror the same changes
-      // into every week so progressive plans stay consistent
+      // If the AI only patched exercises (not weeks), mirror the same weight/rep changes
+      // into every week so all progressive weeks stay consistent
       if (patch.exercises && !patch.weeks && existing.weeks && existing.weeks.length > 0) {
         const exPatch = patch.exercises as import('@/types').GymExercise[];
         patch.weeks = existing.weeks.map(w => ({
