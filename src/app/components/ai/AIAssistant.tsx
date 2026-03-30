@@ -580,54 +580,77 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
         }));
       }
 
-      // Coerce scheduleDays to numbers before saving — Gemini may return strings
+      // Capture old name BEFORE updating — needed to clean up events that predate planId
+      const oldPlanName = existing.name;
+
+      // Coerce scheduleDays to numbers and validate range 0-6
       if (Array.isArray(patch.scheduleDays)) {
-        patch.scheduleDays = (patch.scheduleDays as (number | string)[]).map(Number);
+        patch.scheduleDays = (patch.scheduleDays as (number | string)[])
+          .map(Number)
+          .filter(d => d >= 0 && d <= 6);
       }
 
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
 
-      // If scheduleDays changed, refresh future calendar events for this plan
-      if (Array.isArray(patch.scheduleDays)) {
+      // Refresh future calendar events when days OR times change
+      const daysChanged  = Array.isArray(patch.scheduleDays);
+      const timesChanged = patch.scheduleTime !== undefined || patch.scheduleEndTime !== undefined;
+
+      if (daysChanged || timesChanged) {
         const updated = useGameStore.getState().gymPlans.find(p => p.id === planId);
         if (updated) {
           const today = new Date(); today.setHours(0, 0, 0, 0);
           const todayStr = today.toISOString().slice(0, 10);
-          // Remove all future events for this plan.
-          // Match by planId OR by title — handles older events created before planId was introduced.
-          useGameStore.setState(s => ({
-            calendarEvents: s.calendarEvents.filter(e => {
-              if (e.date <= todayStr) return true;
-              if (e.planId === planId) return false;
-              if (!e.planId && e.title === updated.name) return false;
-              return true;
-            }),
-          }));
-          // Re-create events for the new days (next 8 weeks)
-          // Coerce to Number — Gemini occasionally returns strings e.g. "1" instead of 1
-          const newDays = (patch.scheduleDays as (number | string)[]).map(Number);
-          newDays.forEach(weekday => {
-            const d = new Date(today);
-            let daysUntil = weekday - today.getDay();
-            if (daysUntil < 0) daysUntil += 7;
-            d.setDate(today.getDate() + daysUntil);
-            for (let w = 0; w < 8; w++) {
-              const date = new Date(d);
-              date.setDate(d.getDate() + w * 7);
-              store.addCalendarEvent({
-                title:     updated.name,
-                date:      date.toISOString().slice(0, 10),
-                startTime: updated.scheduleTime ?? '',
-                endTime:   updated.scheduleEndTime ?? '',
-                allDay:    !updated.scheduleTime,
-                location:  '',
-                notes:     '',
-                color:     updated.color,
-                reminder:  30,
-                planId,
-              });
-            }
-          });
+
+          if (daysChanged) {
+            // Delete all future events (by planId OR old/new name for events without planId)
+            useGameStore.setState(s => ({
+              calendarEvents: s.calendarEvents.filter(e => {
+                if (e.date <= todayStr) return true;
+                if (e.planId === planId) return false;
+                if (!e.planId && (e.title === oldPlanName || e.title === updated.name)) return false;
+                return true;
+              }),
+            }));
+            // Recreate events for the new days (next 8 weeks)
+            const newDays = (patch.scheduleDays as number[]).sort((a, b) => a - b);
+            newDays.forEach(weekday => {
+              const d = new Date(today);
+              let daysUntil = weekday - today.getDay();
+              if (daysUntil < 0) daysUntil += 7;
+              d.setDate(today.getDate() + daysUntil);
+              for (let w = 0; w < 8; w++) {
+                const date = new Date(d);
+                date.setDate(d.getDate() + w * 7);
+                store.addCalendarEvent({
+                  title:     updated.name,
+                  date:      date.toISOString().slice(0, 10),
+                  startTime: updated.scheduleTime ?? '',
+                  endTime:   updated.scheduleEndTime ?? '',
+                  allDay:    !updated.scheduleTime,
+                  location:  '',
+                  notes:     '',
+                  color:     updated.color,
+                  reminder:  30,
+                  planId,
+                });
+              }
+            });
+          } else if (timesChanged) {
+            // Only time changed — update startTime/endTime on all future events for this plan
+            useGameStore.setState(s => ({
+              calendarEvents: s.calendarEvents.map(e => {
+                if (e.date <= todayStr) return e;
+                if (e.planId !== planId && !(e.title === oldPlanName && !e.planId)) return e;
+                return {
+                  ...e,
+                  startTime: updated.scheduleTime ?? '',
+                  endTime:   updated.scheduleEndTime ?? '',
+                  allDay:    !updated.scheduleTime,
+                };
+              }),
+            }));
+          }
         }
       }
     }
