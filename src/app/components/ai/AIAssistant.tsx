@@ -580,6 +580,11 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
         }));
       }
 
+      // Coerce scheduleDays to numbers before saving — Gemini may return strings
+      if (Array.isArray(patch.scheduleDays)) {
+        patch.scheduleDays = (patch.scheduleDays as (number | string)[]).map(Number);
+      }
+
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
 
       // If scheduleDays changed, refresh future calendar events for this plan
@@ -588,12 +593,19 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
         if (updated) {
           const today = new Date(); today.setHours(0, 0, 0, 0);
           const todayStr = today.toISOString().slice(0, 10);
-          // Remove all future events for this plan
+          // Remove all future events for this plan.
+          // Match by planId OR by title — handles older events created before planId was introduced.
           useGameStore.setState(s => ({
-            calendarEvents: s.calendarEvents.filter(e => !(e.planId === planId && e.date > todayStr)),
+            calendarEvents: s.calendarEvents.filter(e => {
+              if (e.date <= todayStr) return true;
+              if (e.planId === planId) return false;
+              if (!e.planId && e.title === updated.name) return false;
+              return true;
+            }),
           }));
           // Re-create events for the new days (next 8 weeks)
-          const newDays = patch.scheduleDays as number[];
+          // Coerce to Number — Gemini occasionally returns strings e.g. "1" instead of 1
+          const newDays = (patch.scheduleDays as (number | string)[]).map(Number);
           newDays.forEach(weekday => {
             const d = new Date(today);
             let daysUntil = weekday - today.getDay();

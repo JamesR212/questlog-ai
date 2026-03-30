@@ -665,8 +665,14 @@ export const useGameStore = create<GameStore>()(
             habitLog:        linkedHabitId ? state.habitLog.filter(e => e.habitId !== linkedHabitId) : state.habitLog,
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
-            // Remove future calendar events linked to this plan; keep past ones as a log
-            calendarEvents:  state.calendarEvents.filter(e => !(e.planId === id && e.date > today)),
+            // Remove future calendar events linked to this plan; keep past ones as a log.
+            // Match by planId OR by title (for older events created before planId was added).
+            calendarEvents: state.calendarEvents.filter(e => {
+              if (e.date <= today) return true;
+              if (e.planId === id) return false;
+              if (!e.planId && e.title === plan?.name) return false;
+              return true;
+            }),
           };
         }),
 
