@@ -349,6 +349,8 @@ function NutritionCalendar({
 
   return (
     <div className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
+      {/* Section title */}
+      <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-widest mb-3">Food Log</p>
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMonth} className="text-ql-3 px-2 py-1 text-sm">‹</button>
