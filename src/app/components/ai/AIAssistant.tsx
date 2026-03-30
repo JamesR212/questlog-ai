@@ -47,6 +47,9 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const today    = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   const in7Days  = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName = (dateStr: string) => DAY_NAMES[new Date(dateStr + 'T12:00:00').getDay()];
+  const labelDate = (dateStr: string) => `${dateStr} (${dayName(dateStr)})`;
 
   const recentHabits = store.habitLog.filter(h => {
     const d = new Date(h.date); const now = new Date();
@@ -206,9 +209,9 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 
   const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')                           : 'nothing scheduled';
   const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ')                        : 'nothing scheduled';
-  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${e.date}: ${formatEvent(e)}`).join(' | ')    : 'nothing scheduled';
-  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${e.date}: ${formatEvent(e)}`).join('\n  ') : 'nothing scheduled';
-  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${e.date}: ${formatEvent(e)}`).join('\n  ')   : 'none';
+  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ')    : 'nothing scheduled';
+  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ') : 'nothing scheduled';
+  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ')   : 'none';
 
   // Classify today's activity for targeted advice
   const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes));
@@ -258,14 +261,14 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 - RPG stats: ${rpgStats}
 - Time on GAINN: ${timeOnApp}
 
-CALENDAR — TODAY (${today}):
+CALENDAR — TODAY (${labelDate(today)}):
 ${todaySchedule}
 
-CALENDAR — TOMORROW (${tomorrow}):
+CALENDAR — TOMORROW (${labelDate(tomorrow)}):
 ${tomorrowSchedule}
 
-CALENDAR — THIS WEEK:
-${weekSchedule}
+CALENDAR — THIS WEEK (each entry shows date + day name):
+  ${weekSchedule}
 
 CALENDAR — UPCOMING (beyond this week):
   ${futureSchedule}
