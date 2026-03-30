@@ -651,15 +651,52 @@ export default function AIAssistant() {
               dayTimes:    {},
               dayEndTimes: {},
             });
+
+            // ── Auto-add calendar events for every scheduled day ──────────
+            const scheduleDays = (p.scheduleDays as number[]) ?? [];
+            const scheduleTime    = (p.scheduleTime    as string) ?? '';
+            const scheduleEndTime = (p.scheduleEndTime as string) ?? '';
+            const planColor = (p.color as string) ?? '#7c3aed';
+            const planName  = (p.name  as string) ?? 'Training Session';
+            const weeksList = Array.isArray(p.weeks) ? (p.weeks as Record<string, unknown>[]) : [];
+            const weeksCount = weeksList.length > 0 ? weeksList.length : (Boolean(p.isRepeating) ? 8 : 6);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+
+            scheduleDays.forEach(weekday => {
+              const todayDay = today.getDay();
+              let daysUntil = weekday - todayDay;
+              if (daysUntil < 0) daysUntil += 7;
+              const firstDate = new Date(today);
+              firstDate.setDate(today.getDate() + daysUntil);
+
+              for (let wo = 0; wo < weeksCount; wo++) {
+                const d = new Date(firstDate);
+                d.setDate(firstDate.getDate() + wo * 7);
+                const weekLabel = weeksList[wo]
+                  ? ` — ${weeksList[wo].label ?? `Week ${weeksList[wo].weekNumber}`}`
+                  : '';
+                s.addCalendarEvent({
+                  title:     planName,
+                  date:      d.toISOString().slice(0, 10),
+                  startTime: scheduleTime,
+                  endTime:   scheduleEndTime,
+                  allDay:    !scheduleTime,
+                  location:  '',
+                  notes:     weekLabel ? `${planName}${weekLabel}` : '',
+                  color:     planColor,
+                  reminder:  30,
+                });
+              }
+            });
           });
           const label = rawPlans.length === 1
             ? `"${rawPlans[0].name as string}"`
             : rawPlans.map(p => `"${p.name as string}"`).join(', ');
-          const prefType = (preferences.type ?? '').toLowerCase();
+          const prefType = (preferences.planType ?? preferences.type ?? '').toLowerCase();
           const isStudyPlan = prefType.includes('stud') || prefType.includes('revis') || prefType.includes('exam') || prefType.includes('learn') || prefType.includes('academic');
           const doneMsg = isStudyPlan
             ? `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Plans tab. Each subject has its own plan — head there to get started!`
-            : `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Gym tab → Plans. Head there to log your first session!`;
+            : `✅ Done! ${label} added to your Gym tab and 📅 Calendar! You can edit times and days in "Edit Plan", or just tell me and I'll update them for you 😊`;
           finishProgress(true, doneMsg);
         } else {
           finishProgress(false, 'Plan generation hit a snag. Try again with a bit more detail about what you want.');

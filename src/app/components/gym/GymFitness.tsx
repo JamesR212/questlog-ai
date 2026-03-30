@@ -2016,31 +2016,26 @@ export default function GymFitness() {
                     {!isRepeating && progWeeks.length > 0 && (
                       <div className="flex gap-2 px-4 py-2.5 overflow-x-auto border-b border-ql">
                         {(() => {
-                          // Calculate the highest week the user has earned across all plans in this programme
+                          // Calculate the highest week the user has earned (for Log button locking only)
                           const totalSessions = prog.plans.reduce((sum, p) => sum + gymSessions.filter(s => s.planId === p.id).length, 0);
                           const totalDaysPerWeek = Math.max(1, prog.plans.reduce((sum, p) => sum + p.scheduleDays.length, 0));
                           const earnedWeekIdx = Math.floor(totalSessions / totalDaysPerWeek);
                           const earnedWeekNumber = progWeeks[Math.min(earnedWeekIdx, progWeeks.length - 1)]?.weekNumber ?? 1;
-                          return progWeeks.map(w => {
-                            const isLocked = w.weekNumber > earnedWeekNumber;
-                            return (
-                              <button
-                                key={w.weekNumber}
-                                disabled={isLocked}
-                                onClick={() => !isLocked && setSelectedWeekByProg(prev => ({ ...prev, [prog.key]: w.weekNumber }))}
-                                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                                  isLocked
-                                    ? 'bg-ql-surface2 border border-ql text-ql-3 opacity-40 cursor-not-allowed'
-                                    : selectedWeek === w.weekNumber
-                                    ? 'text-white'
-                                    : 'bg-ql-surface2 border border-ql text-ql-3'
-                                }`}
-                                style={!isLocked && selectedWeek === w.weekNumber ? { backgroundColor: prog.color } : {}}
-                              >
-                                {isLocked ? `🔒 ${w.label ?? `Week ${w.weekNumber}`}` : (w.label ?? `Week ${w.weekNumber}`)}
-                              </button>
-                            );
-                          });
+                          // Store earned week so day rows can access it
+                          return progWeeks.map(w => (
+                            <button
+                              key={w.weekNumber}
+                              onClick={() => setSelectedWeekByProg(prev => ({ ...prev, [prog.key]: w.weekNumber }))}
+                              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                                selectedWeek === w.weekNumber
+                                  ? 'text-white'
+                                  : 'bg-ql-surface2 border border-ql text-ql-3'
+                              }`}
+                              style={selectedWeek === w.weekNumber ? { backgroundColor: prog.color } : {}}
+                            >
+                              {w.weekNumber > earnedWeekNumber ? `🔒 ` : ''}{w.label ?? `Week ${w.weekNumber}`}
+                            </button>
+                          ));
                         })()}
                       </div>
                     )}
@@ -2055,10 +2050,16 @@ export default function GymFitness() {
                     {/* One row per scheduled day — globally sorted Mon→Sun across ALL plans */}
                     {(() => {
                       const MON_FIRST = [1,2,3,4,5,6,0];
-                      // Collect ALL (plan, dayNum) pairs across every plan, then sort globally
                       const allDayRows = prog.plans
                         .flatMap(plan => plan.scheduleDays.map(dayNum => ({ plan, dayNum })))
                         .sort((a, b) => MON_FIRST.indexOf(a.dayNum) - MON_FIRST.indexOf(b.dayNum));
+
+                      // Earned week — used to lock Log button for future weeks
+                      const totalSessions2 = prog.plans.reduce((sum, p) => sum + gymSessions.filter(s => s.planId === p.id).length, 0);
+                      const totalDays2 = Math.max(1, prog.plans.reduce((sum, p) => sum + p.scheduleDays.length, 0));
+                      const earnedWeekIdx2 = Math.floor(totalSessions2 / totalDays2);
+                      const earnedWeekNum2 = progWeeks[Math.min(earnedWeekIdx2, progWeeks.length - 1)]?.weekNumber ?? 1;
+                      const canLog = isRepeating || selectedWeek <= earnedWeekNum2;
 
                       return allDayRows.map(({ plan, dayNum }) => {
                         // ALL exercises in this plan are done on EVERY scheduled day — show them all
@@ -2093,12 +2094,14 @@ export default function GymFitness() {
                               {sessionToday(plan.id) ? (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0"
                                   style={{ backgroundColor: plan.color }}>✓ Done</span>
-                              ) : (
+                              ) : canLog ? (
                                 <button
                                   onClick={e => { e.stopPropagation(); logGymSession(plan.id); }}
                                   className="text-xs font-semibold px-3 py-1.5 rounded-xl text-white shrink-0 transition-colors"
                                   style={{ backgroundColor: plan.color }}
                                 >Log</button>
+                              ) : (
+                                <span className="text-[10px] text-ql-3 shrink-0">🔒 Not yet</span>
                               )}
                               <span className="text-ql-3 text-[10px] ml-1">{isDayExpanded ? '▲' : '▼'}</span>
                             </button>
