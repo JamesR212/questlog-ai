@@ -494,6 +494,20 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       }
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
     }
+  } else if (type === 'log_one_off_activity') {
+    const durationSecs = Math.round(Number(action.durationMinutes ?? 0) * 60);
+    store.addGpsActivity({
+      id:             Math.random().toString(36).slice(2, 9),
+      type:           (action.activityType as import('@/store/gameStore').GpsActivity['type']) || 'other',
+      activityName:   action.activityName ? String(action.activityName) : undefined,
+      startTime:      new Date().toISOString(),
+      duration:       durationSecs,
+      distance:       Number(action.distanceKm ?? 0),
+      coords:         [],
+      elevationGain:  action.elevationGainM ? Number(action.elevationGainM) : undefined,
+      floorsClimbed:  action.elevationGainM ? Math.round(Number(action.elevationGainM) / 3.048) : undefined,
+      caloriesBurned: action.caloriesBurned ? Math.round(Number(action.caloriesBurned)) : undefined,
+    });
   }
 }
 

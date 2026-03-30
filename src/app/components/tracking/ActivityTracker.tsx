@@ -50,16 +50,18 @@ function generateId() {
 
 // ── Activity history card ──────────────────────────────────────────────────
 
-const TYPE_META = {
-  run:   { icon: '🏃', label: 'Run',   color: '#ef4444' },
-  cycle: { icon: '🚴', label: 'Cycle', color: '#3b82f6' },
-  walk:  { icon: '🚶', label: 'Walk',  color: '#34c759' },
+const TYPE_META: Record<string, { icon: string; label: string; color: string }> = {
+  run:   { icon: '🏃', label: 'Run',      color: '#ef4444' },
+  cycle: { icon: '🚴', label: 'Cycle',    color: '#3b82f6' },
+  walk:  { icon: '🚶', label: 'Walk',     color: '#34c759' },
+  other: { icon: '⚡', label: 'Activity', color: '#a855f7' },
 };
 
 function ActivityCard({ activity, onDelete }: { activity: GpsActivity; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const meta = TYPE_META[activity.type];
+  const meta = TYPE_META[activity.type] ?? TYPE_META.other;
+  const label = activity.activityName ?? meta.label;
   const pace = fmtPace(activity.distance, activity.duration);
   const speed = fmtSpeed(activity.distance, activity.duration);
   const date = new Date(activity.startTime).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -69,7 +71,7 @@ function ActivityCard({ activity, onDelete }: { activity: GpsActivity; onDelete:
       <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left" onClick={() => setExpanded(e => !e)}>
         <span className="text-2xl">{meta.icon}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-ql text-sm font-semibold">{meta.label}</p>
+          <p className="text-ql text-sm font-semibold">{label}</p>
           <p className="text-ql-3 text-xs">{date}</p>
         </div>
         <div className="flex gap-4 text-right shrink-0">
@@ -115,6 +117,12 @@ function ActivityCard({ activity, onDelete }: { activity: GpsActivity; onDelete:
                 <p className="text-ql text-sm font-bold">{activity.floorsClimbed} 🏢</p>
                 <p className="text-ql-3 text-[10px]">floors climbed</p>
               </div>
+            </div>
+          )}
+          {(activity.caloriesBurned ?? 0) > 0 && (
+            <div className="bg-ql-surface2 rounded-xl px-3 py-2 text-center">
+              <p className="text-ql text-sm font-bold">{activity.caloriesBurned} kcal</p>
+              <p className="text-ql-3 text-[10px]">calories burned</p>
             </div>
           )}
           {activity.coords.length >= 2 && (

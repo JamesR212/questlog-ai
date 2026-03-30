@@ -225,13 +225,15 @@ export interface WaterEntry {
 
 export interface GpsActivity {
   id: string;
-  type: 'run' | 'cycle' | 'walk';
+  type: 'run' | 'cycle' | 'walk' | 'other';
+  activityName?: string;    // custom label for 'other' type (e.g. "Pilates", "Hiking")
   startTime: string;
   duration: number;         // seconds
   distance: number;         // km
   coords: { lat: number; lng: number; alt?: number }[];
   elevationGain?: number;   // metres of total ascent
   floorsClimbed?: number;   // elevationGain / 3.048
+  caloriesBurned?: number;  // AI-estimated or GPS-computed kcal
 }
 
 const DEFAULT_VICE_DEFS: ViceDef[] = [
