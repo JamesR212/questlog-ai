@@ -37,19 +37,29 @@ export type PullResult =
   | { ok: true;  data: StoreData | null } // data=null means new user (no doc yet)
   | { ok: false; data: null };             // network/firestore error — do NOT push
 
+async function attemptPull(userId: string): Promise<PullResult> {
+  const snap = await getDoc(doc(db, 'users', userId, 'data', 'store'));
+  if (!snap.exists()) return { ok: true, data: null };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _updatedAt, ...data } = snap.data();
+  return { ok: true, data };
+}
+
+// Retries up to 3 times (1s apart) before returning ok:false
 export async function pullFromCloud(userId: string): Promise<PullResult> {
-  try {
-    console.log('[sync] pulling from cloud for user:', userId);
-    const snap = await getDoc(doc(db, 'users', userId, 'data', 'store'));
-    console.log('[sync] pull result — exists:', snap.exists());
-    if (!snap.exists()) return { ok: true, data: null }; // new user, no data yet
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _updatedAt, ...data } = snap.data();
-    return { ok: true, data };
-  } catch (e) {
-    console.error('[sync] pull error:', e);
-    return { ok: false, data: null }; // real error — caller must not push
+  console.log('[sync] pulling from cloud for user:', userId);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const result = await attemptPull(userId);
+      console.log('[sync] pull ok on attempt', attempt, '— doc exists:', result.data !== null);
+      return result;
+    } catch (e) {
+      console.warn(`[sync] pull attempt ${attempt}/3 failed:`, e);
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+    }
   }
+  console.error('[sync] all pull attempts failed — blocking push to protect cloud data');
+  return { ok: false, data: null };
 }
 
 export async function upsertProfile(userId: string, fields: { username?: string; display_name?: string }) {

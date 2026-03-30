@@ -45,6 +45,8 @@ export default function Home() {
 
   const [user, setUser]               = useState<User | null | undefined>(undefined);
   const [syncing, setSyncing]         = useState(false);
+  const [syncError, setSyncError]     = useState(false);  // true = last push failed
+  const [pullFailed, setPullFailed]   = useState(false);  // true = pull failed on login
   const [cloudReady, setCloudReady]   = useState(false);
   const [showAuth, setShowAuth]       = useState(false);
   const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
@@ -66,6 +68,10 @@ export default function Home() {
     if (!user || hydratedUid.current === user.uid) return;
     hydratedUid.current = user.uid;
     setCloudReady(false);
+
+    // Save local state BEFORE resetting — restored as fallback if pull fails
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const localFallback = useGameStore.getState() as any;
     resetGameStore();
 
     const userId = user.uid;
@@ -79,11 +85,14 @@ export default function Home() {
     // Pull and merge cloud data, then check subscription
     pullFromCloud(userId).then(async result => {
       if (!result.ok) {
-        // Firestore error — do NOT push (would wipe cloud data with empty reset state)
-        console.error('[sync] pull failed — blocking cloud push to protect data');
+        // All pull attempts failed — restore local fallback so user sees cached data,
+        // and block all pushes so we never overwrite cloud with empty/wrong state.
+        console.error('[sync] pull failed — restoring local fallback, blocking push');
         pullOk.current = false;
-        setCloudReady(true); // still show the app
-        // Skip subscription check on pull failure — user will see cached/empty data
+        setPullFailed(true);
+        // Restore whatever was in the store before reset (may be empty on first-ever open)
+        useGameStore.setState(localFallback);
+        setCloudReady(true);
         const subSnap = await getDoc(doc(db, 'subscriptions', userId)).catch(() => null);
         if (subSnap?.exists()) {
           const sub = subSnap.data();
@@ -150,8 +159,12 @@ export default function Home() {
   useEffect(() => {
     if (!user || !cloudReady || !pullOk.current) return;
     setSyncing(true);
+    setSyncError(false);
     const s = useGameStore.getState();
-    pushToCloud(user.uid, s).finally(() => setSyncing(false));
+    pushToCloud(user.uid, s)
+      .then(() => setSyncError(false))
+      .catch(() => setSyncError(true))
+      .finally(() => setSyncing(false));
     updatePublicProfile(user.uid, {
       username: s.userName || user.displayName || '',
       displayName: user.displayName || s.userName || '',
@@ -241,6 +254,15 @@ export default function Home() {
             <span className="text-ql-3 text-xs">
               {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
+            {/* Sync indicator */}
+            {pullFailed
+              ? <span title="Cloud sync failed — data may not be up to date" className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              : syncing
+              ? <span title="Syncing…" className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              : syncError
+              ? <span title="Last sync failed — will retry" className="w-2 h-2 rounded-full bg-red-500" />
+              : <span title="Synced" className="w-2 h-2 rounded-full bg-emerald-500" />
+            }
             <button
               onClick={() => setActiveSection(activeSection === 'social' ? 'dashboard' : 'social')}
               className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
