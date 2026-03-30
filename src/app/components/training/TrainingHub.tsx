@@ -910,7 +910,9 @@ function GymLogSheet({ plan, onClose, onSave }: {
   onSave: (logs: ExerciseLogEntry[]) => void;
 }) {
   // Detect run/cardio plans — use mins + km instead of sets × reps × weight
-  const isRunPlan = /run|jog|walk|cardio|marathon|\d+k\b/i.test(plan.name);
+  const isRunPlan   = /run|jog|walk|cardio|marathon|\d+k\b/i.test(plan.name);
+  // Study/revision plans — just show session blocks, no sets/reps/weight
+  const isStudyPlan = plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
 
   const extractMins = (name: string) => {
     const m = name.match(/(\d+)\s*min/i);
@@ -954,7 +956,7 @@ function GymLogSheet({ plan, onClose, onSave }: {
               <div>
                 <h3 className="text-ql text-base font-bold">{plan.name}</h3>
                 <p className="text-ql-3 text-[10px]">
-                  {isRunPlan ? 'Edit mins & km — then log' : 'Edit sets, reps & weight — then log'}
+                  {isStudyPlan ? 'Your session blocks — tap Log when done' : isRunPlan ? 'Edit mins & km — then log' : 'Edit sets, reps & weight — then log'}
                 </p>
               </div>
             </div>
@@ -967,6 +969,13 @@ function GymLogSheet({ plan, onClose, onSave }: {
             <p className="text-ql-3 text-sm text-center py-6">No exercises in this plan — edit it to add some.</p>
           )}
           {logs.map(log => {
+            if (isStudyPlan) {
+              return (
+                <div key={log.exerciseId} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3">
+                  <p className="text-ql text-sm font-semibold">{log.name}</p>
+                </div>
+              );
+            }
             if (isRunPlan) {
               return (
                 <div key={log.exerciseId} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3 flex flex-col gap-3">
