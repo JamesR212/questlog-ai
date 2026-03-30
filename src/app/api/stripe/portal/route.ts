@@ -75,11 +75,63 @@ export async function POST(req: NextRequest) {
     }
 
     const configId = await getOrCreatePortalConfig();
-    const session = await stripe.billingPortal.sessions.create({
-      customer:      customerId,
-      return_url:    process.env.NEXT_PUBLIC_APP_URL || 'https://gainn.app',
-      configuration: configId,
-    });
+
+    // Helper: look up live customer by email and update Firestore
+    const lookupByEmail = async (): Promise<string | undefined> => {
+      try {
+        const userRecord = await getAdminAuth().getUser(userId);
+        const email = userRecord.email;
+        if (!email) return undefined;
+        const customers = await stripe.customers.search({ query: `email:"${email}"`, limit: 10 });
+        // Prefer customers that have an active subscription
+        for (const c of customers.data) {
+          const subs = await stripe.subscriptions.list({ customer: c.id, status: 'active', limit: 1 });
+          if (subs.data.length > 0) {
+            const sub = subs.data[0];
+            await db.collection('subscriptions').doc(userId).set({
+              customerId: c.id,
+              subscriptionId:   sub.id,
+              status:           sub.status,
+              priceId:          sub.items.data[0]?.price.id ?? null,
+              currentPeriodEnd: new Date((sub as any).current_period_end * 1000).toISOString(),
+              cancelAtPeriodEnd: sub.cancel_at_period_end,
+              updatedAt:        new Date().toISOString(),
+            }, { merge: true });
+            console.log(`[portal] recovered live customerId ${c.id} for user ${userId}`);
+            return c.id;
+          }
+        }
+      } catch (err) {
+        console.error('[portal] email lookup failed:', err);
+      }
+      return undefined;
+    };
+
+    let session;
+    try {
+      session = await stripe.billingPortal.sessions.create({
+        customer:      customerId,
+        return_url:    process.env.NEXT_PUBLIC_APP_URL || 'https://gainn.app',
+        configuration: configId,
+      });
+    } catch (e: any) {
+      // Stale/deleted customer ID — clear it and try email lookup
+      if (e?.code === 'resource_missing' && e?.param === 'customer') {
+        console.warn(`[portal] stale customerId ${customerId} — clearing and retrying via email`);
+        await db.collection('subscriptions').doc(userId).set({ customerId: null }, { merge: true });
+        const freshId = await lookupByEmail();
+        if (!freshId) {
+          return NextResponse.json({ error: 'Could not find an active Stripe subscription for this account.' }, { status: 404 });
+        }
+        session = await stripe.billingPortal.sessions.create({
+          customer:      freshId,
+          return_url:    process.env.NEXT_PUBLIC_APP_URL || 'https://gainn.app',
+          configuration: configId,
+        });
+      } else {
+        throw e;
+      }
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (e: any) {
