@@ -1028,7 +1028,7 @@ function GymLogSheet({ plan, onClose, onSave }: {
                   {!isBodyweight && (
                     <>
                       <span className="text-ql-3 text-base mt-4">@</span>
-                      <div className="flex-1 flex flex-col gap-1">
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
                         <p className="text-ql-3 text-[10px]">Weight (kg)</p>
                         <input
                           type="number"
@@ -1036,17 +1036,14 @@ function GymLogSheet({ plan, onClose, onSave }: {
                           value={log.weight || ''}
                           onChange={e => update(log.exerciseId, { weight: parseFloat(e.target.value) || 0 })}
                           placeholder={String(log.targetWeight)}
-                          className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-base text-ql font-semibold outline-none focus:border-ql-accent text-center"
+                          className="w-full min-w-0 bg-ql-input border border-ql-input rounded-xl px-2 py-2 text-base text-ql font-semibold outline-none focus:border-ql-accent text-center"
                         />
-                      </div>
-                      {weightDiff !== null && (
-                        <div className="text-center mt-4 shrink-0">
-                          <p className={`text-sm font-bold ${weightDiff > 0 ? 'text-emerald-400' : weightDiff < 0 ? 'text-amber-400' : 'text-ql-3'}`}>
-                            {weightDiff > 0 ? `+${weightDiff.toFixed(1)}` : weightDiff < 0 ? `${weightDiff.toFixed(1)}` : '='}
+                        {weightDiff !== null && (
+                          <p className={`text-[10px] font-bold text-center tabular-nums ${weightDiff > 0 ? 'text-emerald-400' : weightDiff < 0 ? 'text-amber-400' : 'text-ql-3'}`}>
+                            {weightDiff > 0 ? `+${weightDiff.toFixed(1)}` : weightDiff < 0 ? `${weightDiff.toFixed(1)}` : '='} vs tgt
                           </p>
-                          <p className="text-ql-3 text-[9px]">vs target</p>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </>
                   )}
 
