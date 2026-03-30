@@ -99,6 +99,24 @@ const BLANK_FORM = {
   allDay: false, location: '', notes: '', color: '#007aff', reminder: 0,
 };
 
+// Auto-pick a colour from the event title keywords
+function guessColor(title: string): string | null {
+  const t = title.toLowerCase();
+  if (/gym|workout|lift|weights|training|wod|press|squat|deadlift|bench|pull.?up|push.?up/.test(t)) return '#af52de'; // purple
+  if (/run|jog|marathon|5k|10k|sprint|parkrun/.test(t))                                              return '#ff9500'; // orange
+  if (/cycl|bike|bik|spin/.test(t))                                                                  return '#007aff'; // blue
+  if (/walk|hike|hiking|trek/.test(t))                                                               return '#34c759'; // green
+  if (/swim|pool|aqua/.test(t))                                                                      return '#5ac8fa'; // teal
+  if (/yoga|pilates|stretch|meditation|mindful/.test(t))                                             return '#ff2d55'; // pink
+  if (/meal|lunch|dinner|breakfast|brunch|eat|food|restaurant|cafe|coffee/.test(t))                  return '#34c759'; // green
+  if (/football|tennis|basket|cricket|rugby|golf|sport|match|game/.test(t))                         return '#ff9500'; // orange
+  if (/rest|recovery|nap|relax/.test(t))                                                             return '#636366'; // graphite
+  if (/doctor|dentist|physio|hospital|medical|health|appoint/.test(t))                              return '#ff3b30'; // red
+  if (/flight|travel|holiday|trip|airport/.test(t))                                                  return '#5ac8fa'; // teal
+  if (/work|meeting|call|interview|zoom|teams/.test(t))                                              return '#007aff'; // blue
+  return null;
+}
+
 // ─── Add/Edit event sheet ─────────────────────────────────────────────────────
 function EventSheet({
   initial, onSave, onClose,
@@ -108,6 +126,8 @@ function EventSheet({
   onClose: () => void;
 }) {
   const [form, setForm] = useState(initial);
+  // Track if user manually picked a colour so auto-suggest doesn't override it
+  const colorManual = useRef(!!initial.title); // edits = manual, new events = auto
   const up = (p: Partial<typeof form>) => setForm(f => ({ ...f, ...p }));
 
   const valid = form.title.trim().length > 0;
@@ -142,7 +162,11 @@ function EventSheet({
           <input
             autoFocus
             value={form.title}
-            onChange={e => up({ title: e.target.value })}
+            onChange={e => {
+              const title = e.target.value;
+              const auto = !colorManual.current ? guessColor(title) : null;
+              up({ title, ...(auto ? { color: auto } : {}) });
+            }}
             placeholder="Event title"
             className="w-full bg-ql-surface2 rounded-2xl px-4 py-3 text-ql text-base font-medium outline-none border border-ql focus:border-ql-accent transition-colors placeholder:text-ql-3"
           />
@@ -224,7 +248,7 @@ function EventSheet({
               {EVENT_COLORS.map(c => (
                 <button
                   key={c.hex}
-                  onClick={() => up({ color: c.hex })}
+                  onClick={() => { colorManual.current = true; up({ color: c.hex }); }}
                   className="relative w-8 h-8 rounded-full transition-transform"
                   style={{ backgroundColor: c.hex }}
                   title={c.label}
