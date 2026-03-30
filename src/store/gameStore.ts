@@ -1107,8 +1107,8 @@ export const useGameStore = create<GameStore>()(
         };
         const existingAppearance = p.characterAppearance ?? current.characterAppearance;
         const characterAppearance = {
-          ...existingAppearance,
-          ...REFERENCE_APPEARANCE,
+          ...REFERENCE_APPEARANCE,   // defaults fill any missing fields added in new versions
+          ...existingAppearance,     // user's saved values always win
         };
         // Set accountCreatedDate for existing users who don't have it yet
         const accountCreatedDate = p.accountCreatedDate ?? new Date().toISOString().slice(0, 10);
