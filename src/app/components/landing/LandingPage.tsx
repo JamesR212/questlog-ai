@@ -240,7 +240,7 @@ function Phone({ feature }: { feature: number }) {
             </svg>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 7.5, fontWeight: 800, color: APP.tx }}>Weekly Snapshot</div>
-              <div style={{ fontSize: 5.5, color: '#16a34a', fontWeight: 600 }}>75% accuracy this week</div>
+              <div style={{ fontSize: 5.5, color: '#16a34a', fontWeight: 600 }}>75% goals achieved this week</div>
             </div>
             <div style={{ display: 'flex', gap: 2 }}>
               {['Detailed','Edit'].map(l => (
@@ -572,7 +572,7 @@ function Phone({ feature }: { feature: number }) {
         </div>
         <div>
           <div style={{ fontSize: 12, fontWeight: 800, color: '#3b82f6' }}>50%</div>
-          <div style={{ fontSize: 6.5, color: APP.tx3 }}>Day accuracy</div>
+          <div style={{ fontSize: 6.5, color: APP.tx3 }}>Day goals achieved</div>
         </div>
       </div>
     </div>,
@@ -1628,7 +1628,7 @@ function AnalyticsSection({ onGetStarted: _ }: { onGetStarted: () => void }) {
 
   const bullets = [
     { icon: '🟩', text: 'Full month grid — green, orange, red at a glance' },
-    { icon: '🎯', text: 'Live accuracy ring shows your true completion rate' },
+    { icon: '🎯', text: 'Live goals achieved ring shows your true completion rate' },
     { icon: '📊', text: 'Per-habit progress bars and done/scheduled counts' },
     { icon: '✏️', text: 'Tap any cell to manually correct your record' },
   ];

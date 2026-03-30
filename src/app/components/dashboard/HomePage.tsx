@@ -351,7 +351,7 @@ function WeeklySnapshotGrid() {
             <p className="text-ql text-sm font-semibold">Weekly Snapshot</p>
             {!disabledSections.includes('stats') && weeklyAccuracy !== null && (
               <p className="text-[10px] font-semibold" style={{ color: accColor }}>
-                {weeklyAccuracy}% accuracy this week
+                {weeklyAccuracy}% goals achieved this week
               </p>
             )}
           </div>
@@ -607,7 +607,7 @@ function WeeklySnapshotGrid() {
                         <text x={C} y={C + 17} textAnchor="middle" fontSize="10" fontWeight="600" fill={mAccColor} fontFamily="inherit">%</text>
                       )}
                     </svg>
-                    <p className="text-ql-3 text-[10px] font-medium -mt-0.5">accuracy</p>
+                    <p className="text-ql-3 text-[10px] font-medium -mt-0.5">goals achieved</p>
                   </div>
                 );
               })()}

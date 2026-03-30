@@ -685,7 +685,7 @@ export default function CalendarPage() {
               </svg>
               <div>
                 <p className="text-ql text-base font-bold tabular-nums" style={{ color }}>{Math.round(pct * 100)}%</p>
-                <p className="text-ql-3 text-[10px]">Day accuracy</p>
+                <p className="text-ql-3 text-[10px]">Day goals achieved</p>
               </div>
             </div>
           </div>
