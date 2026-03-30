@@ -123,7 +123,7 @@ export default function Home() {
   }, [user]);
 
   // ── Debounced auto-sync to cloud on store changes ────────────────────────
-  const storeSnapshot = useDebounce(store, 3000);
+  const storeSnapshot = useDebounce(store, 800); // reduced from 3000ms → 800ms
 
   useEffect(() => {
     if (!user || !cloudReady) return;
@@ -142,6 +142,24 @@ export default function Home() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeSnapshot, user?.uid, cloudReady]);
+
+  // ── Force immediate sync when user leaves the app ────────────────────────
+  useEffect(() => {
+    if (!user || !cloudReady) return;
+    const flushSync = () => {
+      const s = useGameStore.getState();
+      pushToCloud(user.uid, s);
+    };
+    // visibilitychange fires when tab is hidden (phone locks, switches app, etc.)
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flushSync(); };
+    // pagehide fires on iOS Safari when the page is being navigated away from
+    window.addEventListener('pagehide', flushSync);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushSync);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [user, cloudReady]);
 
   // ── Not logged in (or still resolving auth) → always show landing/auth ──
   if (!user) {
