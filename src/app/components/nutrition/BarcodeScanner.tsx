@@ -9,6 +9,8 @@ export interface ScannedProduct {
   protein: number;
   carbs: number;
   fat: number;
+  saturatedFat?: number;
+  unsaturatedFat?: number;
   sugar: number;
   servingSize?: string;
   micros?: Micros;
@@ -72,8 +74,10 @@ async function lookupBarcode(code: string): Promise<ScannedProduct | null> {
       calories:    Math.round(caloriesPerServing || cal * factor),
       protein:     parseFloat(((n.proteins_100g   ?? 0) * factor).toFixed(1)),
       carbs:       parseFloat(((n.carbohydrates_100g ?? 0) * factor).toFixed(1)),
-      fat:         parseFloat(((n.fat_100g         ?? 0) * factor).toFixed(1)),
-      sugar:       parseFloat(((n.sugars_100g      ?? 0) * factor).toFixed(1)),
+      fat:          parseFloat(((n.fat_100g                     ?? 0) * factor).toFixed(1)),
+      saturatedFat: n['saturated-fat_100g'] != null ? parseFloat(((n['saturated-fat_100g'] ?? 0) * factor).toFixed(1)) : undefined,
+      unsaturatedFat: n['unsaturated-fat_100g'] != null ? parseFloat(((n['unsaturated-fat_100g'] ?? 0) * factor).toFixed(1)) : undefined,
+      sugar:        parseFloat(((n.sugars_100g                 ?? 0) * factor).toFixed(1)),
       servingSize: p.serving_size,
       micros:      extractMicros(n, factor),
     };

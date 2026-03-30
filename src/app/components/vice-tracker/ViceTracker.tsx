@@ -743,18 +743,18 @@ function BucketPanel({
                 onChange={e => setNewItem({ ...newItem, name: e.target.value })}
                 className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent"
               />
-              <div className="flex gap-2">
-                <div className="flex items-center gap-1.5 flex-1">
-                  <span className="text-ql-3 text-sm">{sym}</span>
+              <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                  <span className="text-ql-3 text-sm shrink-0">{sym}</span>
                   <input type="number" placeholder="0.00" min="0.01" step="0.01" value={newItem.amount}
                     onChange={e => setNewItem({ ...newItem, amount: e.target.value })}
-                    className="flex-1 bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent"
+                    className="w-full min-w-0 bg-ql-input border border-ql-input rounded-xl px-2 py-2 text-sm text-ql outline-none focus:border-ql-accent"
                   />
                 </div>
-                <div className="flex gap-0.5 bg-ql-surface2 rounded-xl p-0.5 border border-ql">
+                <div className="flex gap-0.5 bg-ql-surface2 rounded-xl p-0.5 border border-ql shrink-0">
                   {(['weekly', 'monthly', 'annual', 'one_off'] as const).map(f => (
                     <button key={f} onClick={() => setNewItem({ ...newItem, frequency: f })}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors ${newItem.frequency === f ? 'bg-ql-accent text-white' : 'text-ql-3'}`}
+                      className={`px-1.5 py-1 rounded-lg text-[10px] font-semibold transition-colors ${newItem.frequency === f ? 'bg-ql-accent text-white' : 'text-ql-3'}`}
                     >{{ weekly: 'Wk', monthly: 'Mo', annual: 'Yr', one_off: '1×' }[f]}</button>
                   ))}
                 </div>
@@ -882,11 +882,20 @@ function SubRow({
         <button onClick={() => setEditing(true)} className="text-ql-3 hover:text-ql text-xs transition-colors shrink-0 px-1">✏️</button>
         <button onClick={() => removeSubscription(s.id)} className="text-ql-3 hover:text-red-500 text-xs transition-colors shrink-0">✕</button>
       </div>
-      <div className="flex items-center gap-2 px-3 pb-2.5">
+      <div className="flex items-center gap-2 px-3 pb-2">
         <Toggle on={!!s.syncToCalendar} onToggle={() => onToggleSync(s)} />
         <span className="text-ql-3 text-[10px]">
           {s.syncToCalendar ? '📅 Synced to calendar' : 'Sync with calendar'}
         </span>
+      </div>
+      <div className="flex items-center gap-2 px-3 pb-2.5">
+        <span className="text-ql-3 text-[10px]">Classify:</span>
+        {(['need', 'want'] as const).map(nw => (
+          <button key={nw}
+            onClick={() => updateSubscription(s.id, { needsWants: s.needsWants === nw ? undefined : nw })}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-colors ${s.needsWants === nw ? (nw === 'need' ? 'bg-red-500/20 border-red-400 text-red-400' : 'bg-green-500/20 border-green-400 text-green-400') : 'border-ql text-ql-3 hover:border-ql-accent/50'}`}
+          >{nw === 'need' ? '🔴 Need' : '💚 Want'}</button>
+        ))}
       </div>
     </div>
   );
@@ -910,7 +919,7 @@ function FinancesTab() {
   const sym = currencySymbol;
 
   const [showAddSub, setShowAddSub] = useState(false);
-  const [newSub, setNewSub] = useState({ name: '', emoji: '📺', amount: '', cycle: 'monthly' as 'weekly' | 'monthly' | 'annual', category: 'entertainment' as SubscriptionCategory, startDate: todayDateStr() });
+  const [newSub, setNewSub] = useState({ name: '', emoji: '📺', amount: '', cycle: 'monthly' as 'weekly' | 'monthly' | 'annual', category: 'entertainment' as SubscriptionCategory, startDate: todayDateStr(), needsWants: undefined as 'need' | 'want' | undefined });
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeInput, setIncomeInput] = useState('');
   const [splitMode, setSplitMode] = useState<'50/30/20' | 'custom'>('50/30/20');
@@ -984,8 +993,8 @@ function FinancesTab() {
   const handleAddSub = () => {
     const amount = parseFloat(newSub.amount);
     if (!newSub.name.trim() || isNaN(amount) || amount <= 0) return;
-    addSubscription({ name: newSub.name.trim(), emoji: newSub.emoji, amount, cycle: newSub.cycle, category: newSub.category, startDate: newSub.startDate || undefined });
-    setNewSub({ name: '', emoji: '📺', amount: '', cycle: 'monthly' as 'weekly' | 'monthly' | 'annual', category: 'entertainment', startDate: todayDateStr() });
+    addSubscription({ name: newSub.name.trim(), emoji: newSub.emoji, amount, cycle: newSub.cycle, category: newSub.category, startDate: newSub.startDate || undefined, needsWants: newSub.needsWants });
+    setNewSub({ name: '', emoji: '📺', amount: '', cycle: 'monthly' as 'weekly' | 'monthly' | 'annual', category: 'entertainment', startDate: todayDateStr(), needsWants: undefined });
     setShowAddSub(false);
   };
 
@@ -1022,11 +1031,6 @@ function FinancesTab() {
   const freeMoney = Math.max(0, effectiveMonthly - monthlySubTotal);
   const subPct = hasIncome ? Math.min(100, (monthlySubTotal / effectiveMonthly) * 100) : 0;
 
-  const byCategory: Partial<Record<SubscriptionCategory, typeof subscriptions>> = {};
-  for (const s of subscriptions) {
-    if (!byCategory[s.category]) byCategory[s.category] = [];
-    byCategory[s.category]!.push(s);
-  }
 
   const freqLabel = { weekly: '/week', monthly: '/month', annual: '/year' }[paycheckFrequency];
 
@@ -1258,14 +1262,25 @@ function FinancesTab() {
             <p className="text-ql-3 text-xs text-center py-3">No subscriptions added yet.</p>
           )}
 
-          {SUB_CATEGORIES.filter(cat => byCategory[cat.id]?.length).map(cat => (
-            <div key={cat.id}>
-              <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wide mb-1.5 mt-1">{cat.emoji} {cat.label}</p>
-              {byCategory[cat.id]!.map(s => (
-                <SubRow key={s.id} s={s} sym={sym} onToggleSync={toggleCalendarSync} />
-              ))}
-            </div>
-          ))}
+          {(['need', 'want', 'unsorted'] as const).map(nw => {
+            const filtered = subscriptions.filter(s =>
+              nw === 'unsorted' ? !s.needsWants : s.needsWants === nw
+            );
+            if (!filtered.length) return null;
+            const label = nw === 'need' ? '🔴 Needs' : nw === 'want' ? '💚 Wants' : '⬜ Unsorted';
+            const total = filtered.reduce((sum, s) => sum + monthlyAmount(s.amount, s.cycle), 0);
+            return (
+              <div key={nw}>
+                <div className="flex items-center justify-between mb-1.5 mt-1">
+                  <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wide">{label}</p>
+                  <p className="text-ql-3 text-[10px]">{sym}{total.toFixed(2)}/mo</p>
+                </div>
+                {filtered.map(s => (
+                  <SubRow key={s.id} s={s} sym={sym} onToggleSync={toggleCalendarSync} />
+                ))}
+              </div>
+            );
+          })}
 
           {showAddSub ? (
             <div className="bg-ql-surface2 rounded-2xl border border-ql p-3 flex flex-col gap-2 mt-1">
@@ -1309,6 +1324,15 @@ function FinancesTab() {
                   <button key={cat.id} onClick={() => setNewSub({ ...newSub, category: cat.id })}
                     className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-medium transition-colors border ${newSub.category === cat.id ? 'border-ql-accent bg-ql-accent/10 text-ql-accent' : 'border-ql bg-ql-surface text-ql-3 hover:border-ql-accent/50'}`}
                   >{cat.emoji} {cat.label}</button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-ql-3 text-xs whitespace-nowrap">Classify as:</span>
+                {(['need', 'want'] as const).map(nw => (
+                  <button key={nw}
+                    onClick={() => setNewSub({ ...newSub, needsWants: newSub.needsWants === nw ? undefined : nw })}
+                    className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-colors ${newSub.needsWants === nw ? (nw === 'need' ? 'bg-red-500/20 border-red-400 text-red-400' : 'bg-green-500/20 border-green-400 text-green-400') : 'border-ql text-ql-3 hover:border-ql-accent/50'}`}
+                  >{nw === 'need' ? '🔴 Need' : '💚 Want'}</button>
                 ))}
               </div>
               <div className="flex gap-2">

@@ -73,7 +73,7 @@ export default function CharacterPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-ql text-xl font-bold">Your Hero</h2>
+          <h2 className="text-ql text-xl font-bold">Your Character</h2>
           <p className="text-ql-3 text-sm">{STAGE_LABELS[morphStage]}</p>
         </div>
         <button

@@ -159,13 +159,13 @@ export default function CharacterDashboard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Hero card */}
+      {/* Character card */}
       <div className="bg-ql-surface rounded-3xl shadow-ql border border-ql overflow-hidden">
         <div className="px-6 pt-6 pb-5">
           <div className="flex items-start justify-between mb-2">
             <div>
               <p className="text-ql-3 text-xs font-medium mb-0.5">Adventurer</p>
-              <h1 className="text-ql text-2xl font-bold">Your Hero</h1>
+              <h1 className="text-ql text-2xl font-bold">Your Character</h1>
             </div>
           </div>
         </div>

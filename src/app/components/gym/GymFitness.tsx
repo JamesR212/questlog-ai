@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import type { GymPlan, GymExercise, PerformanceStat, PerformanceEntry } from '@/types';
+import type { GymPlan, GymExercise, WeekPlan, PerformanceStat, PerformanceEntry } from '@/types';
 import AIAdvisor from '../shared/AIAdvisor';
 import FormAnalyzer from './FormAnalyzer';
 import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
@@ -11,7 +11,8 @@ import ActivityTracker from '../tracking/ActivityTracker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const DAY_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LABEL      = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_FULL_LABEL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const GYM_COLORS = [
   { hex: '#ff3b30', label: 'Red'     },
@@ -215,12 +216,12 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
                       <button onClick={() => { setDayTime(d, ''); setDayEndTime(d, ''); }} className="text-ql-3 text-xs px-1">× Clear</button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     <input type="time" value={dayTimes[String(d)] ?? ''} onChange={e => setDayTime(d, e.target.value)}
-                      className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+                      className="w-full bg-ql-input border border-ql-input rounded-xl px-1.5 py-1.5 text-xs text-ql outline-none focus:border-ql-accent transition-colors"
                     />
                     <input type="time" value={dayEndTimes[String(d)] ?? ''} onChange={e => setDayEndTime(d, e.target.value)}
-                      className="w-full bg-ql-input border border-ql-input rounded-xl px-3 py-2 text-sm text-ql outline-none focus:border-ql-accent transition-colors"
+                      className="w-full bg-ql-input border border-ql-input rounded-xl px-1.5 py-1.5 text-xs text-ql outline-none focus:border-ql-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -1317,8 +1318,113 @@ function FemaleBodyMap({ recovery }: { recovery: Record<MuscleGroup, number> }) 
   );
 }
 
+const RADAR_BG: Record<import('@/types').Theme, string> = {
+  dark:  'rgba(0,0,0,0.60)',
+  white: 'rgba(15,15,15,0.70)',
+  pink:  'rgba(100,0,40,0.78)',
+  blue:  'rgba(0,15,70,0.78)',
+  green: 'rgba(0,50,20,0.78)',
+};
+
+function UnifiedRadarChart({
+  recovery,
+  sessions,
+  mode,
+  color,
+  bgColor,
+}: {
+  recovery: Record<MuscleGroup, number>;
+  sessions: { exercises: GymExLog[] }[];
+  mode: 'recovery' | OverviewMode;
+  color: string;
+  bgColor?: string;
+}) {
+  const groups: { key: MuscleGroup; angle: number }[] = [
+    { key: 'Chest',     angle: 90   },
+    { key: 'Back',      angle: 30   },
+    { key: 'Legs',      angle: -30  },
+    { key: 'Abs',       angle: -90  },
+    { key: 'Arms',      angle: -150 },
+    { key: 'Shoulders', angle: 150  },
+  ];
+  const cx = 100, cy = 108, R = 60;
+  const toXY = (angle: number, r: number) => ({
+    x: cx + r * Math.cos(angle * Math.PI / 180),
+    y: cy - r * Math.sin(angle * Math.PI / 180),
+  });
+
+  // Build raw values for non-recovery modes
+  const rawVals: Record<MuscleGroup, number> = { Chest: 0, Back: 0, Shoulders: 0, Arms: 0, Abs: 0, Legs: 0 };
+  if (mode !== 'recovery') {
+    for (const s of sessions) {
+      const hit = new Set<MuscleGroup>();
+      for (const ex of s.exercises) {
+        const key = classifyMuscle(ex.n);
+        if (!key) continue;
+        const mg = (key === 'Core' ? 'Abs' : key) as MuscleGroup;
+        if (mode === 'frequency') { hit.add(mg); }
+        else { rawVals[mg] += ex.s * ex.r * (ex.w || 1); }
+      }
+      if (mode === 'frequency') hit.forEach(mg => { rawVals[mg]++; });
+    }
+  }
+  const maxRaw = Math.max(...Object.values(rawVals), 1);
+
+  const getPct  = (m: MuscleGroup) => mode === 'recovery' ? recovery[m] : Math.round((rawVals[m] / maxRaw) * 100);
+  const getLabel = (m: MuscleGroup) => {
+    if (mode === 'recovery') return `${recovery[m]}%`;
+    const v = rawVals[m];
+    if (mode === 'frequency') return `${v}x`;
+    if (v === 0) return '—';
+    return v >= 100000 ? `${(v / 1000).toFixed(0)}k` : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v);
+  };
+  const getDotColor = (m: MuscleGroup) => mode === 'recovery' ? recoveryColor(recovery[m]) : color;
+  const getLabelColor = (m: MuscleGroup) => mode === 'recovery' ? recoveryColor(recovery[m]) : color;
+
+  const hexPath = (scale: number) => {
+    const pts = groups.map(g => { const p = toXY(g.angle, R * scale); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; });
+    return `M${pts.join('L')}Z`;
+  };
+  const valuePath = () => {
+    const pts = groups.map(g => {
+      const p = toXY(g.angle, R * Math.max(0.04, getPct(g.key) / 100));
+      return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    });
+    return `M${pts.join('L')}Z`;
+  };
+
+  return (
+    <svg viewBox="0 0 200 215" className="w-full max-w-xs mx-auto">
+      {/* Themed background panel so the web reads clearly on any theme */}
+      <rect x="0" y="0" width="200" height="215" rx="12" fill={bgColor ?? 'rgba(0,0,0,0.60)'} />
+      {[0.25, 0.5, 0.75, 1].map(s => (
+        <path key={s} d={hexPath(s)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.9" />
+      ))}
+      {groups.map(g => {
+        const end = toXY(g.angle, R);
+        return <line key={g.key} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="rgba(255,255,255,0.12)" strokeWidth="0.9" />;
+      })}
+      <path d={valuePath()} fill={color} fillOpacity="0.22" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      {groups.map(g => {
+        const p = toXY(g.angle, R * Math.max(0.04, getPct(g.key) / 100));
+        return <circle key={g.key} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2.5" fill={getDotColor(g.key)} />;
+      })}
+      {groups.map(g => {
+        const pos = toXY(g.angle, R + 22);
+        return (
+          <g key={g.key}>
+            <text x={pos.x.toFixed(1)} y={(pos.y - 4).toFixed(1)} textAnchor="middle" fontSize="8" fontWeight="700" fill={getLabelColor(g.key)}>{getLabel(g.key)}</text>
+            <text x={pos.x.toFixed(1)} y={(pos.y + 6).toFixed(1)} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.6)">{g.key}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function RecoverySection() {
-  const { gymSessions, gymPlans, calendarEvents, sleepLog, gpsActivities, stepLog, stepGoal } = useGameStore();
+  const { gymSessions, gymPlans, calendarEvents, sleepLog, gpsActivities, stepLog, stepGoal, theme } = useGameStore();
+  const [radarMode, setRadarMode] = useState<'recovery' | OverviewMode>('recovery');
 
   // Build work events from all activity sources
   // Each event has: muscle group, timestamp (ms), and recoveryHours (time to full recovery)
@@ -1407,6 +1513,17 @@ function RecoverySection() {
     ? [...sleepLog].sort((a, b) => b.date.localeCompare(a.date))[0]
     : null;
 
+  // Sessions data for volume/frequency/load charts
+  const allSessions = gymSessions.map(session => {
+    const plan = gymPlans.find(p => p.id === session.planId);
+    return {
+      exercises: (plan?.exercises ?? []).map(e => ({
+        n: e.name, s: e.sets, r: e.targetReps, w: e.targetWeight,
+      })),
+    };
+  });
+  const radarColor = gymPlans.find(p => gymSessions.some(s => s.planId === p.id))?.color ?? '#4a9eff';
+
   // SVG body regions: approximate front-body geometry
   const bodyRegions: { muscle: MuscleGroup; d: string }[] = [
     { muscle: 'Chest',     d: 'M38,52 Q50,48 62,52 L64,72 Q50,76 36,72 Z' },
@@ -1476,8 +1593,31 @@ function RecoverySection() {
         </div>
       )}
 
+      {/* Radar mode selector + web chart */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+          {([
+            { id: 'recovery',  label: '🔄 Recovery'  },
+            { id: 'volume',    label: '🏋️ Volume'    },
+            { id: 'frequency', label: '📅 Frequency' },
+            { id: 'load',      label: '💪 Load'      },
+          ] as { id: 'recovery' | OverviewMode; label: string }[]).map(m => (
+            <button key={m.id} onClick={() => setRadarMode(m.id)}
+              className={`px-3 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap border transition-colors shrink-0 ${radarMode === m.id ? 'bg-ql-accent text-white border-ql-accent' : 'border-ql text-ql-3 hover:border-ql-accent/50'}`}
+            >{m.label}</button>
+          ))}
+        </div>
+        <UnifiedRadarChart
+          recovery={recovery}
+          sessions={allSessions}
+          mode={radarMode}
+          color={radarColor}
+          bgColor={RADAR_BG[theme ?? 'dark']}
+        />
+      </div>
+
       {/* Muscle cards 2×3 grid */}
-      <div className="grid grid-cols-2 gap-2 px-4 py-4">
+      <div className="grid grid-cols-2 gap-2 px-4 pb-4">
         {(['Chest', 'Back', 'Shoulders', 'Arms', 'Abs', 'Legs'] as MuscleGroup[]).map(muscle => {
           const pct = recovery[muscle];
           const color = recoveryColor(pct);
@@ -1519,6 +1659,9 @@ export default function GymFitness() {
   const [viewingSteps,  setViewingSteps]  = useState(false);
   const [viewingFloors, setViewingFloors] = useState(false);
   const [viewingGymPlan, setViewingGymPlan] = useState<GymPlan | null>(null);
+  const [expandedProgramme, setExpandedProgramme] = useState<string | null>(null);
+  const [selectedWeekByProg, setSelectedWeekByProg] = useState<Record<string, number>>({});
+  const [expandedDayByProg,  setExpandedDayByProg]  = useState<Record<string, string | null>>({});
 
   const GYM_QUIZ: QuizQuestion[] = [
     {
@@ -1613,6 +1756,48 @@ export default function GymFitness() {
   const totalVolume = (plan: GymPlan) =>
     plan.exercises.reduce((sum, ex) => sum + ex.sets * ex.targetReps * (ex.targetWeight || 1), 0);
 
+  // ── Programme grouping ────────────────────────────────────────────────────
+  type ProgrammeGroup = { key: string; label: string; color: string; emoji: string; plans: GymPlan[] };
+  const programmeGroups: ProgrammeGroup[] = (() => {
+    const map = new Map<string, GymPlan[]>();
+    gymPlans.forEach(p => {
+      const key = p.split?.trim() || p.id;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    });
+    return [...map.entries()].map(([key, plans]) => ({
+      key,
+      label: plans[0].split?.trim() || plans[0].name,
+      color: plans[0].color,
+      emoji: plans[0].emoji,
+      plans,
+    }));
+  })();
+
+  // Get exercises for a plan at a specific week (1-indexed)
+  const weekExercises = (plan: GymPlan, weekNum: number): GymExercise[] => {
+    if (plan.weeks && plan.weeks.length > 0) {
+      const w = plan.weeks.find(w => w.weekNumber === weekNum);
+      return w ? w.exercises : plan.exercises;
+    }
+    return plan.exercises;
+  };
+
+  // Determine which week to default to (based on sessions logged)
+  const currentWeekForPlan = (plan: GymPlan): number => {
+    if (!plan.weeks || plan.weeks.length === 0) return 1;
+    const totalSessions = gymSessions.filter(s => s.planId === plan.id).length;
+    const daysPerWeek = Math.max(1, plan.scheduleDays.length);
+    const weekIdx = Math.floor(totalSessions / daysPerWeek) % plan.weeks.length;
+    return plan.weeks[weekIdx].weekNumber;
+  };
+
+  const getProgrammeWeeks = (prog: ProgrammeGroup): WeekPlan[] => {
+    // Use weeks from first plan in group (all plans in a split share same week structure)
+    const firstWithWeeks = prog.plans.find(p => p.weeks && p.weeks.length > 0);
+    return firstWithWeeks?.weeks ?? [];
+  };
+
   const sessionCountThisWeek = (planId: string) => {
     const monday = new Date();
     monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
@@ -1683,7 +1868,7 @@ export default function GymFitness() {
               <div>
                 <p className="text-ql font-semibold">{aiPreview.name}</p>
                 <p className="text-ql-3 text-xs">
-                  {(aiPreview.scheduleDays ?? []).map((d: number) => DAY_LABEL[d]).join(', ')}
+                  {[...(aiPreview.scheduleDays ?? [])].sort((a,b)=>[1,2,3,4,5,6,0].indexOf(a)-[1,2,3,4,5,6,0].indexOf(b)).map((d: number) => DAY_LABEL[d]).join(', ')}
                   {aiPreview.scheduleTime ? ` · ${fmt12(aiPreview.scheduleTime)}` : ''}
                   {aiPreview.scheduleEndTime ? ` – ${fmt12(aiPreview.scheduleEndTime)}` : ''}
                 </p>
@@ -1782,90 +1967,175 @@ export default function GymFitness() {
         </div>
       )}
 
-      {/* All plans */}
+      {/* All plans — hierarchical drill-down */}
       {gymPlans.length > 0 && (
         <div className="flex flex-col gap-3">
-          <p className="text-ql text-sm font-semibold">My Plans</p>
-          {gymPlans.map(plan => {
-            const thisWeek = sessionCountThisWeek(plan.id);
-            const schedLabel = plan.scheduleDays.length === 0 ? 'No schedule'
-              : plan.scheduleDays.map(d => DAY_LABEL[d]).join(', ');
+          <p className="text-ql text-sm font-semibold">My Programmes</p>
+          {programmeGroups.map(prog => {
+            const isExpanded = expandedProgramme === prog.key;
+            const progWeeks = getProgrammeWeeks(prog);
+            const isRepeating = prog.plans.every(p => p.isRepeating || (!p.weeks || p.weeks.length === 0));
+            const defaultWeek = isRepeating ? 1 : (selectedWeekByProg[prog.key] ?? (prog.plans[0] ? currentWeekForPlan(prog.plans[0]) : 1));
+            const selectedWeek = isRepeating ? 1 : (selectedWeekByProg[prog.key] ?? defaultWeek);
 
             return (
-              <div key={plan.id} className="bg-ql-surface rounded-2xl shadow-ql border border-ql overflow-hidden">
-                {/* Plan header */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-ql">
-                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: plan.color }} />
-                  <span className="text-xl">{plan.emoji}</span>
+              <div key={prog.key} className="bg-ql-surface rounded-2xl shadow-ql border border-ql overflow-hidden">
+                {/* Programme header — tap to expand */}
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                  onClick={() => setExpandedProgramme(isExpanded ? null : prog.key)}
+                >
+                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: prog.color }} />
+                  <span className="text-xl">{prog.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-ql text-sm font-semibold">{plan.name}</p>
+                    <p className="text-ql text-sm font-semibold">{prog.label}</p>
                     <p className="text-ql-3 text-[10px]">
-                      {schedLabel}{plan.scheduleTime ? ` · ${fmt12(plan.scheduleTime)}${plan.scheduleEndTime ? ` – ${fmt12(plan.scheduleEndTime)}` : ''}` : ''} · {thisWeek} this week
+                      {prog.plans.length > 1
+                        ? `${prog.plans.length} sessions · ${prog.plans.map(p => p.scheduleDays.map(d => DAY_LABEL[d]).join('/')).join(' & ')}`
+                        : prog.plans[0].scheduleDays.map(d => DAY_LABEL[d]).join(', ')}
+                      {!isRepeating && progWeeks.length > 0 && ` · ${progWeeks.length} week programme`}
                     </p>
                   </div>
-                  <button onClick={() => setEditing(plan)}
-                    className="text-ql-3 hover:text-ql text-xs px-2 py-1 rounded-lg transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button onClick={() => removeGymPlan(plan.id)}
-                    className="text-ql-3 hover:text-red-500 text-sm transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={e => { e.stopPropagation(); setEditing(prog.plans[0]); }}
+                      className="text-ql-3 hover:text-ql text-xs px-2 py-1 rounded-lg transition-colors">
+                      Edit
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); prog.plans.forEach(p => removeGymPlan(p.id)); }}
+                      className="text-ql-3 hover:text-red-500 text-sm transition-colors">
+                      ✕
+                    </button>
+                    <span className="text-ql-3 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
+                  </div>
+                </button>
 
-                {/* Split + recovery info */}
-                {(plan.split || plan.recoveryNotes) && (
-                  <div className="px-4 pt-3 flex flex-col gap-1.5">
-                    {plan.split && (
-                      <span className="inline-flex items-center gap-1 self-start text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: plan.color + '22', color: plan.color }}>
-                        ⚡ {plan.split}
-                      </span>
+                {/* Expanded content */}
+                {isExpanded && (
+                  <div className="border-t border-ql">
+                    {/* Week selector — only for progressive plans */}
+                    {!isRepeating && progWeeks.length > 0 && (
+                      <div className="flex gap-2 px-4 py-2.5 overflow-x-auto border-b border-ql">
+                        {progWeeks.map(w => (
+                          <button
+                            key={w.weekNumber}
+                            onClick={() => setSelectedWeekByProg(prev => ({ ...prev, [prog.key]: w.weekNumber }))}
+                            className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                              selectedWeek === w.weekNumber
+                                ? 'text-white'
+                                : 'bg-ql-surface2 border border-ql text-ql-3'
+                            }`}
+                            style={selectedWeek === w.weekNumber ? { backgroundColor: prog.color } : {}}
+                          >
+                            {w.label ?? `Week ${w.weekNumber}`}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    {plan.recoveryNotes && (
-                      <p className="text-ql-3 text-[11px] leading-relaxed">
-                        🔁 {plan.recoveryNotes}
-                      </p>
+
+                    {/* For repeating (running/cardio): show "Week" header */}
+                    {isRepeating && (
+                      <div className="px-4 py-2 border-b border-ql">
+                        <span className="text-ql-3 text-xs font-medium">📅 Week (repeating each week)</span>
+                      </div>
                     )}
+
+                    {/* One row per scheduled day — sorted Mon→Sun (1,2,3,4,5,6,0) */}
+                    {prog.plans.flatMap(plan => {
+                      const exs = weekExercises(plan, selectedWeek);
+                      const MON_FIRST = [1,2,3,4,5,6,0];
+                      const sortedDays = [...plan.scheduleDays].sort(
+                        (a, b) => MON_FIRST.indexOf(a) - MON_FIRST.indexOf(b)
+                      );
+                      return sortedDays.map((dayNum, dayI) => {
+                        // Map each day positionally to its exercise; cycle if fewer exercises than days
+                        const ex = exs.length > 0 ? exs[dayI % exs.length] : null;
+                        const rowKey = `${plan.id}::${dayI}`;
+                        const isExpanded = expandedDayByProg[prog.key] === rowKey;
+                        const dayTime = plan.dayTimes?.[String(dayNum)] ?? plan.scheduleTime ?? '';
+                        const isOnlyExercise = exs.length <= 1; // single-exercise plans: same every day
+
+                        return (
+                          <div key={rowKey} className="border-b border-ql last:border-b-0">
+                            <button
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                              onClick={() => setExpandedDayByProg(prev => ({
+                                ...prev,
+                                [prog.key]: isExpanded ? null : rowKey,
+                              }))}
+                            >
+                              <div className="flex-1 min-w-0">
+                                {/* Day name as label */}
+                                <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
+                                  {DAY_FULL_LABEL[dayNum]}{dayTime ? ` · ${fmt12(dayTime)}` : ''}
+                                </p>
+                                {/* Exercise name as headline */}
+                                <p className="text-ql text-sm font-medium truncate">
+                                  {ex ? ex.name : 'No exercises yet'}
+                                </p>
+                                {/* Sets/reps inline for quick scan */}
+                                {ex && (
+                                  <p className="text-ql-3 text-[10px] mt-0.5">
+                                    {ex.sets}×{ex.targetReps}
+                                    {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' bodyweight'}
+                                  </p>
+                                )}
+                              </div>
+                              {dayI === 0 && (sessionToday(plan.id) ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0"
+                                  style={{ backgroundColor: plan.color }}>✓ Done</span>
+                              ) : (
+                                <button
+                                  onClick={e => { e.stopPropagation(); logGymSession(plan.id); }}
+                                  className="text-xs font-semibold px-3 py-1.5 rounded-xl text-white shrink-0 transition-colors"
+                                  style={{ backgroundColor: plan.color }}
+                                >Log</button>
+                              ))}
+                              <span className="text-ql-3 text-[10px] ml-1">{isExpanded ? '▲' : '▼'}</span>
+                            </button>
+
+                            {/* Expanded: full exercise details + recovery notes */}
+                            {isExpanded && (
+                              <div className="px-4 pb-3 flex flex-col gap-1.5 bg-ql-surface2">
+                                {plan.recoveryNotes && (
+                                  <p className="text-ql-3 text-[10px] mb-1">🔁 {plan.recoveryNotes}</p>
+                                )}
+                                {!ex ? (
+                                  <p className="text-ql-3 text-xs italic py-2">No exercises — tap Edit to add some.</p>
+                                ) : isOnlyExercise ? (
+                                  // Single exercise: show all sets detail
+                                  exs.map(e => (
+                                    <div key={e.id} className="flex items-center justify-between py-1 border-b border-ql last:border-b-0">
+                                      <span className="text-ql text-sm">{e.name}</span>
+                                      <span className="text-ql-3 text-xs tabular-nums font-medium">
+                                        {e.sets}×{e.targetReps}
+                                        {e.targetWeight > 0 ? ` @ ${e.targetWeight}kg` : ' BW'}
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  // Per-day exercise: show just this day's exercise with full detail
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-ql text-sm">{ex.name}</span>
+                                    <span className="text-ql-3 text-xs tabular-nums font-medium">
+                                      {ex.sets}×{ex.targetReps}
+                                      {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}
+                                    </span>
+                                  </div>
+                                )}
+                                {sessionToday(plan.id) && dayI === 0 && (
+                                  <button
+                                    onClick={() => { const s = todaySession(plan.id); if (s) removeGymSession(s.id); }}
+                                    className="mt-1 text-ql-3 hover:text-red-400 text-xs underline transition-colors self-start"
+                                  >Undo log</button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })}
                   </div>
                 )}
-
-                {/* Exercises list */}
-                <div className="px-4 py-3 flex flex-col gap-1.5">
-                  {plan.exercises.map(ex => (
-                    <div key={ex.id} className="flex items-center justify-between">
-                      <span className="text-ql-2 text-sm">{ex.name}</span>
-                      <span className="text-ql-3 text-xs tabular-nums">
-                        {ex.sets}×{ex.targetReps}
-                        {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}
-                      </span>
-                    </div>
-                  ))}
-                  {plan.exercises.length === 0 && (
-                    <p className="text-ql-3 text-xs italic">No exercises yet — tap Edit to add some.</p>
-                  )}
-                </div>
-
-                {/* Log button */}
-                <div className="px-4 pb-3">
-                  {sessionToday(plan.id) ? (
-                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-ql-surface2 border border-ql">
-                      <span className="text-sm font-semibold" style={{ color: plan.color }}>✓ Logged today</span>
-                      <button
-                        onClick={() => { const s = todaySession(plan.id); if (s) removeGymSession(s.id); }}
-                        className="text-ql-3 hover:text-red-400 text-xs underline transition-colors"
-                      >Undo</button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => logGymSession(plan.id)}
-                      className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
-                      style={{ backgroundColor: plan.color }}
-                    >Log Workout</button>
-                  )}
-                </div>
               </div>
             );
           })}

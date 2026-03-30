@@ -779,7 +779,7 @@ function Phone({ feature }: { feature: number }) {
         {/* AI bubble */}
         <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 4 }}>
           <div style={{ maxWidth: '90%', fontSize: 6, color: APP.tx, lineHeight: 1.5, padding: '4px 7px', background: APP.surface2, border: `1px solid ${APP.border}`, borderRadius: '8px 8px 8px 2px' }}>
-            That&apos;s an excellent goal, Hero! To build you the most effective beginner 5k running plan, how many days a week can you realistically commit to running?
+            That&apos;s an excellent goal! To build you the most effective beginner 5k running plan, how many days a week can you realistically commit to running?
           </div>
         </div>
         {/* Token + input */}
@@ -1392,25 +1392,64 @@ const CELL_C: Record<'g'|'o'|'r', string> = { g: '#16a34a', o: '#d97706', r: '#d
 const TOTAL_DAYS = 14;
 
 function AnalyticsPhone({ visible }: { visible: boolean }) {
-  const [days, setDays] = useState(0);
+  const [cellIndex, setCellIndex] = useState(0);
+  const TOTAL_CELLS = TOTAL_DAYS * ANALYTICS_ROWS.length;
 
   useEffect(() => {
-    if (!visible) { setDays(0); return; }
-    let d = 0;
-    const iv = setInterval(() => { d++; setDays(d); if (d >= TOTAL_DAYS) clearInterval(iv); }, 220);
-    return () => clearInterval(iv);
+    if (!visible) { setCellIndex(0); return; }
+    let cancelled = false;
+    const schedule = (ci: number, delay: number) => {
+      setTimeout(() => {
+        if (cancelled) return;
+        const next = ci + 1;
+        setCellIndex(next);
+        if (next < TOTAL_CELLS) {
+          schedule(next, 99);
+        } else {
+          setTimeout(() => {
+            if (cancelled) return;
+            setCellIndex(0);
+            schedule(0, 165);
+          }, 1980);
+        }
+      }, delay);
+    };
+    schedule(0, 400);
+    return () => { cancelled = true; };
   }, [visible]);
 
-  const greenTotal = ANALYTICS_ROWS.reduce((s, r) => s + r.data.slice(0, days).filter(c => c === 'g').length, 0);
-  const totalCells = days * ANALYTICS_ROWS.length;
+  const ROWS = ANALYTICS_ROWS.length;
+  // Column-major order: cell(ri, di) = di * ROWS + ri
+  // revealed when di * ROWS + ri < cellIndex
+  // isNew    when di * ROWS + ri === cellIndex - 1
+
+  // Per-row days revealed (column-major)
+  const rowDays = ANALYTICS_ROWS.map((_, ri) => {
+    if (cellIndex <= ri) return 0;
+    return Math.min(Math.floor((cellIndex - ri - 1) / ROWS) + 1, TOTAL_DAYS);
+  });
+
+  // Running totals for the ring
+  let greenTotal = 0;
+  let totalCells = 0;
+  ANALYTICS_ROWS.forEach((row, ri) => {
+    const d = rowDays[ri];
+    totalCells += d;
+    greenTotal += row.data.slice(0, d).filter(c => c === 'g').length;
+  });
   const accuracy = totalCells === 0 ? 0 : Math.round((greenTotal / totalCells) * 100);
   const R = 28; const circ = 2 * Math.PI * R;
 
-  const analysisRows = ANALYTICS_ROWS.map((row) => {
-    const revealed = row.data.slice(0, days);
-    const done = revealed.filter(c => c === 'g').length;
-    const pct = days === 0 ? 0 : Math.round((done / days) * 100);
-    return { ...row, done, pct };
+  // Day header: show once any cell in that column is revealed
+  const headerDays = cellIndex === 0 ? 0 : Math.min(Math.floor((cellIndex - 1) / ROWS) + 1, TOTAL_DAYS);
+  // Completed columns: all ROWS cells filled → (di+1)*ROWS <= cellIndex
+  const completedCols = Math.min(Math.floor(cellIndex / ROWS), TOTAL_DAYS);
+
+  const analysisRows = ANALYTICS_ROWS.map((row, ri) => {
+    const d = rowDays[ri];
+    const done = row.data.slice(0, d).filter(c => c === 'g').length;
+    const pct = d === 0 ? 0 : Math.round((done / d) * 100);
+    return { ...row, done, pct, daysRevealed: d };
   });
 
   return (
@@ -1442,7 +1481,7 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', gap: 4 }}>
-            {[{ l: 'Tracked', v: days }, { l: 'Done', v: greenTotal }].map(({ l, v }) => (
+            {[{ l: 'Tracked', v: totalCells }, { l: 'Done', v: greenTotal }].map(({ l, v }) => (
               <div key={l} style={{ flex: 1, ...card({ padding: '4px 5px', textAlign: 'center' as const }) }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: APP.tx }}>{v}</div>
                 <div style={{ fontSize: 5.5, color: APP.tx3 }}>{l}</div>
@@ -1465,7 +1504,7 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
       <div style={{ padding: '2px 5px' }}>
         <div style={{ display: 'flex', marginLeft: 17, marginBottom: 2 }}>
           {Array.from({ length: TOTAL_DAYS }, (_, i) => (
-            <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 4, color: i < days ? APP.tx3 : 'transparent' }}>{i + 1}</div>
+            <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 4, color: i < headerDays ? APP.tx3 : 'transparent' }}>{i + 1}</div>
           ))}
         </div>
         {ANALYTICS_ROWS.map((row, ri) => (
@@ -1473,8 +1512,9 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
             <span style={{ fontSize: 9, width: 15, flexShrink: 0 }}>{row.emoji}</span>
             <div style={{ flex: 1, display: 'flex', gap: 1.5 }}>
               {row.data.map((c, di) => {
-                const revealed = di < days;
-                const isNew = di === days - 1;
+                const cellIdx = di * ROWS + ri;
+                const revealed = cellIdx < cellIndex;
+                const isNew = cellIdx === cellIndex - 1;
                 return (
                   <div
                     key={di}
@@ -1491,10 +1531,10 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
             </div>
           </div>
         ))}
-        {/* Day % row */}
+        {/* Day % row — shows once all rows have filled a column */}
         <div style={{ display: 'flex', marginLeft: 17, marginTop: 2, marginBottom: 4 }}>
           {Array.from({ length: TOTAL_DAYS }, (_, di) => {
-            if (di >= days) return <div key={di} style={{ flex: 1 }} />;
+            if (di >= completedCols) return <div key={di} style={{ flex: 1 }} />;
             const pct = Math.round(ANALYTICS_ROWS.filter(r => r.data[di] === 'g').length / ANALYTICS_ROWS.length * 100);
             const col = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
             return <div key={di} style={{ flex: 1, textAlign: 'center', fontSize: 3.5, color: col, fontWeight: 700 }}>{pct}%</div>;
@@ -1502,34 +1542,31 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
         </div>
       </div>
 
-      {/* Chart */}
-      {days >= 2 && (() => {
+      {/* Chart — always visible, fills in as columns complete */}
+      {(() => {
         const CW = 200, CH = 42, pad = 6;
         const aw = CW - pad * 2, ah = CH - pad * 2;
-        const dayPcts = Array.from({ length: days }, (_, di) =>
+        const hasData = completedCols >= 2;
+        const dayPcts = hasData ? Array.from({ length: completedCols }, (_, di) =>
           Math.round(ANALYTICS_ROWS.filter(r => r.data[di] === 'g').length / ANALYTICS_ROWS.length * 100)
-        );
+        ) : [];
         const pts = dayPcts.map((p, i) => ({
           x: pad + (i / (TOTAL_DAYS - 1)) * aw,
           y: pad + (1 - p / 100) * ah,
           pct: p,
         }));
-        const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-        const fillPath = `${linePath} L${pts[pts.length - 1].x},${CH} L${pts[0].x},${CH} Z`;
+        const linePath = pts.length >= 2 ? pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') : '';
+        const fillPath = linePath ? `${linePath} L${pts[pts.length - 1].x},${CH} L${pts[0].x},${CH} Z` : '';
         return (
-          <div key="chart" style={{ margin: '0 5px 5px', ...card({ padding: '5px 6px' }) }}>
+          <div style={{ margin: '0 5px 5px', ...card({ padding: '5px 6px' }) }}>
             <span style={{ fontSize: 5, color: APP.tx3, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Chart</span>
             <svg width="100%" height={CH} viewBox={`0 0 ${CW} ${CH}`} style={{ display: 'block', marginTop: 2, overflow: 'visible' }}>
-              {/* Subtle grid lines */}
               {[0, 50, 100].map(v => {
                 const gy = pad + (1 - v / 100) * ah;
                 return <line key={v} x1={pad} y1={gy} x2={CW - pad} y2={gy} stroke={APP.border} strokeWidth="0.6" />;
               })}
-              {/* Fill */}
-              <path d={fillPath} fill="rgba(22,163,74,0.10)" />
-              {/* Line */}
-              <path d={linePath} fill="none" stroke="#16a34a" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-              {/* Dots */}
+              {fillPath && <path d={fillPath} fill="rgba(22,163,74,0.10)" />}
+              {linePath && <path d={linePath} fill="none" stroke="#16a34a" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />}
               {pts.map((p, i) => {
                 const col = p.pct >= 80 ? '#16a34a' : p.pct >= 50 ? '#d97706' : '#dc2626';
                 return <circle key={i} cx={p.x} cy={p.y} r="2.8" fill={col} stroke={APP.bg} strokeWidth="1.2" />;
@@ -1552,7 +1589,7 @@ function AnalyticsPhone({ visible }: { visible: boolean }) {
           <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', borderBottom: i < analysisRows.length - 1 ? `1px solid ${APP.border}` : 'none', gap: 5 }}>
             <span style={{ fontSize: 8 }}>{row.emoji}</span>
             <span style={{ fontSize: 6, color: APP.tx2, flex: 1 }}>{['Sleep','Steps','Wake Up','Nutrition','Hydration'][i]}</span>
-            <span style={{ fontSize: 5.5, color: APP.tx3, width: 22, textAlign: 'right' }}>{row.done}/{days}</span>
+            <span style={{ fontSize: 5.5, color: APP.tx3, width: 22, textAlign: 'right' }}>{row.done}/{row.daysRevealed}</span>
             <span style={{ fontSize: 6, fontWeight: 700, color: row.pct >= 80 ? '#16a34a' : row.pct >= 60 ? '#d97706' : '#dc2626', width: 20, textAlign: 'right' }}>{row.pct}%</span>
             <div style={{ width: 28, height: 3.5, background: APP.surface2, borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ height: '100%', background: row.pct >= 80 ? '#16a34a' : row.pct >= 60 ? '#d97706' : '#dc2626', borderRadius: 2, width: `${row.pct}%`, transition: 'width 0.35s ease' }} />
@@ -2094,11 +2131,11 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
 
         {/* Feature rows */}
         {[
-          { delay: '0.7s',  icon: '💬', label: 'Any question',            desc: 'Ask GAINN AI' },
-          { delay: '0.85s', icon: '🙋', label: 'Ask for help',            desc: 'Ask GAINN AI' },
-          { delay: '1.0s',  icon: '📊', label: 'Log your stats',          desc: 'Ask GAINN AI' },
-          { delay: '1.15s', icon: '🗺️', label: 'Build your fitness plans', desc: 'Ask GAINN AI' },
-          { delay: '1.3s',  icon: '📈', label: 'Understand your data',    desc: 'Ask GAINN AI' },
+          { delay: '0.7s',  icon: '📊', label: 'Log your stats',          desc: 'Ask GAINN AI' },
+          { delay: '0.85s', icon: '🗺️', label: 'Build your fitness plan',  desc: 'Ask GAINN AI' },
+          { delay: '1.0s',  icon: '📈', label: 'Understand your data',    desc: 'Ask GAINN AI' },
+          { delay: '1.15s', icon: '💬', label: 'Any question',            desc: 'Ask GAINN AI' },
+          { delay: '1.3s',  icon: '🙋', label: 'Ask for help',            desc: 'Ask GAINN AI' },
         ].map((item) => (
           <div
             key={item.label}
@@ -2219,7 +2256,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
               </div>
             </div>
 
-            {/* Panel 2 — 8 AI features */}
+            {/* Panel 2 — 9 AI features */}
             <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: isMobile ? '100%' : 480 }}>
               {/* Gemini badge */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '10px 16px', marginBottom: 32, alignSelf: 'flex-start' }}>
@@ -2242,7 +2279,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
               </div>
 
               <h3 style={{ fontSize: isMobile ? 'clamp(18px, 2.25vw, 28px)' : 'clamp(24px, 3vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 16 }}>
-                8 AI features,<br />one subscription
+                9 AI features,<br />one subscription
               </h3>
 
               <p style={{ fontSize: isMobile ? 11 : 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>

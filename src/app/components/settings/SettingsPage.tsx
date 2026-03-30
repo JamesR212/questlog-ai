@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { checkUsernameAvailable } from '@/lib/friends';
 import type { Theme } from '@/types';
@@ -46,6 +46,40 @@ const THEMES: { id: Theme; label: string; bg: string; accent: string; surface: s
   { id: 'blue',  label: 'Blue',    bg: '#dbeafe', accent: '#2563eb', surface: '#eff6ff' },
   { id: 'green', label: 'Green',   bg: '#dcfce7', accent: '#16a34a', surface: '#f0fdf4' },
 ];
+
+// ── Theme Picker ─────────────────────────────────────────────────────────────
+function ThemeCarousel({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-ql text-sm font-semibold">Colour Scheme</p>
+      <div className="flex gap-2">
+        {THEMES.map(t => {
+          const isActive = t.id === theme;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className="flex-1 flex flex-col items-center gap-1.5 rounded-2xl py-3 px-1 transition-all duration-200"
+              style={{
+                backgroundColor: t.bg,
+                border: isActive ? `2px solid ${t.accent}` : '2px solid transparent',
+                boxShadow: isActive ? `0 0 0 2px ${t.accent}55` : '0 2px 8px rgba(0,0,0,0.12)',
+              }}
+            >
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.accent }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.surface }} />
+              </div>
+              <span className="text-[10px] font-semibold leading-none" style={{ color: isActive ? t.accent : t.accent + 'aa' }}>
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -216,42 +250,8 @@ export default function SettingsPage() {
         <p className="text-ql-3 text-xs mt-0.5">Customise your GAINN experience</p>
       </div>
 
-      {/* ── Colour Scheme ───────────────────────────────────────── */}
-      <div className="flex flex-col gap-3">
-        <p className="text-ql text-sm font-semibold">Colour Scheme</p>
-        <div className="grid grid-cols-5 gap-2">
-          {THEMES.map(t => {
-            const active = theme === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                className="flex flex-col items-center gap-2"
-              >
-                {/* Swatch */}
-                <div
-                  className="w-full aspect-square rounded-2xl border-2 transition-all duration-200 flex flex-col overflow-hidden"
-                  style={{
-                    backgroundColor: t.bg,
-                    borderColor: active ? t.accent : 'transparent',
-                    boxShadow: active ? `0 0 0 2px ${t.accent}55` : 'none',
-                  }}
-                >
-                  {/* Mini UI preview */}
-                  <div className="flex-1 flex items-end px-1.5 pb-1.5 gap-1">
-                    <div className="flex-1 h-3 rounded-md" style={{ backgroundColor: t.surface }} />
-                    <div className="w-2 h-3 rounded-md" style={{ backgroundColor: t.accent }} />
-                  </div>
-                  <div className="h-3 mx-1 mb-1 rounded-md" style={{ backgroundColor: t.accent, opacity: 0.3 }} />
-                </div>
-                <span className={`text-[10px] font-semibold ${active ? 'text-ql-accent' : 'text-ql-3'}`}>
-                  {t.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* ── Colour Scheme — swipe carousel ─────────────────────── */}
+      <ThemeCarousel theme={theme} setTheme={setTheme} />
 
       {/* ── Sections ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">

@@ -47,11 +47,11 @@ const NUTRITION_GOALS = [
 ];
 
 const THEMES: { id: Theme; name: string; desc: string; bg: string; surface: string; accent: string; text: string }[] = [
-  { id: 'dark',  name: 'Dark',   desc: 'Deep navy, easy on the eyes', bg: '#08080f', surface: '#13131f', accent: '#7c3aed', text: '#f0f0f8' },
-  { id: 'white', name: 'Light',  desc: 'Clean and minimal',           bg: '#f5f5f7', surface: '#ffffff', accent: '#7c3aed', text: '#1d1d1f' },
-  { id: 'pink',  name: 'Pink',   desc: 'Soft rose pastels',           bg: '#fdf2f7', surface: '#ffffff', accent: '#db2777', text: '#3b0a20' },
-  { id: 'blue',  name: 'Blue',   desc: 'Cool pastel blue',            bg: '#f0f6ff', surface: '#ffffff', accent: '#2563eb', text: '#0f2a5e' },
-  { id: 'green', name: 'Forest', desc: 'Calm pastel green',           bg: '#f0fdf5', surface: '#ffffff', accent: '#16a34a', text: '#052e16' },
+  { id: 'dark',  name: 'Dark',   desc: 'Deep navy, easy on the eyes', bg: '#08080f', surface: '#13131f', accent: '#2d6a27', text: '#f0f0f8' },
+  { id: 'white', name: 'Light',  desc: 'Clean and minimal',           bg: '#f5f5f7', surface: '#ffffff', accent: '#2d6a27', text: '#1d1d1f' },
+  { id: 'pink',  name: 'Pink',   desc: 'Soft rose pastels',           bg: '#fce9f1', surface: '#fff4f8', accent: '#d6306a', text: '#2a0d1a' },
+  { id: 'blue',  name: 'Blue',   desc: 'Deep ocean blue',             bg: '#112240', surface: '#1a3050', accent: '#1d58d4', text: '#f9fbff' },
+  { id: 'green', name: 'Forest', desc: 'Calm forest green',           bg: '#142318', surface: '#243d30', accent: '#27a24a', text: '#f2faf4' },
 ];
 
 const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string; desc: string; emoji: string }[] = [
@@ -148,7 +148,7 @@ export default function OnboardingFlow() {
     setGoals(g => g.includes(id) ? g.filter(x => x !== id) : [...g, id]);
 
   const finish = () => {
-    setUserName(name.trim() || 'Hero');
+    setUserName(name.trim() || 'User');
     setCurrencySymbol(currency.symbol);
     const val = parseFloat(savingsInput);
     if (!isNaN(val) && val > 0) setSavingsGoal(val);
@@ -223,15 +223,17 @@ export default function OnboardingFlow() {
 
   const isDark = selectedTheme === 'dark';
   const activeTheme = THEMES.find(t => t.id === selectedTheme)!;
-  const bgColor = currentStep === 'theme'
+  const themeStepIndex = steps.indexOf('theme');
+  const pastThemeStep = stepIndex >= themeStepIndex;
+  const bgColor = pastThemeStep
     ? (isDark ? '#08080f' : activeTheme.bg)
     : '#08080f';
 
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col"
-      data-theme="dark"
-      style={{ colorScheme: 'dark', backgroundColor: bgColor, transition: 'background-color 0.4s ease' }}
+      data-theme={pastThemeStep ? selectedTheme : 'dark'}
+      style={{ backgroundColor: bgColor, transition: 'background-color 0.4s ease' }}
     >
       {/* Progress bar */}
       <div className="h-0.5 bg-white/5">
@@ -259,7 +261,7 @@ export default function OnboardingFlow() {
         {currentStep === 'welcome' && (
           <>
             <div className="text-5xl mb-6">👋</div>
-            <h1 className="text-white text-3xl font-bold mb-2">Welcome, Hero</h1>
+            <h1 className="text-white text-3xl font-bold mb-2">Hello! 👋</h1>
             <p className="text-white/50 text-sm mb-8">GAINN works around you — your goals, your routine, your way. Let's get you set up.</p>
 
             <label className="text-white/60 text-xs font-medium mb-2 block">Your name</label>
@@ -588,7 +590,7 @@ export default function OnboardingFlow() {
           const cardActiveBorder = isDark ? 'rgba(255,255,255,0.4)' : activeTheme.accent;
           const cardActiveBg = isDark ? 'rgba(255,255,255,0.10)' : `${activeTheme.accent}14`;
           const btnBg   = isDark ? '#ffffff' : activeTheme.text;
-          const btnText = isDark ? '#08080f' : '#ffffff';
+          const btnText = isDark ? '#08080f' : activeTheme.bg;
           const backBg   = isDark ? 'rgba(255,255,255,0.08)' : `${activeTheme.text}12`;
           const backText = isDark ? 'rgba(255,255,255,0.6)' : `${activeTheme.text}99`;
 
@@ -643,8 +645,8 @@ export default function OnboardingFlow() {
         {currentStep === 'sections' && (
           <>
             <div className="text-5xl mb-4">🎛️</div>
-            <h1 className="text-white text-3xl font-bold mb-2">Your Sections</h1>
-            <p className="text-white/50 text-sm mb-6">Turn off anything you don't need. You can always change this in Settings.</p>
+            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--ql-tx)' }}>Your Sections</h1>
+            <p className="text-sm mb-6" style={{ color: 'var(--ql-tx-2)' }}>Turn off anything you don't need. You can always change this in Settings.</p>
 
             <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
               {ONBOARDING_SECTIONS.map(s => {
@@ -655,17 +657,22 @@ export default function OnboardingFlow() {
                     onClick={() => setDisabledOnboarding(prev =>
                       isOff ? prev.filter(x => x !== s.id) : [...prev, s.id]
                     )}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all text-left ${
-                      isOff ? 'bg-white/3 border-white/8 opacity-50' : 'bg-white/8 border-white/20'
-                    }`}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all text-left"
+                    style={{
+                      background: isOff ? 'var(--ql-surface-2)' : 'var(--ql-surface)',
+                      borderColor: 'var(--ql-border)',
+                      opacity: isOff ? 0.5 : 1,
+                    }}
                   >
                     <span className="text-xl w-7 text-center">{s.icon}</span>
                     <div className="flex-1">
-                      <p className={`text-sm font-semibold ${isOff ? 'text-white/40 line-through' : 'text-white'}`}>{s.label}</p>
-                      <p className="text-white/30 text-[10px]">{s.desc}</p>
+                      <p className={`text-sm font-semibold ${isOff ? 'line-through' : ''}`} style={{ color: 'var(--ql-tx)' }}>{s.label}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--ql-tx-3)' }}>{s.desc}</p>
                     </div>
-                    <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isOff ? 'bg-white/10' : 'bg-[#16a34a]'}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isOff ? 'translate-x-0.5 opacity-40' : 'translate-x-5'}`} />
+                    <div className="w-11 h-6 rounded-full transition-colors relative shrink-0"
+                      style={{ background: isOff ? 'var(--ql-surface-3)' : 'var(--ql-accent)' }}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform duration-200 ${isOff ? 'translate-x-0.5 opacity-40' : 'translate-x-5'}`}
+                        style={{ background: activeTheme.text }} />
                     </div>
                   </button>
                 );
@@ -673,8 +680,10 @@ export default function OnboardingFlow() {
             </div>
 
             <div className="mt-4 flex gap-3">
-              <button onClick={goBack} className="px-5 py-4 bg-white/8 text-white/60 font-medium rounded-2xl text-sm">Back</button>
-              <button onClick={goNext} className="flex-1 py-4 bg-[#16a34a] text-white font-bold rounded-2xl text-base hover:opacity-90 transition-opacity">Continue</button>
+              <button onClick={goBack} className="px-5 py-4 font-medium rounded-2xl text-sm"
+                style={{ background: 'var(--ql-surface)', color: 'var(--ql-tx-2)', border: '1px solid var(--ql-border)' }}>Back</button>
+              <button onClick={goNext} className="flex-1 py-4 font-bold rounded-2xl text-base hover:opacity-90 transition-opacity"
+                style={{ background: 'var(--ql-accent)', color: activeTheme.text }}>Continue</button>
             </div>
           </>
         )}
@@ -683,8 +692,8 @@ export default function OnboardingFlow() {
         {currentStep === 'coaching' && (
           <>
             <div className="text-5xl mb-4">🤖</div>
-            <h1 className="text-white text-3xl font-bold mb-2">How should GAINN coach you?</h1>
-            <p className="text-white/60 text-sm mb-6">You can change this anytime in Settings</p>
+            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--ql-tx)' }}>How should GAINN coach you?</h1>
+            <p className="text-sm mb-6" style={{ color: 'var(--ql-tx-2)' }}>You can change this anytime in Settings</p>
             <div className="flex flex-col gap-3 w-full">
               {[
                 { icon: '🤗', label: 'Go Easy', desc: 'Gentle, non-judgmental. Celebrates every small win.', value: 20 },
@@ -694,12 +703,13 @@ export default function OnboardingFlow() {
                 <button
                   key={opt.value}
                   onClick={() => { setAiIntensity(opt.value); goNext(); }}
-                  className="w-full flex items-center gap-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl px-5 py-4 text-left transition-all active:scale-[0.98]"
+                  className="w-full flex items-center gap-4 rounded-2xl px-5 py-4 text-left transition-all active:scale-[0.98] hover:opacity-90"
+                  style={{ background: 'var(--ql-surface)', border: '1px solid var(--ql-border)' }}
                 >
                   <span className="text-3xl shrink-0">{opt.icon}</span>
                   <div>
-                    <p className="text-white font-bold text-base">{opt.label}</p>
-                    <p className="text-white/60 text-xs mt-0.5">{opt.desc}</p>
+                    <p className="font-bold text-base" style={{ color: 'var(--ql-tx)' }}>{opt.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--ql-tx-2)' }}>{opt.desc}</p>
                   </div>
                 </button>
               ))}
@@ -711,16 +721,17 @@ export default function OnboardingFlow() {
         {currentStep === 'terms' && (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-5">
             <div className="text-5xl">📋</div>
-            <h2 className="text-2xl font-black text-white leading-tight">Before you begin</h2>
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-5 text-left flex flex-col gap-3">
-              <p className="text-white/80 text-sm font-semibold">GAINN Disclaimer</p>
-              <p className="text-white/50 text-xs leading-relaxed">
-                GAINN provides AI-generated suggestions for fitness, nutrition, finance, and wellness. This content is for <strong className="text-white/70">informational purposes only</strong> and is <strong className="text-white/70">not a substitute</strong> for professional medical, dietary, financial, or fitness advice.
+            <h2 className="text-2xl font-black leading-tight" style={{ color: 'var(--ql-tx)' }}>Before you begin</h2>
+            <div className="w-full max-w-sm rounded-2xl p-5 text-left flex flex-col gap-3"
+              style={{ border: '1px solid var(--ql-border)', background: 'var(--ql-surface)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ql-tx)' }}>GAINN Disclaimer</p>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ql-tx-2)' }}>
+                GAINN provides AI-generated suggestions for fitness, nutrition, finance, and wellness. This content is for <strong style={{ color: 'var(--ql-tx)' }}>informational purposes only</strong> and is <strong style={{ color: 'var(--ql-tx)' }}>not a substitute</strong> for professional medical, dietary, financial, or fitness advice.
               </p>
-              <p className="text-white/50 text-xs leading-relaxed">
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ql-tx-2)' }}>
                 AI features are powered by Google Gemini and other third-party services. GAINN is not responsible for the accuracy, completeness, or outcomes of any AI-generated content. Always consult a qualified professional before making decisions about your health or finances.
               </p>
-              <p className="text-white/50 text-xs leading-relaxed">
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ql-tx-2)' }}>
                 By continuing, you agree that GAINN and its developers shall not be held liable for any loss, injury, or damage arising from your use of this app or its AI features.
               </p>
             </div>
@@ -730,10 +741,14 @@ export default function OnboardingFlow() {
               onClick={() => setTermsAccepted(v => !v)}
               className="flex items-center gap-3 max-w-sm w-full"
             >
-              <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all ${termsAccepted ? 'bg-white border-white' : 'border-white/30 bg-transparent'}`}>
-                {termsAccepted && <span className="text-black text-xs font-black">✓</span>}
+              <div className="w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                style={{
+                  background: termsAccepted ? 'var(--ql-accent)' : 'transparent',
+                  borderColor: termsAccepted ? 'var(--ql-accent)' : 'var(--ql-tx-3)',
+                }}>
+                {termsAccepted && <span className="text-xs font-black" style={{ color: activeTheme.text }}>✓</span>}
               </div>
-              <span className="text-white/60 text-xs text-left leading-relaxed">
+              <span className="text-xs text-left leading-relaxed" style={{ color: 'var(--ql-tx-2)' }}>
                 I understand and agree to these terms
               </span>
             </button>
@@ -743,9 +758,9 @@ export default function OnboardingFlow() {
               disabled={!termsAccepted}
               className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all mt-1"
               style={{
-                background: termsAccepted ? 'rgba(255,255,255,0.15)' : 'transparent',
-                color: termsAccepted ? 'white' : 'rgba(255,255,255,0.2)',
-                border: `2px solid ${termsAccepted ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                background: termsAccepted ? 'var(--ql-accent)' : 'transparent',
+                color: termsAccepted ? activeTheme.text : 'var(--ql-tx-3)',
+                border: `2px solid ${termsAccepted ? 'var(--ql-accent)' : 'var(--ql-border)'}`,
                 cursor: termsAccepted ? 'pointer' : 'default',
               }}
             >
@@ -756,27 +771,27 @@ export default function OnboardingFlow() {
 
         {/* ── GAINN AI showcase slide ── */}
         {currentStep === 'gainn_ai' && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-0 overflow-hidden">
-            {/* Green badge icon — drops in from above */}
+          <div className="flex-1 flex flex-col items-center text-center px-6 gap-0 overflow-y-auto py-8">
+            {/* Badge icon */}
             <div style={{ animation: 'dropIn 1.1s cubic-bezier(0.16,1,0.3,1) 0s both', marginBottom: 28 }}>
               <div style={{
                 width: 88, height: 88, borderRadius: 22,
-                background: '#16a34a',
+                background: 'var(--ql-accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 40px rgba(22,163,74,0.45)',
+                boxShadow: `0 8px 40px ${activeTheme.accent}70`,
                 animation: 'glowPulse 3.5s ease-in-out 1.2s infinite',
               }}>
-                <span style={{ fontSize: 38, color: '#fff', lineHeight: 1 }}>✦</span>
+                <span style={{ fontSize: 38, color: activeTheme.text, lineHeight: 1 }}>✦</span>
               </div>
             </div>
 
             {/* Label */}
             <div style={{ animation: 'fadeSlideUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.5s both' }}>
-              <p className="text-[11px] font-bold tracking-widest uppercase mb-3" style={{ color: '#16a34a' }}>Meet Your AI</p>
-              <h2 className="text-3xl font-black text-white leading-tight mb-3">
-                Ask <span className="text-white">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-white">NN</span>
+              <p className="text-[11px] font-bold tracking-widest uppercase mb-3" style={{ color: 'var(--ql-accent-tx)' }}>Meet Your AI</p>
+              <h2 className="text-3xl font-black leading-tight mb-3" style={{ color: 'var(--ql-tx)' }}>
+                Ask <span style={{ color: 'var(--ql-tx)' }}>G</span><span style={{ color: 'var(--ql-accent-tx)' }}>AI</span><span style={{ color: 'var(--ql-tx)' }}>NN</span>
               </h2>
-              <p className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto mb-7">
+              <p className="text-sm leading-relaxed max-w-xs mx-auto mb-7" style={{ color: 'var(--ql-tx-2)' }}>
                 The intelligence at the centre of everything. Always there, always personal.
               </p>
             </div>
@@ -791,19 +806,19 @@ export default function OnboardingFlow() {
                 { icon: '📈', label: 'Understand your data',     delay: '1.17s' },
               ].map(item => (
                 <div key={item.label} style={{ animation: `fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) ${item.delay} both` }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ background: 'var(--ql-surface)', border: '1px solid var(--ql-border)', borderRadius: 16, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div className="flex items-center gap-3">
                       <div style={{
                         width: 36, height: 36, borderRadius: 10,
-                        background: 'rgba(22,163,74,0.15)',
-                        border: '1px solid rgba(22,163,74,0.3)',
+                        background: 'var(--ql-accent-bd)',
+                        border: '1px solid var(--ql-accent-bd)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 18, flexShrink: 0,
                       }}>{item.icon}</div>
-                      <span className="text-white/80 text-sm font-medium">{item.label}</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--ql-tx)' }}>{item.label}</span>
                     </div>
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ color: '#16a34a', background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.3)', whiteSpace: 'nowrap' }}>
+                      style={{ color: 'var(--ql-accent-tx)', background: 'var(--ql-accent-bd)', border: '1px solid var(--ql-accent-bd)', whiteSpace: 'nowrap' }}>
                       Ask GAINN AI
                     </span>
                   </div>
@@ -812,13 +827,13 @@ export default function OnboardingFlow() {
             </div>
 
             {/* Closing line + button */}
-            <div style={{ animation: 'fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s both' }} className="flex flex-col items-center gap-4">
-              <p className="text-xl font-black text-white">
-                This is your <span style={{ color: '#16a34a' }}>G</span><span style={{ color: '#16a34a' }}>AI</span><span style={{ color: '#fff' }}>NN</span><span style={{ color: '#16a34a' }}>.</span>
+            <div style={{ animation: 'fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s both' }} className="flex flex-col items-center gap-4 pb-4">
+              <p className="text-xl font-black" style={{ color: 'var(--ql-tx)' }}>
+                This is your <span style={{ color: 'var(--ql-accent-tx)' }}>G</span><span style={{ color: 'var(--ql-accent-tx)' }}>AI</span><span style={{ color: 'var(--ql-tx)' }}>NN</span><span style={{ color: 'var(--ql-accent-tx)' }}>.</span>
               </p>
               <button onClick={goNext}
-                className="px-10 py-3.5 rounded-2xl font-bold text-sm text-white transition-all"
-                style={{ background: '#16a34a', border: '2px solid #16a34a' }}>
+                className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all"
+                style={{ background: 'var(--ql-accent)', color: activeTheme.text }}>
                 Continue →
               </button>
             </div>
@@ -833,24 +848,24 @@ export default function OnboardingFlow() {
           return (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-6">
               <div className="text-5xl">💬</div>
-              <h2 className="text-2xl font-black text-white leading-tight">
+              <h2 className="text-2xl font-black leading-tight" style={{ color: 'var(--ql-tx)' }}>
                 Your voice matters to us
               </h2>
-              <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-                We're building GAINN for you — and we genuinely want to hear about your experience. Whether it's something you love, something that could be better, or a feature you'd like to see added, we want to know.
+              <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'var(--ql-tx-2)' }}>
+                We&apos;re building GAINN for you — and we genuinely want to hear about your experience. Whether it&apos;s something you love, something that could be better, or a feature you&apos;d like to see added, we want to know.
               </p>
-              <p className="text-white/40 text-xs leading-relaxed max-w-xs">
-                Head to the <strong className="text-white/60">Community</strong> tab anytime to share feedback directly with our team.
+              <p className="text-xs leading-relaxed max-w-xs" style={{ color: 'var(--ql-tx-3)' }}>
+                Head to the <strong style={{ color: 'var(--ql-tx-2)' }}>Community</strong> tab anytime to share feedback directly with our team.
               </p>
 
               {/* Circle countdown + Continue button */}
               <div className="flex flex-col items-center gap-4 mt-2">
                 <svg width="64" height="64" viewBox="0 0 72 72">
-                  <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                  <circle cx="36" cy="36" r={r} fill="none" stroke="var(--ql-border)" strokeWidth="3" />
                   <circle
                     cx="36" cy="36" r={r}
                     fill="none"
-                    stroke="rgba(255,255,255,0.7)"
+                    stroke="var(--ql-accent)"
                     strokeWidth="3"
                     strokeLinecap="round"
                     strokeDasharray={circ}
@@ -858,16 +873,16 @@ export default function OnboardingFlow() {
                     transform="rotate(-90 36 36)"
                     style={{ transition: 'stroke-dashoffset 0.9s linear' }}
                   />
-                  <text x="36" y="42" textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize="18" fontWeight="bold">{countdown > 0 ? countdown : '✓'}</text>
+                  <text x="36" y="42" textAnchor="middle" fill={activeTheme.text} fontSize="18" fontWeight="bold">{countdown > 0 ? countdown : '✓'}</text>
                 </svg>
                 <button
                   onClick={goNext}
                   disabled={countdown > 0}
                   className="px-10 py-3.5 rounded-2xl font-bold text-sm transition-all"
                   style={{
-                    background: countdown === 0 ? '#16a34a' : 'transparent',
-                    color: countdown === 0 ? 'white' : 'rgba(255,255,255,0.2)',
-                    border: `2px solid ${countdown === 0 ? '#16a34a' : 'rgba(255,255,255,0.1)'}`,
+                    background: countdown === 0 ? 'var(--ql-accent)' : 'transparent',
+                    color: countdown === 0 ? activeTheme.text : 'var(--ql-tx-3)',
+                    border: `2px solid ${countdown === 0 ? 'var(--ql-accent)' : 'var(--ql-border)'}`,
                     cursor: countdown === 0 ? 'pointer' : 'default',
                   }}
                 >

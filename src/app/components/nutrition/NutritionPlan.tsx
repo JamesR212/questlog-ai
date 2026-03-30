@@ -73,19 +73,23 @@ function GoalSheet({
     protein: String(goal.protein),
     carbs: String(goal.carbs),
     fat: String(goal.fat),
+    saturatedFat: String(goal.saturatedFat ?? ''),
+    unsaturatedFat: String(goal.unsaturatedFat ?? ''),
     sugar: String(goal.sugar ?? 50),
   });
 
   const up = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = () => {
-    const parsed = {
+    const parsed: NutritionGoal = {
       calories: parseInt(form.calories) || 2000,
       protein: parseInt(form.protein) || 150,
       carbs: parseInt(form.carbs) || 200,
       fat: parseInt(form.fat) || 65,
       sugar: parseInt(form.sugar) || 50,
     };
+    if (form.saturatedFat) parsed.saturatedFat = parseInt(form.saturatedFat) || undefined;
+    if (form.unsaturatedFat) parsed.unsaturatedFat = parseInt(form.unsaturatedFat) || undefined;
     onSave(parsed);
     onClose();
   };
@@ -104,11 +108,13 @@ function GoalSheet({
         <div className="px-5 py-4 flex flex-col gap-4">
           {(
             [
-              { key: 'calories', label: 'Calories', unit: 'kcal', placeholder: '2000' },
-              { key: 'protein',  label: 'Protein',  unit: 'g',    placeholder: '150'  },
-              { key: 'carbs',    label: 'Carbs',    unit: 'g',    placeholder: '200'  },
-              { key: 'fat',      label: 'Fat',      unit: 'g',    placeholder: '65'   },
-              { key: 'sugar',    label: 'Sugar',    unit: 'g',    placeholder: '50'   },
+              { key: 'calories',      label: 'Calories',       unit: 'kcal', placeholder: '2000' },
+              { key: 'protein',       label: 'Protein',        unit: 'g',    placeholder: '150'  },
+              { key: 'carbs',         label: 'Carbs',          unit: 'g',    placeholder: '200'  },
+              { key: 'fat',           label: 'Fat (total)',    unit: 'g',    placeholder: '65'   },
+              { key: 'saturatedFat',  label: 'Saturated Fat',  unit: 'g',    placeholder: '20'   },
+              { key: 'unsaturatedFat',label: 'Unsaturated Fat',unit: 'g',    placeholder: '45'   },
+              { key: 'sugar',         label: 'Sugar',          unit: 'g',    placeholder: '50'   },
             ] as const
           ).map(({ key, label, unit, placeholder }) => (
             <div key={key} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3 flex items-center gap-3">
@@ -134,7 +140,7 @@ function GoalSheet({
 // ─── Add Meal Sheet ────────────────────────────────────────────────────────────
 function AddMealSheet({ onClose }: { onClose: () => void }) {
   const { logMeal } = useGameStore();
-  const [form, setForm] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', sugar: '' });
+  const [form, setForm] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', saturatedFat: '', unsaturatedFat: '', sugar: '' });
   const [micros, setMicros] = useState<Micros | undefined>(undefined);
   const [servingNote, setServingNote] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -150,6 +156,8 @@ function AddMealSheet({ onClose }: { onClose: () => void }) {
       protein: parseInt(form.protein) || 0,
       carbs: parseInt(form.carbs) || 0,
       fat: parseInt(form.fat) || 0,
+      ...(form.saturatedFat   ? { saturatedFat:   parseInt(form.saturatedFat)   } : {}),
+      ...(form.unsaturatedFat ? { unsaturatedFat: parseInt(form.unsaturatedFat) } : {}),
       sugar: parseInt(form.sugar) || 0,
       micros,
     });
@@ -158,12 +166,14 @@ function AddMealSheet({ onClose }: { onClose: () => void }) {
 
   const handleScan = (product: ScannedProduct) => {
     setForm({
-      name:     product.name,
-      calories: String(product.calories),
-      protein:  String(product.protein),
-      carbs:    String(product.carbs),
-      fat:      String(product.fat),
-      sugar:    String(product.sugar),
+      name:           product.name,
+      calories:       String(product.calories),
+      protein:        String(product.protein),
+      carbs:          String(product.carbs),
+      fat:            String(product.fat),
+      saturatedFat:   product.saturatedFat != null ? String(product.saturatedFat) : '',
+      unsaturatedFat: product.unsaturatedFat != null ? String(product.unsaturatedFat) : '',
+      sugar:          String(product.sugar),
     });
     setMicros(product.micros);
     if (product.servingSize) setServingNote(`Per ${product.servingSize}`);
@@ -216,11 +226,13 @@ function AddMealSheet({ onClose }: { onClose: () => void }) {
 
             {(
               [
-                { key: 'calories', label: 'Calories', unit: 'kcal' },
-                { key: 'protein',  label: 'Protein',  unit: 'g' },
-                { key: 'carbs',    label: 'Carbs',    unit: 'g' },
-                { key: 'fat',      label: 'Fat',      unit: 'g' },
-                { key: 'sugar',    label: 'Sugar',    unit: 'g' },
+                { key: 'calories',       label: 'Calories',        unit: 'kcal' },
+                { key: 'protein',        label: 'Protein',         unit: 'g' },
+                { key: 'carbs',          label: 'Carbs',           unit: 'g' },
+                { key: 'fat',            label: 'Fat (total)',     unit: 'g' },
+                { key: 'saturatedFat',   label: 'Saturated Fat',   unit: 'g' },
+                { key: 'unsaturatedFat', label: 'Unsaturated Fat', unit: 'g' },
+                { key: 'sugar',          label: 'Sugar',           unit: 'g' },
               ] as const
             ).map(({ key, label, unit }) => (
               <div key={key} className="bg-ql-surface2 rounded-2xl border border-ql px-4 py-3 flex items-center gap-3">
@@ -449,9 +461,11 @@ function DayDetailSheet({
       protein: acc.protein + m.protein,
       carbs: acc.carbs + m.carbs,
       fat: acc.fat + m.fat,
+      saturatedFat: acc.saturatedFat + (m.saturatedFat ?? 0),
+      unsaturatedFat: acc.unsaturatedFat + (m.unsaturatedFat ?? 0),
       sugar: acc.sugar + (m.sugar ?? 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, saturatedFat: 0, unsaturatedFat: 0, sugar: 0 }
   );
 
   const calPct = Math.min(100, Math.round((totals.calories / nutritionGoal.calories) * 100));
@@ -515,6 +529,7 @@ function DayDetailSheet({
                     { label: 'Fat',     val: totals.fat,      target: nutritionGoal.fat,          unit: 'g', color: '#22c55e', overIsGood: false },
                     { label: 'Sugar',   val: totals.sugar,    target: nutritionGoal.sugar ?? 50,  unit: 'g', color: '#ec4899', overIsGood: false },
                   ].map(({ label, val, target, unit, color, overIsGood }) => {
+                    const isFat = label === 'Fat';
                     const ratio = target > 0 ? val / target : 0;
                     const pct   = Math.min(100, ratio * 100);
                     const over  = ratio > 1.05;
@@ -535,6 +550,12 @@ function DayDetailSheet({
                         <div className="h-1 bg-ql-surface3 rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
                         </div>
+                        {isFat && (totals.saturatedFat > 0 || totals.unsaturatedFat > 0) && (
+                          <div className="mt-1 text-[8px] text-ql-3 tabular-nums leading-tight">
+                            {totals.saturatedFat > 0 && <div>Sat {totals.saturatedFat}g</div>}
+                            {totals.unsaturatedFat > 0 && <div>Unsat {totals.unsaturatedFat}g</div>}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -552,6 +573,7 @@ function DayDetailSheet({
                       <p className="text-ql text-sm font-medium">{meal.name}</p>
                       <p className="text-ql-3 text-[10px] mt-0.5 tabular-nums">
                         {meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g
+                        {(meal.saturatedFat ?? 0) > 0 ? ` (Sat ${meal.saturatedFat}g)` : ''}
                         {(meal.sugar ?? 0) > 0 ? ` · S ${meal.sugar}g` : ''}
                         {meal.micros && <span className="text-ql-accent"> · 🧬</span>}
                       </p>
@@ -623,8 +645,9 @@ function NutritionHistorySheet({
       protein: acc.protein + m.protein,
       carbs: acc.carbs + m.carbs,
       fat: acc.fat + m.fat,
+      saturatedFat: acc.saturatedFat + (m.saturatedFat ?? 0),
       sugar: acc.sugar + (m.sugar ?? 0),
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 });
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0, saturatedFat: 0, sugar: 0 });
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
@@ -699,6 +722,7 @@ function NutritionHistorySheet({
                     <p className="text-ql-3 text-[10px] tabular-nums mt-0.5">
                       {totals.calories} kcal · {meals.length} meal{meals.length !== 1 ? 's' : ''}
                       {' · '}P {totals.protein}g · C {totals.carbs}g · F {totals.fat}g
+                      {totals.saturatedFat > 0 ? ` (Sat ${totals.saturatedFat}g)` : ''}
                       {totals.sugar > 0 ? ` · S ${totals.sugar}g` : ''}
                     </p>
                   </div>
@@ -734,6 +758,7 @@ function NutritionHistorySheet({
                           <p className="text-ql text-sm font-medium">{meal.name}</p>
                           <p className="text-ql-3 text-[10px] mt-0.5 tabular-nums">
                             {meal.calories} kcal · P {meal.protein}g · C {meal.carbs}g · F {meal.fat}g
+                            {(meal.saturatedFat ?? 0) > 0 ? ` (Sat ${meal.saturatedFat}g)` : ''}
                             {(meal.sugar ?? 0) > 0 ? ` · S ${meal.sugar}g` : ''}
                             {meal.micros && <span className="text-ql-accent"> · 🧬</span>}
                           </p>
@@ -930,6 +955,7 @@ function MealDetailSheet({
             <h3 className="text-ql text-base font-semibold leading-snug">{meal.name}</h3>
             <p className="text-ql-3 text-[10px] mt-0.5 tabular-nums">
               {meal.calories} kcal · {meal.protein}g P · {meal.carbs}g C · {meal.fat}g F
+              {(meal.saturatedFat ?? 0) > 0 ? ` (Sat ${meal.saturatedFat}g)` : ''}
               {meal.sugar > 0 ? ` · ${meal.sugar}g S` : ''}
               {meal.micros && <span className="text-ql-accent ml-1">🧬</span>}
             </p>
@@ -955,8 +981,12 @@ function MealDetailSheet({
               </div>
             ))}
           </div>
-          {meal.sugar > 0 && (
-            <p className="text-ql-3 text-[10px] -mt-3 tabular-nums">Sugar: {meal.sugar}g</p>
+          {((meal.saturatedFat ?? 0) > 0 || (meal.unsaturatedFat ?? 0) > 0 || meal.sugar > 0) && (
+            <div className="flex gap-3 -mt-3 flex-wrap">
+              {(meal.saturatedFat ?? 0) > 0 && <p className="text-ql-3 text-[10px] tabular-nums">Saturated fat: {meal.saturatedFat}g</p>}
+              {(meal.unsaturatedFat ?? 0) > 0 && <p className="text-ql-3 text-[10px] tabular-nums">Unsaturated fat: {meal.unsaturatedFat}g</p>}
+              {meal.sugar > 0 && <p className="text-ql-3 text-[10px] tabular-nums">Sugar: {meal.sugar}g</p>}
+            </div>
           )}
 
           {/* Ingredients */}
@@ -1013,9 +1043,9 @@ function MealDetailSheet({
 // ─── Saved Meals Sheet ─────────────────────────────────────────────────────────
 const MEAL_CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Bulk Cook', 'Other'] as const;
 
-interface AiMealRaw { name: string; category: string; calories: number; protein: number; carbs: number; fat: number; sugar?: number; ingredients?: string; recipe?: string; micros?: Micros; }
+interface AiMealRaw { name: string; category: string; calories: number; protein: number; carbs: number; fat: number; saturatedFat?: number; unsaturatedFat?: number; sugar?: number; ingredients?: string; recipe?: string; micros?: Micros; }
 
-const EMPTY_RECIPE = { name: '', category: 'Dinner', ingredients: '', method: '', calories: '', protein: '', carbs: '', fat: '', sugar: '' };
+const EMPTY_RECIPE = { name: '', category: 'Dinner', ingredients: '', method: '', calories: '', protein: '', carbs: '', fat: '', saturatedFat: '', unsaturatedFat: '', sugar: '' };
 
 function SavedMealsSheet({ onClose }: { onClose: () => void }) {
   const { savedMealLibrary, addToMealLibrary, removeFromMealLibrary, logMeal, nutritionGoal } = useGameStore();
@@ -1063,11 +1093,13 @@ function SavedMealsSheet({ onClose }: { onClose: () => void }) {
       if (data.food) {
         setRecipe(r => ({
           ...r,
-          calories: String(data.food.calories ?? ''),
-          protein:  String(data.food.protein  ?? ''),
-          carbs:    String(data.food.carbs    ?? ''),
-          fat:      String(data.food.fat      ?? ''),
-          sugar:    String(data.food.sugar    ?? ''),
+          calories:       String(data.food.calories      ?? ''),
+          protein:        String(data.food.protein       ?? ''),
+          carbs:          String(data.food.carbs         ?? ''),
+          fat:            String(data.food.fat           ?? ''),
+          saturatedFat:   String(data.food.saturatedFat  ?? ''),
+          unsaturatedFat: String(data.food.unsaturatedFat ?? ''),
+          sugar:          String(data.food.sugar         ?? ''),
         }));
       } else {
         setRecipeAiError(data.error ?? 'Could not estimate — try adding more detail');
@@ -1082,15 +1114,17 @@ function SavedMealsSheet({ onClose }: { onClose: () => void }) {
   const saveRecipe = () => {
     if (!recipeValid) return;
     addToMealLibrary({
-      name:        recipe.name.trim(),
-      category:    recipe.category,
-      calories:    parseInt(recipe.calories) || 0,
-      protein:     parseInt(recipe.protein)  || 0,
-      carbs:       parseInt(recipe.carbs)    || 0,
-      fat:         parseInt(recipe.fat)      || 0,
-      sugar:       parseInt(recipe.sugar)    || 0,
-      ingredients: recipe.ingredients.trim() || undefined,
-      recipe:      recipe.method.trim()      || undefined,
+      name:           recipe.name.trim(),
+      category:       recipe.category,
+      calories:       parseInt(recipe.calories) || 0,
+      protein:        parseInt(recipe.protein)  || 0,
+      carbs:          parseInt(recipe.carbs)    || 0,
+      fat:            parseInt(recipe.fat)      || 0,
+      ...(recipe.saturatedFat   ? { saturatedFat:   parseInt(recipe.saturatedFat)   } : {}),
+      ...(recipe.unsaturatedFat ? { unsaturatedFat: parseInt(recipe.unsaturatedFat) } : {}),
+      sugar:          parseInt(recipe.sugar)    || 0,
+      ingredients:    recipe.ingredients.trim() || undefined,
+      recipe:         recipe.method.trim()      || undefined,
     });
     setRecipeSaved(true);
     setRecipe(EMPTY_RECIPE);
@@ -1461,11 +1495,13 @@ function SavedMealsSheet({ onClose }: { onClose: () => void }) {
               <p className="text-ql-3 text-xs font-semibold uppercase tracking-wider">Nutrition (per serving)</p>
               <div className="bg-ql-surface2 rounded-2xl border border-ql overflow-hidden divide-y divide-ql">
                 {([
-                  { key: 'calories', label: 'Calories', unit: 'kcal' },
-                  { key: 'protein',  label: 'Protein',  unit: 'g'    },
-                  { key: 'carbs',    label: 'Carbs',    unit: 'g'    },
-                  { key: 'fat',      label: 'Fat',      unit: 'g'    },
-                  { key: 'sugar',    label: 'Sugar',    unit: 'g'    },
+                  { key: 'calories',       label: 'Calories',        unit: 'kcal' },
+                  { key: 'protein',        label: 'Protein',         unit: 'g'    },
+                  { key: 'carbs',          label: 'Carbs',           unit: 'g'    },
+                  { key: 'fat',            label: 'Fat (total)',      unit: 'g'    },
+                  { key: 'saturatedFat',   label: 'Saturated Fat',   unit: 'g'    },
+                  { key: 'unsaturatedFat', label: 'Unsaturated Fat', unit: 'g'    },
+                  { key: 'sugar',          label: 'Sugar',           unit: 'g'    },
                 ] as const).map(({ key, label, unit }) => (
                   <div key={key} className="flex items-center gap-3 px-4 py-3">
                     <span className="text-ql text-sm flex-1">{label}</span>

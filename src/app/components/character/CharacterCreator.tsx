@@ -108,7 +108,7 @@ export default function CharacterCreator() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-ql text-xl font-bold">Create Your Hero</h2>
+        <h2 className="text-ql text-xl font-bold">Create Your Character</h2>
         <p className="text-ql-3 text-sm mt-0.5">Your character evolves as you level up</p>
       </div>
 

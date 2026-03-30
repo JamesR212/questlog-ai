@@ -32,7 +32,7 @@ export default function LevelUpModal() {
             Level Up
           </div>
           <div className="text-ql text-2xl font-bold mb-1">{levelUpMessage}</div>
-          <p className="text-ql-3 text-sm mb-6">You have grown stronger, hero.</p>
+          <p className="text-ql-3 text-sm mb-6">You have grown stronger.</p>
 
           <div className="grid grid-cols-4 gap-2 mb-6">
             {[

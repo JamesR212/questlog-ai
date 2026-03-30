@@ -989,7 +989,271 @@ function ProgressRing({ pct, hit, color, valLine1, valLine2, goalLine }: {
   );
 }
 
-// ─── Daily trio — Steps, Nutrition, Hydration ─────────────────────────────────
+// ─── Calorie burn calculation ──────────────────────────────────────────────────
+function calcTodayBurn(store: ReturnType<typeof useGameStore.getState>, today: string) {
+  const ca   = store.characterAppearance;
+  const wLog = [...store.weightLog].sort((a, b) => b.date.localeCompare(a.date));
+  const weight = wLog[0]?.weight ?? ca.startingWeight ?? 75;
+  const height = ca.height ?? 175;
+  const age    = ca.age    ?? 25;
+  const gender = ca.gender ?? 'neutral';
+
+  // BMR — use Katch-McArdle if body fat available, else Mifflin-St Jeor
+  const bfLog = [...(store.bodyCompositionLog ?? [])].sort((a, b) => b.date.localeCompare(a.date));
+  const latestBf = bfLog[0];
+  let bmr: number;
+  let bmrLabel: string;
+  if (latestBf?.bodyFatLow != null && latestBf?.bodyFatHigh != null) {
+    const bf = (latestBf.bodyFatLow + latestBf.bodyFatHigh) / 2;
+    const lean = weight * (1 - bf / 100);
+    bmr = Math.round(370 + 21.6 * lean);
+    bmrLabel = `Katch-McArdle (${bf.toFixed(0)}% BF, ${lean.toFixed(1)}kg lean mass)`;
+  } else {
+    const base = 10 * weight + 6.25 * height - 5 * age;
+    bmr = Math.round(gender === 'masculine' ? base + 5 : gender === 'feminine' ? base - 161 : base - 78);
+    bmrLabel = `Mifflin-St Jeor (${height}cm, ${weight}kg, age ${age})`;
+  }
+
+  // NEAT — steps (covers daily walking; 0.00045 kcal/step/kg is MET-validated)
+  const todaySteps = store.stepLog.find(e => e.date === today)?.steps ?? 0;
+  const neatKcal   = Math.round(todaySteps * weight * 0.00045);
+
+  // GPS exercise today — specific distance + time data available
+  const todayGps = (store.gpsActivities ?? []).filter(a => (a.startTime ?? '').slice(0, 10) === today);
+  type ActivityRow = { label: string; kcal: number; gps: boolean; estimated: boolean };
+  const activityRows: ActivityRow[] = [];
+
+  for (const a of todayGps) {
+    let kcal = 0;
+    if (a.type === 'run')   kcal = Math.round(weight * a.distance * 1.036);
+    if (a.type === 'cycle') kcal = Math.round(weight * a.distance * 0.28);
+    if (a.type === 'walk')  kcal = Math.round(weight * a.distance * 0.53);
+    if (kcal > 0) {
+      const mins = Math.round(a.duration / 60);
+      const icon = a.type === 'run' ? '🏃' : a.type === 'cycle' ? '🚴' : '🚶';
+      activityRows.push({
+        label: `${icon} ${a.type.charAt(0).toUpperCase() + a.type.slice(1)} · ${a.distance.toFixed(1)}km · ${mins} min`,
+        kcal, gps: true, estimated: false,
+      });
+    }
+  }
+  // Deduct GPS walk overlap with NEAT steps
+  const walkKcalGps = todayGps.filter(a => a.type === 'walk').reduce((s, a) => s + Math.round(weight * a.distance * 0.53), 0);
+  const walkOverlap = Math.min(walkKcalGps, neatKcal);
+
+  // Gym sessions today (resistance training ~7 MET × 45 min)
+  const todayGym = store.gymSessions.filter(s => (s.date ?? '').slice(0, 10) === today);
+  // Track which habits are already covered by a gym session (avoid double-counting)
+  const gymLinkedHabitIds = new Set(
+    todayGym.map(s => store.gymPlans.find(p => p.id === s.planId)?.linkedHabitId).filter(Boolean) as string[]
+  );
+  for (const s of todayGym) {
+    const plan = store.gymPlans.find(p => p.id === s.planId);
+    const kcal = Math.round(weight * 7 * (45 / 60));
+    activityRows.push({ label: `💪 ${plan?.name ?? 'Gym session'}`, kcal, gps: false, estimated: false });
+  }
+
+  // Non-GPS fitness habits completed today (e.g. "Morning Run" ticked without GPS)
+  const todayHabitIds = new Set(store.habitLog.filter(e => e.date === today).map(e => e.habitId));
+  // Types that GPS already covered today
+  const gpsRunToday   = todayGps.some(a => a.type === 'run');
+  const gpsCycleToday = todayGps.some(a => a.type === 'cycle');
+
+  for (const habitId of todayHabitIds) {
+    if (gymLinkedHabitIds.has(habitId)) continue; // gym session already counted
+    const hab = store.habitDefs.find(h => h.id === habitId);
+    if (!hab) continue;
+    const n = hab.name.toLowerCase();
+    const e = String(hab.emoji);
+
+    let kcal = 0; let icon = '🏃'; let activity = '';
+    if (!gpsRunToday && (/run|jog|5k|10k|marathon|sprint/i.test(n) || e === '🏃' || e === '🏃‍♂️' || e === '🏃‍♀️')) {
+      kcal = Math.round(weight * 7 * (30 / 60)); icon = '🏃'; activity = '~30 min run';
+    } else if (!gpsCycleToday && (/cycle|bike|spin/i.test(n) || e === '🚴' || e === '🚴‍♂️' || e === '🚴‍♀️')) {
+      kcal = Math.round(weight * 6 * (45 / 60)); icon = '🚴'; activity = '~45 min cycle';
+    } else if (/swim/i.test(n) || e === '🏊' || e === '🏊‍♂️' || e === '🏊‍♀️') {
+      kcal = Math.round(weight * 8 * (45 / 60)); icon = '🏊'; activity = '~45 min swim';
+    } else if (/\b(gym|lift|weight|crossfit|hiit|circuit|strength|resistance)\b/i.test(n) || e === '🏋️' || e === '🏋️‍♂️') {
+      kcal = Math.round(weight * 7 * (45 / 60)); icon = '💪'; activity = '~45 min session';
+    } else if (/yoga|pilates|stretch/i.test(n) || e === '🧘' || e === '🧘‍♂️' || e === '🧘‍♀️') {
+      kcal = Math.round(weight * 3 * (45 / 60)); icon = '🧘'; activity = '~45 min session';
+    } else {
+      continue; // not a classifiable fitness habit
+    }
+    if (kcal > 0) {
+      activityRows.push({ label: `${icon} ${hab.name} · ${activity}`, kcal, gps: false, estimated: true });
+    }
+  }
+
+  const exerciseKcal = activityRows.reduce((s, r) => s + r.kcal, 0) - walkOverlap;
+  const totalBurned  = bmr + neatKcal + exerciseKcal;
+
+  // TDEE (for ring progress)
+  const actMult: Record<string, number> = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
+  const tdee = Math.round(bmr * (actMult[ca.activityLevel ?? 'moderate'] ?? 1.55));
+
+  return { bmr, bmrLabel, neatKcal, todaySteps, activityRows, exerciseKcal, totalBurned, tdee, weight };
+}
+
+// ─── Calories-burned detail sheet ─────────────────────────────────────────────
+function CalorieBurnSheet({ onClose }: { onClose: () => void }) {
+  const store = useGameStore.getState();
+  const today = todayStr();
+  const { bmr, bmrLabel, neatKcal, todaySteps, activityRows, totalBurned, tdee, weight } =
+    calcTodayBurn(store, today);
+  const meals  = useGameStore(s => s.mealLog).filter(m => m.date === today);
+  const calsIn = meals.reduce((s, m) => s + m.calories, 0);
+  const net    = calsIn - totalBurned;
+  const fmt    = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+
+  const netColor = net > 200 ? '#f59e0b' : net < -200 ? '#3b82f6' : '#22c55e';
+  const netLabel = net > 200 ? 'Calorie surplus' : net < -200 ? 'Calorie deficit' : 'Balanced';
+  const netDesc  = net > 200
+    ? 'You\'re eating more than you\'re burning — good for muscle gain.'
+    : net < -200
+    ? 'You\'re burning more than you\'re eating — good for fat loss.'
+    : 'Intake matches expenditure — good for maintenance.';
+
+  const Row = ({ label, kcal, sub, badge }: { label: string; kcal: number; sub?: string; badge?: string }) => (
+    <div className="flex items-start justify-between py-2 border-b border-ql last:border-0 gap-2">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-ql text-xs font-medium">{label}</p>
+          {badge && (
+            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${badge === 'GPS' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+              {badge}
+            </span>
+          )}
+        </div>
+        {sub && <p className="text-ql-3 text-[10px] mt-0.5">{sub}</p>}
+      </div>
+      <p className="text-ql text-xs font-bold tabular-nums shrink-0">{fmt(kcal)} kcal</p>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--ql-bg)' }}>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-ql shrink-0">
+        <button onClick={onClose} className="text-ql-3 text-sm px-1">←</button>
+        <div>
+          <p className="text-ql font-bold text-base">🔥 Calories Burned</p>
+          <p className="text-ql-3 text-xs">Today's estimated energy expenditure</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+
+        {/* Big total */}
+        <div className="bg-ql-surface rounded-2xl border border-ql p-5 flex items-center gap-4">
+          <div className="flex-1">
+            <p className="text-ql-3 text-xs font-medium mb-1">Total burned today</p>
+            <p className="text-4xl font-black tabular-nums" style={{ color: '#f97316' }}>{totalBurned.toLocaleString()}</p>
+            <p className="text-ql-3 text-xs mt-1">kcal · TDEE target ~{tdee.toLocaleString()} kcal</p>
+          </div>
+          <div style={{ width: 72, height: 72 }}>
+            <svg viewBox="0 0 72 72" width="72" height="72">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="var(--ql-surface2)" strokeWidth="6" />
+              <circle cx="36" cy="36" r="30" fill="none" stroke="#f97316" strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 30}`}
+                strokeDashoffset={`${2 * Math.PI * 30 * (1 - Math.min(1, totalBurned / tdee))}`}
+                transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+              <text x="36" y="40" textAnchor="middle" fontSize="11" fontWeight="800" fill="#f97316">
+                {Math.round((totalBurned / tdee) * 100)}%
+              </text>
+            </svg>
+          </div>
+        </div>
+
+        {/* Badge legend */}
+        {activityRows.some(r => r.gps || r.estimated) && (
+          <div className="flex gap-2">
+            {activityRows.some(r => r.gps) && (
+              <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">📡 GPS — exact distance & time</span>
+            )}
+            {activityRows.some(r => r.estimated) && (
+              <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">~ Est. — no GPS, typical duration used</span>
+            )}
+          </div>
+        )}
+
+        {/* Breakdown */}
+        <div className="bg-ql-surface rounded-2xl border border-ql p-4">
+          <p className="text-ql text-sm font-semibold mb-3">📊 Breakdown</p>
+          <Row label="🧬 Basal Metabolic Rate" kcal={bmr} sub={bmrLabel} />
+          <Row label={`👟 Daily movement · ${todaySteps.toLocaleString()} steps`} kcal={neatKcal}
+            sub={`${weight}kg × ${todaySteps.toLocaleString()} steps × 0.00045 (MET-validated)`} />
+          {activityRows.map((r, i) => (
+            <Row key={i} label={r.label} kcal={r.kcal}
+              badge={r.gps ? 'GPS' : r.estimated ? '~ Est.' : undefined}
+              sub={r.gps ? 'Calculated from exact GPS distance' : r.estimated ? 'No GPS — based on typical session duration' : undefined}
+            />
+          ))}
+          <div className="flex items-center justify-between pt-2 mt-1">
+            <p className="text-ql text-xs font-bold">Total burned</p>
+            <p className="text-xs font-black tabular-nums" style={{ color: '#f97316' }}>{totalBurned.toLocaleString()} kcal</p>
+          </div>
+        </div>
+
+        {/* Net calculator */}
+        <div className="bg-ql-surface rounded-2xl border border-ql p-4">
+          <p className="text-ql text-sm font-semibold mb-3">⚖️ Net Calories</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-ql-3 text-xs">🥗 Calories in (food today)</p>
+            <p className="text-green-400 text-xs font-bold tabular-nums">+{fmt(calsIn)} kcal</p>
+          </div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-ql-3 text-xs">🔥 Calories burned</p>
+            <p className="text-xs font-bold tabular-nums" style={{ color: '#f97316' }}>−{fmt(totalBurned)} kcal</p>
+          </div>
+          {/* Bar */}
+          <div className="h-2 bg-ql-surface2 rounded-full overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(100, calsIn > 0 ? (calsIn / Math.max(calsIn, totalBurned)) * 100 : 0)}%`,
+                backgroundColor: netColor,
+              }} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold" style={{ color: netColor }}>
+                {net >= 0 ? '+' : ''}{fmt(Math.abs(net))} kcal {net >= 0 ? 'surplus' : 'deficit'}
+              </p>
+              <p className="text-ql-3 text-[10px] mt-0.5">{netLabel} · {netDesc}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Today's meals */}
+        {meals.length > 0 && (
+          <div className="bg-ql-surface rounded-2xl border border-ql p-4">
+            <p className="text-ql text-sm font-semibold mb-3">🥗 Food logged today</p>
+            {meals.map(m => (
+              <div key={m.id} className="flex items-center justify-between py-1.5 border-b border-ql last:border-0">
+                <p className="text-ql text-xs truncate flex-1">{m.name}</p>
+                <div className="flex gap-2 shrink-0 ml-2">
+                  <p className="text-ql-3 text-[10px]">P{m.protein}g C{m.carbs}g F{m.fat}g</p>
+                  <p className="text-ql text-xs font-semibold tabular-nums">{m.calories}</p>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2 mt-1">
+              <p className="text-ql-3 text-xs font-semibold">Total</p>
+              <p className="text-green-400 text-xs font-bold tabular-nums">{calsIn.toLocaleString()} kcal</p>
+            </div>
+          </div>
+        )}
+        {meals.length === 0 && (
+          <div className="bg-ql-surface rounded-2xl border border-ql p-4 text-center">
+            <p className="text-ql-3 text-xs">No food logged today — tell GAINN what you've eaten!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Daily trio — Steps, Nutrition, Hydration, Burn ───────────────────────────
 function DailyTrioCard() {
   const {
     stepLog, stepGoal,
@@ -998,6 +1262,7 @@ function DailyTrioCard() {
     setActiveSection, setTrainingTab, setNutritionTab,
     disabledSections,
   } = useGameStore();
+  const [showBurn, setShowBurn] = useState(false);
 
   const today = todayStr();
   const fmt   = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
@@ -1018,6 +1283,10 @@ function DailyTrioCard() {
   const todayWater = waterLog.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0);
   const waterPct   = waterGoal > 0 ? Math.min(1, todayWater / waterGoal) : 0;
   const waterHit   = todayWater >= waterGoal;
+
+  // Calorie burn
+  const burn = calcTodayBurn(useGameStore.getState(), today);
+  const burnPct = burn.tdee > 0 ? Math.min(1, burn.totalBurned / burn.tdee) : 0;
 
   const foodOff      = disabledSections.includes('food');
   const hydrationOff = disabledSections.includes('hydration');
@@ -1054,14 +1323,25 @@ function DailyTrioCard() {
         <p className="text-ql-3 text-[10px] font-medium">💧 Hydration</p>
       </button>
     ),
+    <button key="burn"
+      onClick={() => setShowBurn(true)}
+      className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-3 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform"
+    >
+      <ProgressRing pct={burnPct} hit={burnPct >= 1} color="#f97316"
+        valLine1={fmt(burn.totalBurned)} valLine2="kcal" goalLine={`~${fmt(burn.tdee)} TDEE`} />
+      <p className="text-ql-3 text-[10px] font-medium">🔥 Burned</p>
+    </button>,
   ].filter(Boolean);
 
   if (rings.length === 0) return null;
 
   return (
-    <div className={`grid gap-3 grid-cols-${rings.length}`}>
-      {rings}
-    </div>
+    <>
+      <div className={`grid gap-3 grid-cols-${rings.length}`}>
+        {rings}
+      </div>
+      {showBurn && <CalorieBurnSheet onClose={() => setShowBurn(false)} />}
+    </>
   );
 }
 
