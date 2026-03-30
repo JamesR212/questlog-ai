@@ -2,12 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { getAuth } from 'firebase-admin/auth';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
 
 function getAdminAuth() {
-  // Re-use the already-initialised app from getAdminDb()
-  getAdminDb(); // ensures app is initialised
+  getAdminDb(); // ensures Firebase Admin app is initialised
   return getAuth();
+}
+
+// Creates a minimal portal configuration programmatically so we never need
+// to manually configure it in the Stripe dashboard.
+async function getOrCreatePortalConfig(): Promise<string> {
+  const configs = await stripe.billingPortal.configurations.list({ limit: 1 });
+  if (configs.data.length > 0) return configs.data[0].id;
+
+  const config = await stripe.billingPortal.configurations.create({
+    features: {
+      invoice_history:       { enabled: true },
+      payment_method_update: { enabled: true },
+      subscription_cancel:   { enabled: true },
+    },
+    business_profile: {
+      headline: 'Manage your GAINN subscription',
+    },
+  });
+  console.log('[portal] created billing portal config:', config.id);
+  return config.id;
 }
 
 export async function POST(req: NextRequest) {
@@ -56,9 +74,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No subscription found. Please ensure you have an active subscription.' }, { status: 404 });
     }
 
+    const configId = await getOrCreatePortalConfig();
     const session = await stripe.billingPortal.sessions.create({
-      customer:   customerId,
-      return_url: process.env.NEXT_PUBLIC_APP_URL || 'https://gainn.app',
+      customer:      customerId,
+      return_url:    process.env.NEXT_PUBLIC_APP_URL || 'https://gainn.app',
+      configuration: configId,
     });
 
     return NextResponse.json({ url: session.url });
