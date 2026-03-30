@@ -441,7 +441,7 @@ function AddHabitSheet({ onClose, onSave, initial }: HabitSheetProps) {
 }
 
 // ─── Exercise row (plan builder) ──────────────────────────────────────────────
-function ExerciseRow({ ex, onChange, onRemove }: { ex: GymExercise; onChange: (ex: GymExercise) => void; onRemove: () => void }) {
+function ExerciseRow({ ex, onChange, onRemove, isStudyPlan = false }: { ex: GymExercise; onChange: (ex: GymExercise) => void; onRemove: () => void; isStudyPlan?: boolean }) {
   return (
     <div className="bg-ql-surface2 rounded-xl p-3 border border-ql flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -451,22 +451,24 @@ function ExerciseRow({ ex, onChange, onRemove }: { ex: GymExercise; onChange: (e
         />
         <button onClick={onRemove} className="text-ql-3 hover:text-red-500 text-sm transition-colors px-1">✕</button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        {([
-          { key: 'sets',         label: 'Sets',            min: 1,  max: 20  },
-          { key: 'targetReps',   label: 'Reps',            min: 1,  max: 100 },
-          { key: 'targetWeight', label: 'kg (0 = BW)',     min: 0,  max: 500 },
-        ] as const).map(({ key, label, min, max }) => (
-          <div key={key} className="flex flex-col gap-0.5">
-            <span className="text-ql-3 text-[10px]">{label}</span>
-            <input type="number" min={min} max={max} value={ex[key]}
-              onChange={e => onChange({ ...ex, [key]: Number(e.target.value) })}
-              onFocus={e => e.target.select()}
-              className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
-            />
-          </div>
-        ))}
-      </div>
+      {!isStudyPlan && (
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { key: 'sets',         label: 'Sets',            min: 1,  max: 20  },
+            { key: 'targetReps',   label: 'Reps',            min: 1,  max: 100 },
+            { key: 'targetWeight', label: 'kg (0 = BW)',     min: 0,  max: 500 },
+          ] as const).map(({ key, label, min, max }) => (
+            <div key={key} className="flex flex-col gap-0.5">
+              <span className="text-ql-3 text-[10px]">{label}</span>
+              <input type="number" min={min} max={max} value={ex[key]}
+                onChange={e => onChange({ ...ex, [key]: Number(e.target.value) })}
+                onFocus={e => e.target.select()}
+                className="bg-ql-input border border-ql-input rounded-lg px-2.5 py-1.5 text-sm text-ql outline-none text-center"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -482,6 +484,7 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
   const [name,      setName]      = useState(initial?.name      ?? '');
   const [emoji,     setEmoji]     = useState(initial?.emoji     ?? '💪');
   const [color,     setColor]     = useState(initial?.color     ?? '#ff3b30');
+  const isStudyPlan = initial?.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(initial?.name ?? '');
   const [days,        setDays]        = useState<number[]>(initial?.scheduleDays ?? []);
   const [dayTimes,    setDayTimes]    = useState<Record<string, string>>(initial?.dayTimes    ?? {});
   const [dayEndTimes, setDayEndTimes] = useState<Record<string, string>>(initial?.dayEndTimes ?? {});
@@ -562,7 +565,7 @@ function PlanSheet({ initial, onClose, onSave }: PlanSheetProps) {
           <p className="text-ql-3 text-xs font-medium mb-2">Exercises / Activities</p>
           <div className="flex flex-col gap-2 mb-2">
             {exercises.map(ex => (
-              <ExerciseRow key={ex.id} ex={ex}
+              <ExerciseRow key={ex.id} ex={ex} isStudyPlan={isStudyPlan}
                 onChange={updated => setExercises(exercises.map(e => e.id === ex.id ? updated : e))}
                 onRemove={() => setExercises(exercises.filter(e => e.id !== ex.id))}
               />
