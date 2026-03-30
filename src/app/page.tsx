@@ -10,7 +10,7 @@ import type { User } from 'firebase/auth';
 import AuthScreen from './components/auth/AuthScreen';
 import LandingPage from './components/landing/LandingPage';
 import SubscriptionGate from './components/subscription/SubscriptionGate';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import NavBar from './components/shared/NavBar';
 import LevelUpModal from './components/shared/LevelUpModal';
@@ -196,6 +196,34 @@ export default function Home() {
       setSubscribed(null);
     }
   }, [user]);
+
+  // ── Real-time listener: merge in changes from other devices ─────────────
+  // onSnapshot fires every time any device pushes to Firestore.
+  // We skip our own pushes (matched by _updatedAt == LAST_PUSH_KEY) and only
+  // merge genuinely external updates so the app stays live across devices.
+  useEffect(() => {
+    if (!user || !cloudReady || !pullOk.current) return;
+    const ref = doc(db, 'users', user.uid, 'data', 'store');
+    const unsub = onSnapshot(ref, (snap) => {
+      if (!snap.exists()) return;
+      const { _updatedAt, ...cloudData } = snap.data() as Record<string, unknown>;
+      if (!_updatedAt) return;
+      // Skip if this snapshot is the echo of our own last push
+      const lastPush = localStorage.getItem('questlog-last-push');
+      if (_updatedAt === lastPush) return;
+      // Another device pushed newer data — merge it in without overwriting local
+      const currentLocal = useGameStore.getState() as unknown as Record<string, unknown>;
+      const merged = mergeStates(cloudData, currentLocal);
+      useGameStore.setState(merged);
+      // Update our last-push marker so we don't re-merge this snapshot
+      localStorage.setItem('questlog-last-push', _updatedAt as string);
+      console.log('[sync] real-time update from another device — merged (ts:', _updatedAt, ')');
+    }, (err) => {
+      console.warn('[sync] snapshot error:', err);
+    });
+    return () => unsub();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, cloudReady]);
 
   // ── Debounced auto-sync to cloud on store changes ────────────────────────
   const storeSnapshot = useDebounce(store, 800); // reduced from 3000ms → 800ms
