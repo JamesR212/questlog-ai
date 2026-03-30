@@ -1662,6 +1662,7 @@ export default function GymFitness() {
   const [aiError,      setAiError]      = useState<string | null>(null);
   const [showQuiz,     setShowQuiz]     = useState(false);
   const [viewingStat,   setViewingStat]   = useState<PerformanceStat | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null); // prog key pending delete
   const [viewingSteps,  setViewingSteps]  = useState(false);
   const [viewingFloors, setViewingFloors] = useState(false);
   const [viewingGymPlan, setViewingGymPlan] = useState<GymPlan | null>(null);
@@ -2011,10 +2012,31 @@ export default function GymFitness() {
                       className="text-ql-3 hover:text-ql text-xs px-2 py-1 rounded-lg transition-colors">
                       Edit
                     </button>
-                    <button onClick={e => { e.stopPropagation(); prog.plans.forEach(p => removeGymPlan(p.id)); }}
-                      className="text-ql-3 hover:text-red-500 text-sm transition-colors">
-                      ✕
-                    </button>
+                    <div className="relative">
+                      <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(prog.key); }}
+                        className="text-ql-3 hover:text-red-500 text-sm transition-colors px-1">
+                        ✕
+                      </button>
+                      {confirmDeleteId === prog.key && (
+                        <div className="absolute right-0 top-7 z-50 bg-ql-hdr border border-ql rounded-2xl shadow-2xl p-4 w-52"
+                          onClick={e => e.stopPropagation()}>
+                          <p className="text-ql text-sm font-semibold mb-1">Delete plan?</p>
+                          <p className="text-ql-3 text-xs mb-3">This removes the plan and all future calendar events.</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => { prog.plans.forEach(p => removeGymPlan(p.id)); setConfirmDeleteId(null); }}
+                              className="flex-1 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-xl transition-colors">
+                              Yes, delete
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="flex-1 py-1.5 bg-ql-surface2 border border-ql text-ql text-xs font-semibold rounded-xl transition-colors">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <span className="text-ql-3 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
                   </div>
                 </button>
