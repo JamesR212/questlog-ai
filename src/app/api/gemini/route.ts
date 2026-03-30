@@ -848,7 +848,10 @@ Rules:
 - FOOD PORTION SIZING: when the user logs food without specifying an exact quantity or weight, use their height, weight, age, activity level and TDEE from the "User profile" section above to estimate a realistic portion size for them personally. A heavier, taller or more active person eats larger portions than a lighter sedentary one — scale the calories and macros accordingly. Always briefly mention your assumption in the reply (e.g. "Logged as a ~180g portion based on your size")
 - When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)
 - For plan generation: gather info conversationally — don't ask all questions at once. 1-2 questions per message. Once you have enough to build a great plan, trigger the action immediately
-- When triggering generate_gym_plan or generate_meal_plan, your reply should be a very short confirmation like "Perfect, I have everything I need!" — keep it to one sentence, the app will show the timing and auto-save message itself
+- PLAN GENERATION CRITICAL RULE: When you have enough info to generate a plan, you MUST include BOTH the reply AND the action in the same JSON object. NEVER set "action": null when triggering a plan — the action field IS what causes the plan to be built. If action is null, nothing will happen.
+  WRONG: { "reply": "Perfect, building your plan!", "action": null }
+  CORRECT: { "reply": "Perfect, building your plan!", "action": { "type": "generate_gym_plan", "preferences": { ... } } }
+  The reply should be a single short sentence. The action must be fully populated.
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
 - When the user mentions food they had on a PAST day (yesterday, "last Tuesday", "3 days ago", etc.), ALWAYS use confirm_past_food_log — never use log_food for past dates. Calculate the exact YYYY-MM-DD date from today (${today}) and set dateLabel to a human-friendly string like "yesterday (27 Mar)"
 - When asked "how am I doing?" or progress questions, reference their actual goals, weight change, time on app, gym sessions, and habit streak — be specific with real numbers
@@ -939,6 +942,7 @@ Just ask me anything — I'm here to coach you! 🏆"`,
       const chat = model.startChat({ history: chatHistory });
       const result = await chat.sendMessage(message);
       let raw = result.response.text().trim();
+      console.log('[Assistant] raw response (first 600):', raw.slice(0, 600));
       // Strip all code fences (they may appear anywhere, not just at start/end)
       raw = raw.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
       // Extract just the JSON object — find outermost { ... }
@@ -949,8 +953,10 @@ Just ask me anything — I'm here to coach you! 🏆"`,
       }
       try {
         const parsed = JSON.parse(raw);
+        console.log('[Assistant] action type:', parsed.action?.type ?? 'null');
         return NextResponse.json({ reply: parsed.reply ?? raw, action: parsed.action ?? null });
-      } catch {
+      } catch (e) {
+        console.log('[Assistant] JSON parse failed:', e, 'raw:', raw.slice(0, 300));
         return NextResponse.json({ reply: raw, action: null });
       }
     }
