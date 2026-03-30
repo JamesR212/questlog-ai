@@ -138,26 +138,32 @@ export async function POST(req: NextRequest) {
         const subjectCount = subjectList.length;
         const weeksUntilExam = Math.min(Math.max(parseInt(prefs.weeksUntilExam ?? '8', 10), 4), 16);
         const confidence = prefs.confidence ?? '';
+        const hoursPerDay = parseFloat(prefs.hoursPerDay ?? '2');
+        const needsBreaks = hoursPerDay > 2;
+        const breakNote = needsBreaks
+          ? `IMPORTANT: User is studying ${hoursPerDay}h/day — recoveryNotes MUST recommend a 5–10 min break every 45–60 mins and a longer 20–30 min break after every 2 hours. Mention this in the plan.`
+          : '';
 
         // Study-specific progressive block — uses exam timeline
         const studyProgressiveBlock = wantsProgressive
           ? `- isRepeating = false. Generate ${weeksUntilExam} progressive weeks. Early weeks: content review and notes. Mid weeks: practice questions and topic tests. Final 2 weeks: past papers only, timed conditions. Final week label: "Exam Week – Past Papers Only". exercises[] = Week 1 sessions (used as fallback).`
           : `- isRepeating = true. Do NOT include weeks[]. exercises[] = the full weekly session rotation.`;
 
-        planInstructions = `Create a structured revision plan for: ${prefs.type ?? 'exam preparation'}.
+        planInstructions = `Create a structured revision plan for: ${prefs.planType ?? 'exam preparation'}.
 Goal: ${prefs.goal ?? 'Pass exams with strong grades'}
-Subjects: ${subjectList.join(', ')}
+Subjects: ${subjectList.join(', ')} — use EXACTLY these subjects, do not add extras.
 Weeks until exam: ${weeksUntilExam}
 Study days per week: ${daysPerWeek}
+Hours per day: ${hoursPerDay}
 ${confidence ? `Confidence per subject: ${confidence}` : ''}
+${breakNote}
 
-Generate EXACTLY ${subjectCount} plan${subjectCount > 1 ? 's' : ''} — one plan per subject.
-Each plan is named after its subject (e.g. "Maths Revision", "Physics Revision").
-Each "exercise" = one type of study session for that subject (e.g. "Topic Review", "Past Paper Practice", "Flashcard Drill", "Timed Questions", "Essay Practice").
+Generate EXACTLY ${subjectCount} plan${subjectCount > 1 ? 's' : ''} — one plan per subject, named exactly after the subject (e.g. "${subjectList[0]} Revision").
+Each "exercise" = one study session type (e.g. "Topic Review", "Past Paper Practice", "Flashcard Drill", "Timed Questions", "Essay Practice").
 ${confidence ? 'Weaker subjects get more days per week. Stronger subjects get fewer.' : 'Spread days evenly across subjects.'}
 Use "sets" = sessions per week for that topic block. "targetReps" = 0. "targetWeight" = 0.
 Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.
-recoveryNotes = spaced repetition strategy, rest days, and burnout prevention for that subject.`;
+recoveryNotes = spaced repetition tips, rest day advice, burnout prevention${needsBreaks ? ', AND mandatory break schedule (5–10 min every 45–60 mins, 20–30 min break after 2h)' : ''}.`;
 
         formatRules = `${studyProgressiveBlock}
 - scheduleTime/scheduleEndTime: realistic study slot (e.g. 09:00–11:00).
@@ -820,15 +826,24 @@ NOTE: use "planType" (not "type") inside preferences to avoid field name collisi
 For gym/weights the "split" field: infer from daysPerWeek if not stated (1-3→Full Body, 4→Upper/Lower, 5-6→Push/Pull/Legs). Use the user's gymExperience/runExperience from context for "experience".
 
 ─── STUDY / REVISION PLANS ───
-When a user asks for a revision plan, study plan, or exam prep — ask up to 2 focused questions (only what you don't already know):
-Q1 (if not mentioned): "What subjects are you studying, and when's your exam?" — covers both in one.
-Q2 (if not mentioned after Q1): "How confident are you in each subject — strong, average, or weak?"
-Once you know subjects + time until exam → trigger immediately. Confidence is optional but helpful.
-{ "type": "generate_gym_plan", "preferences": { "planType": "Study – A-Level Revision", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
-- subjects: comma-separated list of subjects
-- weeksUntilExam: number of weeks until exam (convert "June" or a date to weeks from today: ${today})
+When a user asks for a revision/study plan — NEVER assume their subjects or modules. Always ask.
+Gather these in up to 3 conversational questions (ask only what you don't know, max 2 per message):
+
+Q1: "Which subjects (or modules) are you revising, and when's your exam?" — always ask this first if not stated.
+Q2: "How many hours a day are you looking to study?" — always ask, do not assume.
+Q3 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
+
+BREAK RULE: If hoursPerDay > 2, add a note in recoveryNotes recommending a break every 45–60 mins (e.g. 5–10 min break, longer break after 2h). Mention this naturally in your reply too.
+
+Once you know subjects + exam date + daily hours → trigger immediately.
+{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+- subjects: comma-separated — use EXACTLY what the user said, do not add or assume extra subjects
+- weeksUntilExam: convert any date/month to weeks from today (${today})
+- hoursPerDay: hours per day the user wants to study
 - daysPerWeek: total study days per week (ask if not stated, default 5)
-- Set planType to match what they said: "Study – [subjects]" or "Revision – [exam name]"
+- planType: "Study – [subject]" or "Revision – [exam name]" matching what they said
+
+AFTER generating, tell the user: "If you want detailed advice on how to tackle a specific subject, you can ask me and I'll do my best — or for in-depth subject help, tools like Claude, ChatGPT, or Gemini are great too. I'm here to help you plan your time, manage breaks, and keep you on track! 😊"
 
 ─── MEAL PLAN / MEAL LIBRARY ───
 When a user asks for a meal plan, ask up to 3 focused questions before triggering. Ask in groups of 2 max. Be conversational — one exchange at a time.
