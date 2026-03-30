@@ -723,7 +723,9 @@ Rules:
 
     // ── Persistent AI assistant mode ────────────────────────────────────────
     if (mode === 'assistant') {
-      const today = new Date().toISOString().slice(0, 10);
+      const nowDate = new Date();
+      const today = nowDate.toISOString().slice(0, 10);
+      const todayDayName = nowDate.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'Europe/London' });
       const intensity = Number(context.aiIntensity ?? 50);
       const intensityInstruction = intensity <= 20
         ? 'COACHING STYLE — Supportive (intensity 1-20): Be extremely gentle, warm, and non-judgmental. Celebrate every small win enthusiastically. Never criticise or point out failures directly. If they miss a goal say something like "That\'s totally okay — what got in the way? Let\'s make tomorrow count 🤗"'
@@ -1014,7 +1016,11 @@ Once you know allergies + budget + cuisine preference → trigger immediately. T
 If the user is NOT asking to log or change anything, return:
 { "reply": "your message here", "action": null }
 
-Today's date: ${today}
+Today's date: ${today} (${todayDayName})
+RELATIVE DATE RULE — when the user says "next [weekday]", always calculate from today's date above:
+  • "next Tuesday" = the very next Tuesday after today. If today IS Tuesday, still use the next one (7 days ahead).
+  • "this Tuesday" = the coming Tuesday within this current week (could be today or the next few days).
+  • Always verify your answer: count forward from ${todayDayName} ${today} to find the correct YYYY-MM-DD. Double-check before using in an action.
 Rules:
 - Always return valid JSON — never plain text
 - Use their name naturally
