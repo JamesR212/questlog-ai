@@ -130,7 +130,8 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   // Gym plans — full details so AI can read before editing
   const gymPlansContext = store.gymPlans.length === 0 ? '  None' :
     store.gymPlans.map(p => {
-      const dayStr  = p.scheduleDays.map(d => dayNames[d]).join(',');
+      // Show both names AND numeric values so AI can patch scheduleDays correctly
+      const dayStr  = p.scheduleDays.map(d => `${dayNames[d]}(${d})`).join(',');
       const fmtEx   = (e: import('@/types').GymExercise) =>
         `${e.name} ${e.sets}x${e.targetReps}${e.targetWeight > 0 ? `@${e.targetWeight}kg` : '(bw)'}[id:${e.id}]`;
       const exList  = (p.exercises ?? []).map(fmtEx).join('; ');
@@ -143,7 +144,8 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
       const splitStr   = p.split         ? ` | split: ${p.split}`           : '';
       const recovStr   = p.recoveryNotes ? ` | recovery: ${p.recoveryNotes}` : '';
       const repeatStr  = p.isRepeating   ? ' | repeating'                    : '';
-      return `  [id:${p.id}] ${p.emoji} ${p.name} — days: ${dayStr}${splitStr}${repeatStr} — exercises: ${exList || 'none'}${weekSum}${recovStr}`;
+      const timeStr    = p.scheduleTime  ? ` | time: ${p.scheduleTime}–${p.scheduleEndTime}` : '';
+      return `  [id:${p.id}] ${p.emoji} ${p.name} — scheduleDays: [${p.scheduleDays.join(',')}] (${dayStr})${timeStr}${splitStr}${repeatStr} — exercises: ${exList || 'none'}${weekSum}${recovStr}`;
     }).join('\n');
 
   // Recent GPS activities
@@ -579,6 +581,43 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       }
 
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
+
+      // If scheduleDays changed, refresh future calendar events for this plan
+      if (Array.isArray(patch.scheduleDays)) {
+        const updated = useGameStore.getState().gymPlans.find(p => p.id === planId);
+        if (updated) {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const todayStr = today.toISOString().slice(0, 10);
+          // Remove all future events for this plan
+          useGameStore.setState(s => ({
+            calendarEvents: s.calendarEvents.filter(e => !(e.planId === planId && e.date > todayStr)),
+          }));
+          // Re-create events for the new days (next 8 weeks)
+          const newDays = patch.scheduleDays as number[];
+          newDays.forEach(weekday => {
+            const d = new Date(today);
+            let daysUntil = weekday - today.getDay();
+            if (daysUntil < 0) daysUntil += 7;
+            d.setDate(today.getDate() + daysUntil);
+            for (let w = 0; w < 8; w++) {
+              const date = new Date(d);
+              date.setDate(d.getDate() + w * 7);
+              store.addCalendarEvent({
+                title:     updated.name,
+                date:      date.toISOString().slice(0, 10),
+                startTime: updated.scheduleTime ?? '',
+                endTime:   updated.scheduleEndTime ?? '',
+                allDay:    !updated.scheduleTime,
+                location:  '',
+                notes:     '',
+                color:     updated.color,
+                reminder:  30,
+                planId,
+              });
+            }
+          });
+        }
+      }
     }
   } else if (type === 'log_one_off_activity') {
     const durationSecs = Math.round(Number(action.durationMinutes ?? 0) * 60);

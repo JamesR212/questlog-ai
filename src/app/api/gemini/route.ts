@@ -875,15 +875,50 @@ For all-day events (no specific time):
 Remove a calendar event (use the event id from the user's calendar context above):
 { "type": "delete_calendar_event", "id": "abc1234" }
 
-Edit an existing training plan (gym, running, cycling, swimming, or any plan) — when the user mentions editing, changing, updating or adjusting any plan, follow this exact 3-step flow:
-STEP 1 — Read it back briefly: find the plan in "ALL GYM PLANS" above, confirm you can see it in one short line (e.g. "Got it — your Push Day: Bench 4×8 @60kg, OHP 4×8 @40kg, Dips 3×12."). Use the [id:...] value shown there as planId.
-STEP 2 — Ask max 1 focused question: what specifically do they want changed and why? Keep it to one sentence.
-STEP 3 — Once you know exactly what to change, generate the full updated fields and trigger:
-{ "type": "update_gym_plan", "planId": "abc1234", "patch": { "exercises": [...], "weeks": [...] } }
-Only include fields that actually change in patch{}. Never trigger update_gym_plan without completing steps 1 and 2 first.
-IMPORTANT: If the user has already told you what to change in their first message (e.g. "edit my push day and swap bench for incline press"), skip step 2 and go straight from step 1 to step 3.
-CRITICAL — COMPLETE ARRAYS ONLY: When patching "exercises" or "weeks", you MUST include the COMPLETE array — every exercise, every week. Copy all unchanged exercises exactly as shown in "ALL GYM PLANS" above (preserve their [id:...] values), and only modify the specific ones being changed. NEVER send a partial array with just the changed exercises — this will delete all the others. NEVER send exercises:[] or weeks:[] unless the user explicitly asked to remove everything.
-DELETED PLAN RULE: If the user says they deleted a plan (e.g. "I deleted it", "can you rebuild it", "it's gone"), NEVER use update_gym_plan. Always use generate_gym_plan instead to create a fresh plan.
+─── EDITING AN EXISTING PLAN ───
+When the user wants to change, update, adjust, or rebuild any existing plan, follow this flow:
+
+STEP 1 — Identify the plan: find it in "ALL GYM PLANS" above, confirm in one short sentence (e.g. "Got it — your Push Day, currently Mon(1),Wed(3),Fri(5): Bench 4×8@60kg, OHP 4×8@40kg, Dips 3×12."). Note the [id:...] value — that is the planId you must use.
+STEP 2 — Clarify if needed: if the user's message already says exactly what to change, skip this step. Otherwise ask ONE focused question.
+STEP 3 — Apply the change using the correct action below.
+
+── WHICH ACTION TO USE ──────────────────────────────────────────────────────
+USE update_gym_plan when:
+  • Changing exercise weights, reps, sets (e.g. "increase bench to 80kg")
+  • Swapping or adding/removing individual exercises
+  • Changing the plan name, emoji, color, split, recoveryNotes
+  • Changing training days WITHOUT changing the total number of days
+    (e.g. "move my Monday session to Tuesday" — same count, different day)
+
+USE generate_gym_plan (full rebuild) when:
+  • The NUMBER of training days changes (e.g. "add 2 more days", "drop to 3 days", "rebuild with 5 days")
+  • The user says "rebuild", "redo", "start fresh", "make me a new one"
+  • The plan structure fundamentally changes (e.g. switching from full-body to PPL)
+
+── update_gym_plan FORMAT ───────────────────────────────────────────────────
+{ "type": "update_gym_plan", "planId": "<use [id:...] from context>", "patch": { <only the fields that change> } }
+
+Patchable fields — include ONLY the ones that actually change:
+  • "name": "New Plan Name"
+  • "emoji": "💪"
+  • "color": "#hex"
+  • "split": "Push/Pull/Legs"
+  • "recoveryNotes": "Rest 48h between sessions"
+  • "scheduleDays": [1,3,5]   ← numbers only: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+  • "scheduleTime": "07:00"   ← HH:MM
+  • "scheduleEndTime": "08:00"
+  • "exercises": [...]        ← FULL list, every exercise, unchanged ones copied exactly with their [id:...] values
+  • "weeks": [...]            ← FULL list of ALL weeks. Copy every unchanged week exactly. Only modify the specific week(s) changing.
+
+EXERCISES / WEEKS RULES — READ CAREFULLY:
+1. Always copy exercises with their exact [id:...] value from context (e.g. [id:abc1234] → "id": "abc1234")
+2. Include EVERY exercise — not just the changed ones. Omitting an exercise does NOT delete it, but sending an incomplete list may.
+3. For progressive plans (has weeks): if you patch "exercises", also patch "weeks" with the same changes applied to every week.
+4. For weight/rep changes across all weeks, scale proportionally (e.g. wk1 was 60kg→wk8 was 90kg, adding 20kg across board → wk1 60→80kg, wk8 90→110kg).
+5. NEVER send exercises:[] or weeks:[] — empty arrays are ignored as a safety measure.
+
+── DELETED PLAN RULE ────────────────────────────────────────────────────────
+If the user says "I deleted it", "it's gone", "can you rebuild it" — NEVER use update_gym_plan. Use generate_gym_plan instead.
 
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
 
