@@ -674,7 +674,13 @@ export default function AIAssistant() {
               targetReps:   Number(ex.targetReps   ?? 10),
               targetWeight: Number(ex.targetWeight ?? 0),
             });
-            s.addGymPlan({
+            // 1-to-1 swap: remove any existing plan with the same name so we don't accumulate duplicates
+            const newName = String(p.name ?? '').toLowerCase().trim();
+            const duplicate = useGameStore.getState().gymPlans.find(
+              existing => existing.name.toLowerCase().trim() === newName
+            );
+            if (duplicate) s.removeGymPlan(duplicate.id);
+            const newPlanId = s.addGymPlan({
               name:          p.name          as string,
               emoji:         p.emoji         as string,
               color:         p.color         as string,
@@ -729,6 +735,7 @@ export default function AIAssistant() {
                   notes:     weekLabel ? `${planName}${weekLabel}` : '',
                   color:     planColor,
                   reminder:  30,
+                  planId:    newPlanId,
                 });
               }
             });
@@ -821,9 +828,25 @@ export default function AIAssistant() {
           generatePlan('gym', data.action.preferences ?? {});
         } else if (data.action?.type === 'generate_meal_plan') {
           generatePlan('meal', data.action.preferences ?? {});
-        } else if (data.action) {
+        } else if (data.action?.type === 'update_gym_plan') {
+          // Show same building animation for plan edits
+          setBuildProgress(0);
+          if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+          buildTimerRef.current = setInterval(() => {
+            setBuildProgress(p => {
+              if (p >= 92) { clearInterval(buildTimerRef.current!); return 92; }
+              return p + 4; // faster than new plan — reaches ~92% in ~6s
+            });
+          }, 250);
+          setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true, planBuildingType: 'gym' }]);
           const actionResult = executeAction(data.action, store);
           if (actionResult === 'PLAN_NOT_FOUND') {
+            clearInterval(buildTimerRef.current!);
+            setBuildProgress(100);
+            setTimeout(() => {
+              setMessages(prev => prev.map(m => m.isPlanBuilding ? { ...m, isPlanBuilding: false, text: reply } : m));
+              setBuildProgress(-1);
+            }, 300);
             // Plan was deleted — extract preferences from the patch and regenerate fresh
             const patch = (data.action.patch ?? {}) as Record<string, unknown>;
             const prefs: Record<string, string> = {};
@@ -834,7 +857,17 @@ export default function AIAssistant() {
             if (patch.splitType)     prefs.splitType     = String(patch.splitType);
             if (patch.progressive !== undefined) prefs.progressive = patch.progressive ? 'yes' : 'no';
             generatePlan('gym', prefs);
+          } else {
+            // Update succeeded — finish animation
+            clearInterval(buildTimerRef.current!);
+            setBuildProgress(100);
+            setTimeout(() => {
+              setMessages(prev => prev.map(m => m.isPlanBuilding ? { ...m, isPlanBuilding: false, text: '✅ Plan updated!' } : m));
+              setBuildProgress(-1);
+            }, 600);
           }
+        } else if (data.action) {
+          executeAction(data.action, store);
         }
       }
     } catch {

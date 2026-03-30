@@ -1011,9 +1011,11 @@ function GymPlanDetailSheet({ plan, performanceLog, onClose }: {
                             {exercises.map((ex, i) => (
                               <div key={i} className="flex items-center justify-between">
                                 <p className="text-ql text-xs">{ex.n}</p>
-                                <p className="text-ql-3 text-[11px] font-mono tabular-nums">
-                                  {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
-                                </p>
+                                {plan.split !== 'study' && (
+                                  <p className="text-ql-3 text-[11px] font-mono tabular-nums">
+                                    {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1074,9 +1076,11 @@ function GymPlanDetailSheet({ plan, performanceLog, onClose }: {
                             {exercises.map((ex, i) => (
                               <div key={i} className="flex items-center justify-between">
                                 <p className="text-ql text-xs">{ex.n}</p>
-                                <p className="text-ql-3 text-[11px] font-mono tabular-nums">
-                                  {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
-                                </p>
+                                {plan.split !== 'study' && (
+                                  <p className="text-ql-3 text-[11px] font-mono tabular-nums">
+                                    {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1880,9 +1884,11 @@ export default function GymFitness() {
               {(aiPreview.exercises ?? []).map((ex: GymExercise, i: number) => (
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-ql-2">{ex.name}</span>
-                  <span className="text-ql-3 text-xs tabular-nums">
-                    {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
-                  </span>
+                  {aiPreview.split !== 'study' && (
+                    <span className="text-ql-3 text-xs tabular-nums">
+                      {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -1945,9 +1951,11 @@ export default function GymFitness() {
                   {plan.exercises.slice(0, 3).map(ex => (
                     <div key={ex.id} className="flex items-center justify-between text-xs text-ql-3">
                       <span>{ex.name}</span>
-                      <span className="tabular-nums">
-                        {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
-                      </span>
+                      {plan.split !== 'study' && (
+                        <span className="tabular-nums">
+                          {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
+                        </span>
+                      )}
                     </div>
                   ))}
                   {plan.exercises.length > 3 && (
@@ -2120,9 +2128,11 @@ export default function GymFitness() {
                                   exs.map(e => (
                                     <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-ql last:border-b-0">
                                       <span className="text-ql text-sm">{e.name}</span>
-                                      <span className="text-ql-3 text-xs tabular-nums font-medium">
-                                        {(e.targetReps > 0 || e.targetWeight > 0) ? `${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @ ${e.targetWeight}kg` : ' BW'}` : ''}
-                                      </span>
+                                      {plan.split !== 'study' && (
+                                        <span className="text-ql-3 text-xs tabular-nums font-medium">
+                                          {(e.targetReps > 0 || e.targetWeight > 0) ? `${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @ ${e.targetWeight}kg` : ' BW'}` : ''}
+                                        </span>
+                                      )}
                                     </div>
                                   ))
                                 )}

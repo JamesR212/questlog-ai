@@ -216,6 +216,7 @@ export interface CalendarEvent {
   notes: string;
   color: string;       // hex
   reminder: number;    // minutes before, 0 = none
+  planId?: string;     // gym plan that created this event (for cascading delete)
 }
 
 export interface PerformanceStat {

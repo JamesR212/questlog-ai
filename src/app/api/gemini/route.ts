@@ -149,8 +149,9 @@ export async function POST(req: NextRequest) {
           : `- isRepeating = true. Do NOT include weeks[]. exercises[] = the full weekly session rotation.`;
 
         // Build the timetable block instructions
-        const studyBlockMins = 45;
-        const shortBreakMins = 10;
+        // Use the user's preferred work duration; default 45 min if not provided
+        const studyBlockMins = prefs.studyBlockMins ? Math.min(Math.max(parseInt(prefs.studyBlockMins, 10), 15), 120) : 45;
+        const shortBreakMins = studyBlockMins <= 30 ? 5 : 10;
         const longBreakMins  = 30;
         const totalMins      = Math.round(hoursPerDay * 60);
         // How many 45-min blocks fit? Insert a long break around the midpoint.
@@ -195,7 +196,7 @@ ${confidence ? 'Weaker subjects get more days per week. Stronger subjects get fe
 
 TIMETABLE FORMAT — CRITICAL: Each "exercise" is a TIMED BLOCK, not a vague label.
 Build the day block-by-block, calculating cumulative times from scheduleTime (default 09:00):
-- Study blocks: ${studyBlockMins} minutes each. Name format: "Subject – Session Type  HH:MM–HH:MM"
+- Study blocks: ${studyBlockMins} minutes each (user's chosen work interval — respect this exactly). Name format: "Subject – Session Type  HH:MM–HH:MM"
 - Short break after each study block: ${shortBreakMins} minutes. Name: "☕ Break  HH:MM–HH:MM"
 - Long/lunch break: ${longBreakMins} minutes, placed around midday (12:00–13:00) if the session spans it. Name: "🍽️ Lunch  HH:MM–HH:MM"
 - Session types vary by week: Week 1–2 = Topic Review, Week 3–4 = Practice Questions, Week 5+ = Past Papers / Timed Conditions
@@ -207,6 +208,7 @@ recoveryNotes = spaced repetition tips, rest day advice, burnout prevention. Do 
 Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.`;
 
         formatRules = `${studyProgressiveBlock}
+- split: ALWAYS set to "study" — this tells the app to hide all gym stats for this plan.
 - scheduleTime: when the session starts (default "09:00"). scheduleEndTime: calculated end including all breaks.
 - targetWeight always 0. targetReps = block duration in minutes.
 - No two plans may share the same scheduleDays values.`;
@@ -905,16 +907,16 @@ Gather these in up to 3 conversational questions (ask only what you don't know, 
 
 Q1: "Which subjects (or modules) are you revising, and when's your exam?" — always ask this first if not stated.
 Q2: "How many hours a day are you looking to study?" — always ask, do not assume.
-Q3: "Do you prefer to focus on one subject per day, or mix multiple topics in a session? (Some people find it easier to deep-focus on one thing at a time — totally fine either way!)" — always ask, important for personalisation.
-Q4 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
+Q3: "How long do you like to work before taking a break? (e.g. 25 mins, 45 mins, 1 hour — there's no wrong answer, it's whatever works best for you!)" — always ask, used to build the timetable.
+Q4: "Do you prefer to focus on one subject per day, or mix multiple topics in a session? (Some people find it easier to deep-focus on one thing at a time — totally fine either way!)" — always ask, important for personalisation.
+Q5 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
 
-BREAK RULE: If hoursPerDay > 2, add a note in recoveryNotes recommending a break every 45–60 mins (e.g. 5–10 min break, longer break after 2h). Mention this naturally in your reply too.
-
-Once you know subjects + exam date + daily hours + focus style → trigger immediately.
-{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "focusStyle": "one subject per day", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+Once you know subjects + exam date + daily hours + study block length + focus style → trigger immediately.
+{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "studyBlockMins": "45", "focusStyle": "one subject per day", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
 - subjects: comma-separated — use EXACTLY what the user said, do not add or assume extra subjects
 - weeksUntilExam: convert any date/month to weeks from today (${today})
 - hoursPerDay: hours per day the user wants to study
+- studyBlockMins: how long (in minutes) the user wants to work before a break — use EXACTLY what they said, converted to a number (e.g. "25 mins" → "25", "1 hour" → "60")
 - focusStyle: "one subject per day" or "mixed topics" — drives how sessions are structured
 - daysPerWeek: total study days per week (ask if not stated, default 5)
 - planType: "Study – [subject]" or "Revision – [exam name]" matching what they said

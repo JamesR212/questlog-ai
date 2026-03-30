@@ -657,6 +657,7 @@ export const useGameStore = create<GameStore>()(
           const plan = state.gymPlans.find(p => p.id === id);
           const linkedHabitId = plan?.linkedHabitId;
           const linkedStatId  = plan?.linkedStatId;
+          const today = new Date().toISOString().slice(0, 10);
           return {
             gymPlans:        state.gymPlans.filter((p) => p.id !== id),
             gymSessions:     state.gymSessions.filter((s) => s.planId !== id),
@@ -664,6 +665,8 @@ export const useGameStore = create<GameStore>()(
             habitLog:        linkedHabitId ? state.habitLog.filter(e => e.habitId !== linkedHabitId) : state.habitLog,
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
+            // Remove future calendar events linked to this plan; keep past ones as a log
+            calendarEvents:  state.calendarEvents.filter(e => !(e.planId === id && e.date > today)),
           };
         }),
 
