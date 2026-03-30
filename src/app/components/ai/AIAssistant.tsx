@@ -499,8 +499,15 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     });
   } else if (type === 'update_gym_plan') {
     const planId = String(action.planId ?? '');
-    const patch  = action.patch as Record<string, unknown> | undefined;
-    if (planId && patch) {
+    // Rescue any patchable fields the AI placed at the top level instead of inside patch
+    const PATCHABLE = ['name','emoji','color','split','recoveryNotes','scheduleDays','scheduleTime','scheduleEndTime','dayTimes','dayEndTimes'];
+    const patch = (action.patch ?? {}) as Record<string, unknown>;
+    PATCHABLE.forEach(k => {
+      if (patch[k] === undefined && (action as Record<string, unknown>)[k] !== undefined) {
+        patch[k] = (action as Record<string, unknown>)[k];
+      }
+    });
+    if (planId && Object.keys(patch).length > 0) {
       const existing = useGameStore.getState().gymPlans.find(p => p.id === planId);
       if (!existing) {
         return 'PLAN_NOT_FOUND';
