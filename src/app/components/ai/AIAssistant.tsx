@@ -501,17 +501,65 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     if (planId && patch) {
       const existing = useGameStore.getState().gymPlans.find(p => p.id === planId);
       if (!existing) {
-        // Plan was deleted — return a sentinel so the caller can re-generate
         return 'PLAN_NOT_FOUND';
       }
-      // Safety: never replace a non-empty exercises/weeks array with an empty one
-      // (guards against the AI sending a partial patch that wipes exercises)
-      if (Array.isArray(patch.exercises) && (patch.exercises as unknown[]).length === 0 && (existing.exercises?.length ?? 0) > 0) {
-        delete patch.exercises;
+
+      // ── Smart exercise merge by ID ─────────────────────────────────────
+      // The AI may send a partial exercises array (just the changed ones).
+      // We merge by ID so unchanged exercises are preserved, and only the
+      // modified ones are updated. This also applies to each week's exercises.
+      const mergeExercises = (
+        existingExs: import('@/types').GymExercise[],
+        patchExs: Record<string, unknown>[],
+      ): import('@/types').GymExercise[] => {
+        if (patchExs.length === 0) return existingExs;
+        // Update existing by ID; keep any not mentioned; append genuinely new ones
+        const updated = existingExs.map(ex => {
+          const match = patchExs.find(pe => pe.id === ex.id || pe.name === ex.name);
+          return match ? { ...ex, ...match, id: ex.id } as import('@/types').GymExercise : ex;
+        });
+        const added = patchExs
+          .filter(pe => !existingExs.some(ex => ex.id === pe.id || ex.name === pe.name))
+          .map(pe => ({
+            id:           String(pe.id ?? Math.random().toString(36).slice(2, 9)),
+            name:         String(pe.name ?? ''),
+            sets:         Number(pe.sets ?? 3),
+            targetReps:   Number(pe.targetReps ?? 10),
+            targetWeight: Number(pe.targetWeight ?? 0),
+          }) as import('@/types').GymExercise);
+        return [...updated, ...added];
+      };
+
+      if (Array.isArray(patch.exercises) && (patch.exercises as unknown[]).length > 0) {
+        patch.exercises = mergeExercises(existing.exercises ?? [], patch.exercises as Record<string, unknown>[]);
+      } else {
+        delete patch.exercises; // never wipe with empty array
       }
-      if (Array.isArray(patch.weeks) && (patch.weeks as unknown[]).length === 0 && (existing.weeks?.length ?? 0) > 0) {
-        delete patch.weeks;
+
+      if (Array.isArray(patch.weeks) && (patch.weeks as unknown[]).length > 0) {
+        patch.weeks = (patch.weeks as Record<string, unknown>[]).map(pw => {
+          const existingWeek = (existing.weeks ?? []).find(ew => ew.weekNumber === Number(pw.weekNumber));
+          const patchedExs = Array.isArray(pw.exercises) ? pw.exercises as Record<string, unknown>[] : [];
+          return {
+            ...(existingWeek ?? {}),
+            ...pw,
+            exercises: existingWeek ? mergeExercises(existingWeek.exercises ?? [], patchedExs) : patchedExs,
+          };
+        });
+      } else if (Array.isArray(patch.weeks)) {
+        delete patch.weeks; // never wipe with empty array
       }
+
+      // If the AI only patched exercises (not weeks), mirror the same changes
+      // into every week so progressive plans stay consistent
+      if (patch.exercises && !patch.weeks && existing.weeks && existing.weeks.length > 0) {
+        const exPatch = patch.exercises as import('@/types').GymExercise[];
+        patch.weeks = existing.weeks.map(w => ({
+          ...w,
+          exercises: mergeExercises(w.exercises ?? [], exPatch as unknown as Record<string, unknown>[]),
+        }));
+      }
+
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
     }
   } else if (type === 'log_one_off_activity') {
