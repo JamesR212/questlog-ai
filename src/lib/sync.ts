@@ -32,18 +32,23 @@ export async function pushToCloud(userId: string, storeState: StoreData) {
   }
 }
 
-export async function pullFromCloud(userId: string): Promise<StoreData | null> {
+// Discriminated result: ok=false means a real error — caller must NOT push to cloud
+export type PullResult =
+  | { ok: true;  data: StoreData | null } // data=null means new user (no doc yet)
+  | { ok: false; data: null };             // network/firestore error — do NOT push
+
+export async function pullFromCloud(userId: string): Promise<PullResult> {
   try {
     console.log('[sync] pulling from cloud for user:', userId);
     const snap = await getDoc(doc(db, 'users', userId, 'data', 'store'));
     console.log('[sync] pull result — exists:', snap.exists());
-    if (!snap.exists()) return null;
+    if (!snap.exists()) return { ok: true, data: null }; // new user, no data yet
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _updatedAt, ...data } = snap.data();
-    return data;
+    return { ok: true, data };
   } catch (e) {
     console.error('[sync] pull error:', e);
-    return null;
+    return { ok: false, data: null }; // real error — caller must not push
   }
 }
 

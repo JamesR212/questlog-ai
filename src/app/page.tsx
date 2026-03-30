@@ -50,6 +50,8 @@ export default function Home() {
   const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
   const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
   const hydratedUid                   = useRef<string | null>(null);
+  // SAFETY: only allow cloud push after a clean pull — prevents empty-state overwriting cloud data
+  const pullOk                        = useRef<boolean>(false);
 
   // ── Auth listener ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -75,7 +77,26 @@ export default function Home() {
     });
 
     // Pull and merge cloud data, then check subscription
-    pullFromCloud(userId).then(async cloudData => {
+    pullFromCloud(userId).then(async result => {
+      if (!result.ok) {
+        // Firestore error — do NOT push (would wipe cloud data with empty reset state)
+        console.error('[sync] pull failed — blocking cloud push to protect data');
+        pullOk.current = false;
+        setCloudReady(true); // still show the app
+        // Skip subscription check on pull failure — user will see cached/empty data
+        const subSnap = await getDoc(doc(db, 'subscriptions', userId)).catch(() => null);
+        if (subSnap?.exists()) {
+          const sub = subSnap.data();
+          const isActive = sub.status === 'active' || sub.status === 'trialing';
+          const notExpired = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
+          setSubscribed(isActive && notExpired);
+        } else {
+          setSubscribed(false);
+        }
+        return;
+      }
+      pullOk.current = true;
+      const cloudData = result.data;
       if (cloudData) useGameStore.setState(cloudData);
       setCloudReady(true);
 
@@ -114,6 +135,7 @@ export default function Home() {
   useEffect(() => {
     if (!user && hydratedUid.current !== null) {
       hydratedUid.current = null;
+      pullOk.current = false;
       localStorage.removeItem('questlog-storage');
       window.location.reload();
     } else if (!user) {
@@ -126,7 +148,7 @@ export default function Home() {
   const storeSnapshot = useDebounce(store, 800); // reduced from 3000ms → 800ms
 
   useEffect(() => {
-    if (!user || !cloudReady) return;
+    if (!user || !cloudReady || !pullOk.current) return;
     setSyncing(true);
     const s = useGameStore.getState();
     pushToCloud(user.uid, s).finally(() => setSyncing(false));
@@ -145,8 +167,9 @@ export default function Home() {
 
   // ── Force immediate sync when user leaves the app ────────────────────────
   useEffect(() => {
-    if (!user || !cloudReady) return;
+    if (!user || !cloudReady || !pullOk.current) return;
     const flushSync = () => {
+      if (!pullOk.current) return; // never flush if pull failed
       const s = useGameStore.getState();
       pushToCloud(user.uid, s);
     };
