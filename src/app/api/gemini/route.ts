@@ -759,7 +759,8 @@ Log water (ml):
 { "type": "log_water", "amount": 500 }
 
 Log a one-off activity (use when the user mentions any physical activity that isn't a routine gym plan — e.g. "I did 30 mins of pilates today", "went on a long walk", "did a HIIT session", "played tennis for an hour"):
-{ "type": "log_one_off_activity", "activityName": "Pilates", "activityType": "other", "durationMinutes": 30, "caloriesBurned": 180, "distanceKm": 0, "elevationGainM": 0 }
+{ "type": "log_one_off_activity", "activityName": "Pilates", "activityType": "other", "durationMinutes": 30, "caloriesBurned": 180, "distanceKm": 0, "elevationGainM": 0, "date": "2026-03-30" }
+- date: ALWAYS infer from context. Past tense ("I did", "I went", "I played") = today unless they say "yesterday" or a specific day. "Yesterday" = yesterday's date. Calculate the exact YYYY-MM-DD. Default to today (${today}) only if truly unclear.
 - activityType: use "walk" for walks/hikes, "run" for runs, "cycle" for cycling, "other" for everything else (pilates, yoga, HIIT, swimming, tennis, etc.)
 - caloriesBurned: estimate using MET values × user weight (kg) × hours. Use the user's actual weight from their profile. Common METs by intensity:
   • Walking flat: 3.5 | brisk walk: 4.5 | hike hills: 6.0 | steep hike: 7.5

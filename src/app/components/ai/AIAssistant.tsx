@@ -500,7 +500,7 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       id:             Math.random().toString(36).slice(2, 9),
       type:           (action.activityType as import('@/store/gameStore').GpsActivity['type']) || 'other',
       activityName:   action.activityName ? String(action.activityName) : undefined,
-      startTime:      new Date().toISOString(),
+      startTime:      action.date ? new Date(String(action.date)).toISOString() : new Date().toISOString(),
       duration:       durationSecs,
       distance:       Number(action.distanceKm ?? 0),
       coords:         [],
