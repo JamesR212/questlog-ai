@@ -173,10 +173,12 @@ Experience: ${prefs.experience ?? 'Some experience'}
 Focus: ${prefs.focus ?? 'Build endurance'}
 
 Generate 1 plan. Alternate hard/easy sessions. Never two hard sessions back-to-back.
-Each "exercise" = one session type (e.g. "${isCycling ? 'Easy 45-min Ride' : isSwimming ? 'Easy 1km Swim' : 'Easy 5k Run'}").
-Use "sets" = 1, "targetReps" = duration in minutes, "targetWeight" = 0.
-${wantsProgressive ? 'For progressive weeks: increase duration/intensity each week (e.g. Easy 30-min → Easy 35-min → Easy 40-min).' : ''}
-recoveryNotes = explain the hard/easy periodisation logic.`;
+ALWAYS include 3 exercises per session in this exact order:
+1. "Warm-Up Stretch" — dynamic stretches before the session (sets=1, targetReps=5, targetWeight=0). E.g. leg swings, hip circles, ankle rolls, high knees on the spot.
+2. The main ${activityName.toLowerCase()} session (e.g. "${isCycling ? 'Easy 45-min Ride' : isSwimming ? 'Easy 1km Swim' : 'Easy 5k Run'}") — sets=1, targetReps=duration in minutes, targetWeight=0.
+3. "Cool-Down Stretch" — static stretches after the session (sets=1, targetReps=5, targetWeight=0). E.g. quad stretch, hamstring stretch, calf stretch, hip flexor stretch.
+${wantsProgressive ? 'For progressive weeks: increase the main session duration/intensity each week. Warm-up and cool-down stay constant.' : ''}
+recoveryNotes = explain the hard/easy periodisation logic and importance of the warm-up/cool-down for injury prevention.`;
         formatRules = `${progressiveBlock}
 - scheduleTime/scheduleEndTime: realistic training hours.
 - targetWeight 0 for all endurance sessions.`;
