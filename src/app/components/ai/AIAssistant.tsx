@@ -11,10 +11,11 @@ interface Message {
   mediaType?: 'image' | 'video';
   loadingLabel?: string;
   pendingFoodLog?: PendingFoodLog;
+  isPlanBuilding?: boolean; // shows construction progress animation
 }
 
 interface PendingMeal {
-  name: string; calories: number; protein: number; carbs: number; fat: number; sugar: number;
+  name: string; calories: number; protein: number; carbs: number; fat: number; saturatedFat?: number; unsaturatedFat?: number; sugar: number;
 }
 interface PendingFoodLog {
   date: string;
@@ -114,6 +115,55 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
     }).join('\n');
   const savingsSoFar  = store.vices.reduce((sum, v) => sum + (v.goldSaved ?? 0), 0);
 
+  // RPG stats
+  const rpgStats = `Level ${store.stats.level} — XP: ${store.stats.xp}/${store.stats.xpToNext} | STR: ${store.stats.str} / CON: ${store.stats.con} / DEX: ${store.stats.dex} / GOLD: ${store.stats.gold}`;
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Habit definitions
+  const habitDefs = store.habitDefs.length === 0 ? '  None' :
+    store.habitDefs.map(h =>
+      `  ${h.emoji} ${h.name} — days: ${h.scheduleDays.map(d => dayNames[d]).join(',')} | completions: ${store.habitLog.filter(l => l.habitId === h.id).length}`
+    ).join('\n');
+
+  // Gym plans — full details so AI can read before editing
+  const gymPlansContext = store.gymPlans.length === 0 ? '  None' :
+    store.gymPlans.map(p => {
+      const dayStr  = p.scheduleDays.map(d => dayNames[d]).join(',');
+      const exList  = (p.exercises ?? []).map(e =>
+        `${e.name} ${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @${e.targetWeight}kg` : ' (bodyweight)'}`
+      ).join('; ');
+      const weekSum = p.weeks && p.weeks.length > 0
+        ? ` | ${p.weeks.length} progressive weeks (wk1: ${(p.weeks[0].exercises ?? []).map(e => `${e.name} ${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @${e.targetWeight}kg` : ''}`).join('; ')})`
+        : '';
+      const splitStr   = p.split         ? ` | split: ${p.split}`           : '';
+      const recovStr   = p.recoveryNotes ? ` | recovery: ${p.recoveryNotes}` : '';
+      const repeatStr  = p.isRepeating   ? ' | repeating'                    : '';
+      return `  [id:${p.id}] ${p.emoji} ${p.name} — days: ${dayStr}${splitStr}${repeatStr} — exercises: ${exList || 'none'}${weekSum}${recovStr}`;
+    }).join('\n');
+
+  // Recent GPS activities
+  const recentGps = store.gpsActivities.slice(-20).reverse().map(a =>
+    `  ${a.startTime?.slice(0,10) ?? 'unknown'}: ${a.type} — ${a.distance ? a.distance.toFixed(2) + 'km' : ''} ${a.duration ? Math.round(a.duration / 60) + 'min' : ''} ${a.elevationGain ? a.elevationGain + 'm gain' : ''}`
+  ).join('\n') || '  No GPS activities';
+
+  // Wake quest
+  const wakeContext = store.wakeQuest.targetTime
+    ? `Target wake time: ${store.wakeQuest.targetTime} — check-ins: ${store.wakeQuest.checkIns?.length ?? 0} total — recent: ${(store.wakeQuest.checkIns ?? []).slice(-7).map(c => c.onTime ? '✓' : '✗').join(' ')}`
+    : 'Wake quest not configured';
+
+  // Nutrition goals
+  const nutritionGoalCtx = store.nutritionGoal
+    ? `${store.nutritionGoal.calories}kcal | P:${store.nutritionGoal.protein}g | C:${store.nutritionGoal.carbs}g | F:${store.nutritionGoal.fat}g | Sugar:${store.nutritionGoal.sugar ?? 50}g`
+    : 'Not set';
+
+  // Subscriptions
+  const subsContext = store.subscriptions && store.subscriptions.length > 0
+    ? store.subscriptions.map(s =>
+        `  ${s.emoji} ${s.name}: ${store.currencySymbol}${s.amount}/${s.cycle} (${s.needsWants ?? 'unsorted'})`
+      ).join('\n')
+    : '  None tracked';
+
   // Vice/spending analysis — last 30 days
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const recentVices = store.vices.filter(v => v.date >= thirtyDaysAgo);
@@ -198,6 +248,8 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 - Activity level: ${store.characterAppearance.activityLevel ?? 'moderate'}
 - Goals: ${store.primaryGoals.length > 0 ? store.primaryGoals.join(', ') : 'not set'}
 - Estimated daily calorie need (TDEE): ~${tdee} kcal baseline${hasEnduranceToday ? ` / ~${tdeeWithActivity} kcal today (endurance activity)` : hasGymToday ? ` / ~${tdeeWithActivity} kcal today (gym)` : ''}
+- Nutrition goals: ${nutritionGoalCtx}
+- RPG stats: ${rpgStats}
 - Time on GAINN: ${timeOnApp}
 
 CALENDAR — TODAY (${today}):
@@ -237,8 +289,20 @@ TODAY'S ACTIVITY:
 - Running experience: ${store.runExperience || 'not set'}
 - Use experience level to calibrate advice difficulty. Brand new / Never run = beginner-friendly. 4+ years = technical/advanced.
 
+WAKE QUEST:
+${wakeContext}
+
+ALL HABIT DEFINITIONS:
+${habitDefs}
+
+ALL GYM PLANS:
+${gymPlansContext}
+
 ALL GYM SESSIONS:
 ${allGymSessions}
+
+RECENT GPS ACTIVITIES (last 20):
+${recentGps}
 
 STEP HISTORY (last 90 days):
 ${stepHistory}
@@ -261,7 +325,10 @@ VICES & SPENDING (last 30 days):
 - Estimated vice spend: ${store.currencySymbol}${totalViceSpend.toFixed(0)}
 - Other tracked spending: ${store.currencySymbol}${totalSpending.toFixed(0)} across ${recentSpending.length} entries
 - Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved via vice log: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
-- Login streak: ${store.loginStreak} days`;
+- Login streak: ${store.loginStreak} days
+
+SUBSCRIPTIONS:
+${subsContext}`;
 }
 
 const SECTION_CONTEXT: Record<string, string> = {
@@ -293,6 +360,8 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       protein:  Number(action.protein  ?? 0),
       carbs:    Number(action.carbs    ?? 0),
       fat:      Number(action.fat      ?? 0),
+      ...(action.saturatedFat   != null ? { saturatedFat:   Number(action.saturatedFat)   } : {}),
+      ...(action.unsaturatedFat != null ? { unsaturatedFat: Number(action.unsaturatedFat) } : {}),
       sugar:    Number(action.sugar    ?? 0),
       micros:   rawMicros ?? undefined,
     });
@@ -307,6 +376,8 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
           protein:  Number(m.protein  ?? 0),
           carbs:    Number(m.carbs    ?? 0),
           fat:      Number(m.fat      ?? 0),
+          ...(m.saturatedFat   != null ? { saturatedFat:   Number(m.saturatedFat)   } : {}),
+          ...(m.unsaturatedFat != null ? { unsaturatedFat: Number(m.unsaturatedFat) } : {}),
           sugar:    Number(m.sugar    ?? 0),
           micros:   micros ?? undefined,
         });
@@ -400,18 +471,35 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       build:        action.build       ? String(action.build) : undefined,
       notes:        String(action.notes ?? ''),
     });
+  } else if (type === 'update_gym_plan') {
+    const planId = String(action.planId ?? '');
+    const patch  = action.patch as Record<string, unknown> | undefined;
+    if (planId && patch) {
+      const exists = useGameStore.getState().gymPlans.some(p => p.id === planId);
+      if (exists) {
+        store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
+      } else {
+        // Plan was deleted — return a sentinel so the caller can re-generate
+        return 'PLAN_NOT_FOUND';
+      }
+    }
   }
 }
 
+const GAINN_INTRO_MARKER = '__GAINN_INTRO__';
+
 export default function AIAssistant() {
   const store = useGameStore();
-  const { activeSection, userName } = store;
+  const { activeSection, userName, gainnIntroSeen, setGainnIntroSeen } = store;
 
-  const [open,        setOpen]        = useState(false);
-  const [messages,    setMessages]    = useState<Message[]>([]);
-  const [input,       setInput]       = useState('');
-  const [loading,     setLoading]     = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState('Thinking…');
+  const [open,           setOpen]           = useState(false);
+  const [messages,       setMessages]       = useState<Message[]>([]);
+  const [input,          setInput]          = useState('');
+  const [loading,        setLoading]        = useState(false);
+  const [loadingLabel,   setLoadingLabel]   = useState('Thinking…');
+  const [introCountdown, setIntroCountdown] = useState(10);
+  const [buildProgress,  setBuildProgress]  = useState(-1); // -1=hidden, 0–100
+  const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [listening,   setListening]   = useState(false);
   const messagesEndRef    = useRef<HTMLDivElement>(null);
   const inputRef          = useRef<HTMLInputElement>(null);
@@ -421,14 +509,51 @@ export default function AIAssistant() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
+  // Auto-open GAINN intro for new users
+  useEffect(() => {
+    if (!gainnIntroSeen) {
+      setOpen(true);
+    }
+  }, []);
+
+  // 10-second countdown when intro is shown
+  useEffect(() => {
+    if (!open || gainnIntroSeen) return;
+    setIntroCountdown(10);
+    const iv = setInterval(() => {
+      setIntroCountdown(c => {
+        if (c <= 1) { clearInterval(iv); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [open, gainnIntroSeen]);
+
+  // Reset chat when user leaves the app (switches tabs / goes to home screen)
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        setMessages([]);
+      }
+    };
+    document.addEventListener('visibilitychange', onHidden);
+    return () => document.removeEventListener('visibilitychange', onHidden);
+  }, []);
+
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 300);
-      if (messages.length === 0) {
+      if (!gainnIntroSeen) {
+        // First-time intro — show tutorial message
+        if (messages.length === 0) setMessages([{ role: 'ai', text: GAINN_INTRO_MARKER }]);
+      } else if (messages.length === 0) {
+        // Only show greeting when chat history was cleared (app leave reset)
         const name = userName ? userName.split(' ')[0] : 'there';
         setMessages([{ role: 'ai', text: `Hey ${name}! I know your stats, your goals, and what you've been up to. Ask me anything, or send a photo of your food / a video of your form for instant analysis.` }]);
       }
+      // Otherwise preserve existing conversation
     }
+    // Do NOT clear messages on close — keep history until user leaves the app
   }, [open]);
 
   useEffect(() => {
@@ -444,9 +569,32 @@ export default function AIAssistant() {
     preferences: Record<string, string>,
   ) => {
     const s = useGameStore.getState();
+
+    // ── Start construction progress animation ────────────────────────────
+    setBuildProgress(0);
+    if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+    buildTimerRef.current = setInterval(() => {
+      setBuildProgress(p => {
+        if (p >= 92) { clearInterval(buildTimerRef.current!); return 92; }
+        return p + 1.5; // reaches ~92% in ~15 sec at 250ms intervals
+      });
+    }, 250);
+
+    // Add the building message with animation flag
+    setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true }]);
+
+    const finishProgress = (success: boolean, successMsg: string) => {
+      if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+      setBuildProgress(100);
+      setTimeout(() => {
+        // Replace building message with done message
+        setMessages(prev => prev.map(m => m.isPlanBuilding ? { ...m, isPlanBuilding: false, text: successMsg } : m));
+        setBuildProgress(-1);
+      }, success ? 600 : 300);
+    };
+
     try {
       if (type === 'gym') {
-        addAiMsg('⏳ Building your plan now — this takes around 15 seconds. It\'ll appear automatically in the Gym tab when ready. You can keep chatting!');
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -466,7 +614,7 @@ export default function AIAssistant() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          addAiMsg(`Plan generation failed: ${data.error ?? res.status}. Try again in a moment.`);
+          finishProgress(false, `Plan generation failed: ${data.error ?? res.status}. Try again in a moment.`);
           return;
         }
         // Support both legacy { plan } and new { plans: [...] }
@@ -474,34 +622,48 @@ export default function AIAssistant() {
         console.log('[GymPlan] rawPlans received:', JSON.stringify(rawPlans, null, 2));
         if (rawPlans.length > 0) {
           rawPlans.forEach(p => {
+            const mapEx = (ex: Record<string, unknown>) => ({
+              id:           Math.random().toString(36).slice(2, 9),
+              name:         String(ex.name         ?? ''),
+              sets:         Number(ex.sets         ?? 3),
+              targetReps:   Number(ex.targetReps   ?? 10),
+              targetWeight: Number(ex.targetWeight ?? 0),
+            });
             s.addGymPlan({
-              name:          p.name as string,
-              emoji:         p.emoji as string,
-              color:         p.color as string,
-              split:         p.split as string | undefined,
+              name:          p.name          as string,
+              emoji:         p.emoji         as string,
+              color:         p.color         as string,
+              split:         p.split         as string | undefined,
               recoveryNotes: p.recoveryNotes as string | undefined,
-              exercises:     ((p.exercises as Record<string, unknown>[]) ?? []).map(ex => ({
-                ...ex,
-                id: Math.random().toString(36).slice(2, 9),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any)),
-              scheduleDays:    (p.scheduleDays as number[]) ?? [],
-              scheduleTime:    (p.scheduleTime as string) ?? '',
-              scheduleEndTime: (p.scheduleEndTime as string) ?? '',
-              dayTimes:        {},
-              dayEndTimes:     {},
+              isRepeating:   Boolean(p.isRepeating),
+              exercises: ((p.exercises as Record<string, unknown>[]) ?? []).map(mapEx),
+              weeks: Array.isArray(p.weeks)
+                ? (p.weeks as Record<string, unknown>[]).map(w => ({
+                    weekNumber: Number(w.weekNumber ?? 1),
+                    label:      w.label as string | undefined,
+                    exercises:  ((w.exercises as Record<string, unknown>[]) ?? []).map(mapEx),
+                  }))
+                : undefined,
+              scheduleDays:    (p.scheduleDays    as number[]) ?? [],
+              scheduleTime:    (p.scheduleTime    as string)  ?? '',
+              scheduleEndTime: (p.scheduleEndTime as string)  ?? '',
+              dayTimes:    {},
+              dayEndTimes: {},
             });
           });
           const label = rawPlans.length === 1
             ? `"${rawPlans[0].name as string}"`
             : rawPlans.map(p => `"${p.name as string}"`).join(', ');
-          addAiMsg(`✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Gym tab → Plans. Head there to log your first session!`);
+          const prefType = (preferences.type ?? '').toLowerCase();
+          const isStudyPlan = prefType.includes('stud') || prefType.includes('revis') || prefType.includes('exam') || prefType.includes('learn') || prefType.includes('academic');
+          const doneMsg = isStudyPlan
+            ? `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Plans tab. Each subject has its own plan — head there to get started!`
+            : `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Gym tab → Plans. Head there to log your first session!`;
+          finishProgress(true, doneMsg);
         } else {
-          addAiMsg('Plan generation hit a snag. Try again with a bit more detail about what you want.');
+          finishProgress(false, 'Plan generation hit a snag. Try again with a bit more detail about what you want.');
         }
       } else {
-        setLoadingLabel('Building your meal plan… (~20 sec)');
-        addAiMsg('⏳ Generating your meal plan — usually takes around 20 seconds. All the meals will be saved automatically to your Meal Library in the Food tab when ready, so feel free to carry on!');
         const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -513,14 +675,14 @@ export default function AIAssistant() {
         const data = await res.json();
         if (data.mealPlan?.meals?.length) {
           (data.mealPlan.meals as Omit<SavedMealItem, 'id'>[]).forEach(meal => s.addToMealLibrary(meal));
-          addAiMsg(`✅ Added ${data.mealPlan.meals.length} meals to your Meal Library in the Food tab — you can log them any time!`);
+          finishProgress(true, `✅ Added ${data.mealPlan.meals.length} meals to your Meal Library in the Food tab — you can log them any time!`);
         } else {
-          addAiMsg('Meal plan generation hit a snag. Try describing your preferences again.');
+          finishProgress(false, 'Meal plan generation hit a snag. Try describing your preferences again.');
         }
       }
     } catch (err) {
       console.error('[GymPlan] generatePlan error:', err);
-      addAiMsg(`Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
+      finishProgress(false, `Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [addAiMsg]);
 
@@ -528,6 +690,8 @@ export default function AIAssistant() {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
+    // If user types during intro, mark it as seen so chat continues normally
+    if (!gainnIntroSeen) setGainnIntroSeen();
     // Capture history BEFORE adding the new user message
     const historySnapshot = messages;
     setMessages(prev => [...prev, { role: 'user', text }]);
@@ -535,10 +699,10 @@ export default function AIAssistant() {
     setLoadingLabel('Thinking…');
     try {
       const habitList = store.habitDefs.map(h => h.name).join(', ');
-      // Build conversation history for Gemini (skip initial greeting, keep last 20 turns)
+      // Build conversation history for Gemini (skip initial greeting, keep last 30 turns)
       const history = historySnapshot
         .slice(1)  // skip the opening greeting
-        .slice(-20) // keep last 20 messages for context
+        .slice(-30) // keep last 30 messages for context
         .filter(m => !m.mediaUrl) // skip pure-media messages
         .map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
       const res = await fetch('/api/gemini', {
@@ -576,7 +740,19 @@ export default function AIAssistant() {
         } else if (data.action?.type === 'generate_meal_plan') {
           generatePlan('meal', data.action.preferences ?? {});
         } else if (data.action) {
-          executeAction(data.action, store);
+          const actionResult = executeAction(data.action, store);
+          if (actionResult === 'PLAN_NOT_FOUND') {
+            // Plan was deleted — extract preferences from the patch and regenerate fresh
+            const patch = (data.action.patch ?? {}) as Record<string, unknown>;
+            const prefs: Record<string, string> = {};
+            if (patch.name)          prefs.name          = String(patch.name);
+            if (patch.goal)          prefs.goal          = String(patch.goal);
+            if (patch.daysPerWeek)   prefs.daysPerWeek   = String(patch.daysPerWeek);
+            if (patch.scheduleDays)  prefs.scheduleDays  = JSON.stringify(patch.scheduleDays);
+            if (patch.splitType)     prefs.splitType     = String(patch.splitType);
+            if (patch.progressive !== undefined) prefs.progressive = patch.progressive ? 'yes' : 'no';
+            generatePlan('gym', prefs);
+          }
         }
       }
     } catch {
@@ -771,8 +947,7 @@ export default function AIAssistant() {
 
   return (
     <>
-      {/* Thin tap-to-close strip above the drawer — doesn't block the page scroll area */}
-      {open && <div className="fixed left-0 right-0 z-40" style={{ bottom: '45vh', height: 40 }} onClick={() => setOpen(false)} />}
+      {/* No backdrop during intro — countdown forces the user to wait */}
 
       {/* Hidden file inputs */}
       <input
@@ -802,7 +977,7 @@ export default function AIAssistant() {
       {/* Drawer */}
       <div
         className={`fixed left-0 right-0 bottom-0 z-50 transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`}
-        style={{ height: '45vh' }}
+        style={{ height: gainnIntroSeen ? '45vh' : '80vh' }}
       >
         <div className="h-full bg-ql-surface border-t border-ql rounded-t-3xl flex flex-col overflow-hidden shadow-2xl"
           style={{ maxWidth: 512, margin: '0 auto' }}>
@@ -818,7 +993,23 @@ export default function AIAssistant() {
               </div>
               <span className="text-ql text-sm font-semibold">GAINN AI</span>
             </div>
-            <button onClick={() => setOpen(false)} className="text-ql-3 text-lg leading-none px-1">×</button>
+            {!gainnIntroSeen && introCountdown > 0 ? (
+              // Countdown circle — can't close yet
+              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                <svg width="32" height="32" viewBox="0 0 32 32" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+                  <circle cx="16" cy="16" r="11" fill="none" stroke="var(--ql-border)" strokeWidth="2.5" />
+                  <circle cx="16" cy="16" r="11" fill="none" stroke="var(--ql-accent-tx)" strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeDasharray={String(2 * Math.PI * 11)}
+                    strokeDashoffset={String(2 * Math.PI * 11 * (1 - introCountdown / 10))}
+                    style={{ transition: 'stroke-dashoffset 1s linear' }}
+                  />
+                </svg>
+                <span className="text-ql text-[11px] font-bold relative z-10">{introCountdown}</span>
+              </div>
+            ) : (
+              <button onClick={() => { if (!gainnIntroSeen) setGainnIntroSeen(); setOpen(false); }} className="text-ql-3 text-lg leading-none px-1">×</button>
+            )}
           </div>
 
           {/* Messages */}
@@ -836,7 +1027,84 @@ export default function AIAssistant() {
                   {m.mediaUrl && m.mediaType === 'video' && (
                     <video src={m.mediaUrl} className="w-full max-h-36 object-cover" muted playsInline />
                   )}
-                  <p className="px-3 py-2 whitespace-pre-line">{m.text}</p>
+
+                  {/* ── Plan building construction animation ── */}
+                  {m.isPlanBuilding ? (
+                    <div className="px-3 py-3 flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        {/* Circular progress ring */}
+                        <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
+                          <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: 'rotate(-90deg)' }}>
+                            {/* Track */}
+                            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--ql-surface3)" strokeWidth="3.5" />
+                            {/* Progress arc */}
+                            <circle
+                              cx="22" cy="22" r="18"
+                              fill="none"
+                              stroke="var(--ql-accent)"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              strokeDasharray={`${2 * Math.PI * 18}`}
+                              strokeDashoffset={`${2 * Math.PI * 18 * (1 - Math.min(buildProgress, 100) / 100)}`}
+                              style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+                            />
+                          </svg>
+                          {/* Hard hat emoji centred */}
+                          <div className="absolute inset-0 flex items-center justify-center" style={{ fontSize: 16 }}>
+                            {buildProgress >= 100 ? '✅' : '🏗️'}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-ql text-xs font-semibold">
+                            {buildProgress >= 100 ? 'Plan complete!' : 'Building your plan…'}
+                          </p>
+                          <p className="text-ql-3 text-[10px]">
+                            {buildProgress >= 100 ? 'Saving to your Plans tab' : `${Math.round(Math.min(buildProgress, 100))}% — hang tight, takes ~15 sec`}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Animated construction dots */}
+                      {buildProgress < 100 && (
+                        <div className="flex gap-1.5 px-1">
+                          {['🧱','⚙️','📐','🔩','🏋️'].map((e, di) => (
+                            <span
+                              key={di}
+                              className="text-sm"
+                              style={{
+                                opacity: buildProgress > di * 20 ? 1 : 0.2,
+                                transition: 'opacity 0.5s ease',
+                                transform: buildProgress > di * 20 ? 'scale(1)' : 'scale(0.7)',
+                              }}
+                            >{e}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : m.text === GAINN_INTRO_MARKER ? (
+                    <div className="px-3 py-3 flex flex-col gap-2.5">
+                      <p className="text-ql text-sm font-semibold">Hey {userName ? userName.split(' ')[0] : 'there'}! 👋 I&apos;m GAINN — your personal AI coach.</p>
+                      <p className="text-ql-3 text-xs">I live in the bottom-right corner, always ready to help. Here&apos;s what I can do:</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { icon: '🍽️', label: 'Log food & water' },
+                          { icon: '🏋️', label: 'Build gym plans' },
+                          { icon: '🏃', label: 'Build running plans' },
+                          { icon: '📸', label: 'Review your form' },
+                          { icon: '📊', label: 'Track progress' },
+                          { icon: '💤', label: 'Sleep & recovery' },
+                        ].map(({ icon, label }) => (
+                          <div key={label} className="flex items-center gap-1.5 bg-ql-surface rounded-xl px-2.5 py-2 border border-ql">
+                            <span className="text-base shrink-0">{icon}</span>
+                            <span className="text-ql text-[11px] font-medium leading-tight">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-ql-3 text-[11px] leading-relaxed">GAINN keeps a record of everything — your goals, weight, nutrition, workouts, sleep, and more — so every answer is tailored specifically to <strong className="text-ql">you</strong>.</p>
+                      <p className="text-ql-3 text-[11px]">Feel free to ask me anything right now — type below! 🚀</p>
+                    </div>
+                  ) : (
+                    <p className="px-3 py-2 whitespace-pre-line">{m.text}</p>
+                  )}
                 </div>
                 {/* Past food log confirmation card */}
                 {m.pendingFoodLog && !m.pendingFoodLog.confirmed && (
@@ -861,12 +1129,18 @@ export default function AIAssistant() {
                       <button
                         onClick={() => {
                           const pfl = m.pendingFoodLog!;
+                          // Normalise date: trim + take first 10 chars (YYYY-MM-DD)
+                          const logDate = (pfl.date ?? '').trim().slice(0, 10) || new Date().toISOString().slice(0, 10);
+                          const gs = useGameStore.getState();
                           pfl.meals.forEach(meal => {
-                            store.logMeal({
+                            gs.logMeal({
                               name: meal.name, calories: meal.calories,
                               protein: meal.protein, carbs: meal.carbs,
-                              fat: meal.fat, sugar: meal.sugar ?? 0,
-                            }, pfl.date);
+                              fat: meal.fat,
+                              ...(meal.saturatedFat   != null ? { saturatedFat:   meal.saturatedFat   } : {}),
+                              ...(meal.unsaturatedFat != null ? { unsaturatedFat: meal.unsaturatedFat } : {}),
+                              sugar: meal.sugar ?? 0,
+                            }, logDate);
                           });
                           setMessages(prev => prev.map((msg, idx) =>
                             idx === i && msg.pendingFoodLog

@@ -59,7 +59,7 @@ function deleteFileFromAPI(fileName: string, apiKey: string): void {
 }
 
 const SECTION_PROMPTS: Record<string, string> = {
-  dashboard:  'You are an RPG quest advisor reviewing a hero\'s overall stats and progress. Be motivational, use RPG fantasy language, and give advice about improving STR, CON, DEX, and GOLD stats.',
+  dashboard:  'You are an RPG quest advisor reviewing the user\'s overall stats and progress. Be motivational, use RPG fantasy language, and give advice about improving STR, CON, DEX, and GOLD stats.',
   quests:     'You are a wise quest giver in an RPG world. Help the user set and achieve their goals across money, fitness, sleep, and gym categories. Use epic fantasy language.',
   vices:      'You are a gruff but caring tavern keeper who helps adventurers resist temptation. Comment on their vice tracking (pints, cigarettes, junk food) and celebrate gold saved from skipping vices.',
   gym:        'You are a battle-hardened warrior trainer. Give advice about the user\'s gym workouts, exercises, weights, and strength gains. Use warrior/combat metaphors.',
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // ── Plan generation mode ─────────────────────────────────────────────────
+    // ── Plan generation mode (any activity type) ─────────────────────────────
     if (mode === 'generate_gym_plan') {
       // Disable thinking — plan generation only needs fast structured JSON, not extended reasoning
       const model = genAI.getGenerativeModel({
@@ -90,64 +90,164 @@ export async function POST(req: NextRequest) {
       });
       const prefs = context.preferences ?? {};
       const daysPerWeek = parseInt(prefs.daysPerWeek ?? '3', 10);
+      const rawType  = (prefs.type  ?? '').toLowerCase();
       const rawSplit = (prefs.split ?? '').toLowerCase().replace(/[^a-z]/g, '');
 
-      // Fuzzy split detection — handle PPL, pushpulllegs, upperlower, UL, etc.
+      // ── Detect activity category ────────────────────────────────────────
+      const isCycling  = rawType.includes('cycl') || rawType.includes('bike') || rawType.includes('bik');
+      const isSwimming = rawType.includes('swim');
+      const isRunning  = rawSplit.includes('run') || rawSplit.includes('cardio') || rawType.includes('run') || rawType.includes('marathon') || rawType.includes('jog');
+      const isEndurance = isRunning || isCycling || isSwimming;
+
+      const isStudy  = rawType.includes('stud') || rawType.includes('exam') || rawType.includes('revis') || rawType.includes('learn') || rawType.includes('course') || rawType.includes('academic');
+      const isYoga   = rawType.includes('yoga') || rawType.includes('pilates') || rawType.includes('stretch') || rawType.includes('mobil');
+      const isSport  = rawType.includes('football') || rawType.includes('rugby') || rawType.includes('tennis') || rawType.includes('basketball') || rawType.includes('sport') || rawType.includes('martial') || rawType.includes('box');
+      const isGym    = !isEndurance && !isStudy && !isYoga && !isSport;
+
+      // ── Progressive vs repeating ─────────────────────────────────────────
+      // Explicit preference wins; otherwise default: gym+study = progressive, others = repeating
+      const progressivePref = (prefs.progressive ?? '').toLowerCase();
+      const wantsProgressive = progressivePref === 'yes' || progressivePref === 'true'
+        || (progressivePref === '' && (isGym || isStudy));
+      const wantsRepeating = !wantsProgressive;
+
+      // ── Gym split detection ──────────────────────────────────────────────
       const isPPL        = /p(ush)?p(ull)?l(eg)?s?/.test(rawSplit) || rawSplit.includes('ppl');
       const isUpperLower = rawSplit.includes('upper') || rawSplit.includes('ul') || rawSplit === 'upperlower';
       const isBodyPart   = rawSplit.includes('bodypart') || rawSplit.includes('bro') || rawSplit.includes('isolation');
-      const isRunning    = rawSplit.includes('run') || rawSplit.includes('cardio') || (prefs.type ?? '').toLowerCase().includes('run');
+      const inferredPPL        = isGym && !rawSplit && daysPerWeek >= 5;
+      const inferredUpperLower = isGym && !rawSplit && daysPerWeek === 4;
 
-      // Also infer from daysPerWeek if no split specified
-      const inferredPPL        = !rawSplit && daysPerWeek >= 5;
-      const inferredUpperLower = !rawSplit && daysPerWeek === 4;
+      // ── Build the prompt based on activity type ──────────────────────────
+      let expertRole: string;
+      let planInstructions: string;
+      let formatRules: string;
 
-      const splitInstructions = (isPPL || inferredPPL)
-        ? `REQUIRED SPLIT: Push/Pull/Legs — generate EXACTLY 3 plans:
+      // Shared progressive/repeating format instruction
+      const progressiveBlock = wantsProgressive
+        ? `- isRepeating = false. Generate ${isStudy ? '4–8' : '5'} progressive weeks where each week ${isStudy ? 'covers harder/more advanced material' : 'increases difficulty (more sets, reps, weight, distance, or duration)'}. ${isStudy ? 'Final week label: "Consolidation Week".' : 'Week 5 = deload/recovery (60-70% intensity).'} exercises[] = the Week 1 sessions (used as fallback).`
+        : `- isRepeating = true. Do NOT include weeks[]. exercises[] = the full weekly session rotation. Same plan repeats every week.`;
+
+      if (isStudy) {
+        expertRole = 'You are an expert academic coach and revision planner.';
+
+        // Parse multi-subject support
+        const subjectList = prefs.subjects
+          ? prefs.subjects.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : prefs.focus ? [prefs.focus] : ['General study'];
+        const subjectCount = subjectList.length;
+        const weeksUntilExam = Math.min(Math.max(parseInt(prefs.weeksUntilExam ?? '8', 10), 4), 16);
+        const confidence = prefs.confidence ?? '';
+
+        // Study-specific progressive block — uses exam timeline
+        const studyProgressiveBlock = wantsProgressive
+          ? `- isRepeating = false. Generate ${weeksUntilExam} progressive weeks. Early weeks: content review and notes. Mid weeks: practice questions and topic tests. Final 2 weeks: past papers only, timed conditions. Final week label: "Exam Week – Past Papers Only". exercises[] = Week 1 sessions (used as fallback).`
+          : `- isRepeating = true. Do NOT include weeks[]. exercises[] = the full weekly session rotation.`;
+
+        planInstructions = `Create a structured revision plan for: ${prefs.type ?? 'exam preparation'}.
+Goal: ${prefs.goal ?? 'Pass exams with strong grades'}
+Subjects: ${subjectList.join(', ')}
+Weeks until exam: ${weeksUntilExam}
+Study days per week: ${daysPerWeek}
+${confidence ? `Confidence per subject: ${confidence}` : ''}
+
+Generate EXACTLY ${subjectCount} plan${subjectCount > 1 ? 's' : ''} — one plan per subject.
+Each plan is named after its subject (e.g. "Maths Revision", "Physics Revision").
+Each "exercise" = one type of study session for that subject (e.g. "Topic Review", "Past Paper Practice", "Flashcard Drill", "Timed Questions", "Essay Practice").
+${confidence ? 'Weaker subjects get more days per week. Stronger subjects get fewer.' : 'Spread days evenly across subjects.'}
+Use "sets" = sessions per week for that topic block. "targetReps" = 0. "targetWeight" = 0.
+Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.
+recoveryNotes = spaced repetition strategy, rest days, and burnout prevention for that subject.`;
+
+        formatRules = `${studyProgressiveBlock}
+- scheduleTime/scheduleEndTime: realistic study slot (e.g. 09:00–11:00).
+- targetWeight always 0. targetReps always 0.
+- No two plans may share the same scheduleDays values.`;
+      } else if (isEndurance) {
+        const activityName = isCycling ? 'Cycling' : isSwimming ? 'Swimming' : 'Running';
+        expertRole = `You are an expert ${activityName.toLowerCase()} coach building a science-backed training plan.`;
+        planInstructions = `Create a ${activityName} training plan.
+Goal: ${prefs.goal ?? 'General fitness / endurance'}
+Sessions per week: ${daysPerWeek}
+Experience: ${prefs.experience ?? 'Some experience'}
+Focus: ${prefs.focus ?? 'Build endurance'}
+
+Generate 1 plan. Alternate hard/easy sessions. Never two hard sessions back-to-back.
+Each "exercise" = one session type (e.g. "${isCycling ? 'Easy 45-min Ride' : isSwimming ? 'Easy 1km Swim' : 'Easy 5k Run'}").
+Use "sets" = 1, "targetReps" = duration in minutes, "targetWeight" = 0.
+${wantsProgressive ? 'For progressive weeks: increase duration/intensity each week (e.g. Easy 30-min → Easy 35-min → Easy 40-min).' : ''}
+recoveryNotes = explain the hard/easy periodisation logic.`;
+        formatRules = `${progressiveBlock}
+- scheduleTime/scheduleEndTime: realistic training hours.
+- targetWeight 0 for all endurance sessions.`;
+      } else if (isYoga || isSport) {
+        const activityName = isYoga ? 'yoga/mobility' : 'sport/athletic';
+        expertRole = `You are an expert ${activityName} coach.`;
+        planInstructions = `Create a ${prefs.type ?? activityName} training plan.
+Goal: ${prefs.goal ?? 'Improve performance and consistency'}
+Sessions per week: ${daysPerWeek}
+Experience: ${prefs.experience ?? 'Some experience'}
+Focus: ${prefs.focus ?? 'General'}
+
+Generate 1 plan. Each "exercise" = one session or drill (e.g. "Hip Mobility Flow 30min", "Footwork Drills 45min").
+Use "sets" = 1, "targetReps" = duration in minutes, "targetWeight" = 0.
+${wantsProgressive ? 'For progressive weeks: increase difficulty, duration, or complexity each week.' : ''}
+recoveryNotes = rest and recovery guidance.`;
+        formatRules = `${progressiveBlock}
+- scheduleTime/scheduleEndTime: realistic session times.`;
+      } else {
+        // Gym / weights
+        expertRole = 'You are an expert personal trainer creating a science-backed gym programme with proper recovery built in.';
+        const splitInstructions = (isPPL || inferredPPL)
+          ? `REQUIRED SPLIT: Push/Pull/Legs — generate EXACTLY 3 plans:
   - Plan 1 "Push Day": Chest, Shoulders, Triceps. scheduleDays = [1,4] (Mon+Thu).
   - Plan 2 "Pull Day": Back, Biceps, Rear Delts. scheduleDays = [2,5] (Tue+Fri).
   - Plan 3 "Legs Day": Quads, Hamstrings, Glutes, Calves. scheduleDays = [3,6] (Wed+Sat).
   If daysPerWeek is 3: Push [1], Pull [3], Legs [5] (one day each, no repeats).`
-        : (isUpperLower || inferredUpperLower)
-        ? `REQUIRED SPLIT: Upper/Lower — generate EXACTLY 2 plans:
+          : (isUpperLower || inferredUpperLower)
+          ? `REQUIRED SPLIT: Upper/Lower — generate EXACTLY 2 plans:
   - Plan 1 "Upper Body": Chest, Back, Shoulders, Arms. scheduleDays = [1,4] (Mon+Thu).
   - Plan 2 "Lower Body": Quads, Hamstrings, Glutes, Calves, Core. scheduleDays = [2,5] (Tue+Fri).`
-        : isBodyPart
-        ? `REQUIRED SPLIT: Body Part — generate EXACTLY 5 plans (one muscle group per day):
+          : isBodyPart
+          ? `REQUIRED SPLIT: Body Part — generate EXACTLY 5 plans (one muscle group per day):
   Chest [1], Back [2], Shoulders [3], Arms [4], Legs [5]. One day each per week.`
-        : isRunning
-        ? `REQUIRED: Running plan — generate 1 plan. Alternate hard/easy efforts. Never two hard days back-to-back. Include distance/duration in exercise names.`
-        : `REQUIRED SPLIT: Full Body — generate 1 plan scheduled ${daysPerWeek <= 2 ? 'with rest days between (e.g. [1,4])' : 'Mon/Wed/Fri [1,3,5]'}. Hit all major muscle groups each session.`;
-
-      const prompt = `You are an expert personal trainer creating a science-backed gym programme with proper recovery built in.
-
-User preferences:
-- Training type: ${prefs.type ?? 'Weights and gym training'}
-- Goal: ${prefs.goal ?? 'General fitness'}
-- Experience: ${prefs.experience ?? 'Some experience'}
-- Days per week: ${daysPerWeek}
-- Focus area: ${prefs.focus ?? 'Full body'}
-- Stats: STR=${context.stats?.str ?? 10}, CON=${context.stats?.con ?? 10}, Level=${context.stats?.level ?? 1}
+          : `REQUIRED SPLIT: Full Body — generate 1 plan scheduled ${daysPerWeek <= 2 ? 'with rest days between (e.g. [1,4])' : 'Mon/Wed/Fri [1,3,5]'}. Hit all major muscle groups each session.`;
+        planInstructions = `Training type: ${prefs.type ?? 'Weights and gym training'}
+Goal: ${prefs.goal ?? 'General fitness'}
+Experience: ${prefs.experience ?? 'Some experience'}
+Days per week: ${daysPerWeek}
+Focus area: ${prefs.focus ?? 'Full body'}
+Stats: STR=${context.stats?.str ?? 10}, CON=${context.stats?.con ?? 10}, Level=${context.stats?.level ?? 1}
 
 ${splitInstructions}
 
-RECOVERY RULES (always apply):
-- Never schedule the same muscle group on consecutive days (minimum 48h between same group).
-- For multi-plan splits: scheduleDays across plans must never overlap.
-- Each plan's recoveryNotes must clearly explain the recovery logic in plain English.
+RECOVERY RULES: Never schedule the same muscle group on consecutive days. No two plans may share a scheduleDays value. recoveryNotes must explain the recovery logic.`;
+        formatRules = `- exercises[] must mirror the Week 1 exercises (used as fallback). 4–6 exercises per plan, specific to that muscle group.
+- targetWeight 0 = bodyweight. Tailor weights to experience and STR (${context.stats?.str ?? 10}/150).
+${progressiveBlock}
+- scheduleTime/scheduleEndTime: realistic gym hours (~1 hour session).`;
+      }
+
+      const prompt = `${expertRole}
+
+${planInstructions}
 
 Return ONLY a raw JSON array (no markdown, no code fences, no wrapping object):
 [
   {
-    "name": "Push Day",
+    "name": "Plan name",
     "emoji": "💪",
     "color": "#e05a2b",
-    "split": "Push · Pull · Legs",
-    "recoveryNotes": "Chest, shoulders and triceps get 72h rest before the next Push session.",
+    "split": "Short plan type label",
+    "recoveryNotes": "Recovery/rest guidance.",
+    "isRepeating": false,
     "exercises": [
-      { "name": "Bench Press", "sets": 4, "targetReps": 8, "targetWeight": 60 }
+      { "name": "Session or exercise name", "sets": 1, "targetReps": 10, "targetWeight": 0 }
     ],
-    "scheduleDays": [1, 4],
+    "weeks": [
+      { "weekNumber": 1, "exercises": [{ "name": "Session or exercise name", "sets": 1, "targetReps": 10, "targetWeight": 0 }] }
+    ],
+    "scheduleDays": [1, 3, 5],
     "scheduleTime": "07:00",
     "scheduleEndTime": "08:00"
   }
@@ -155,15 +255,15 @@ Return ONLY a raw JSON array (no markdown, no code fences, no wrapping object):
 
 Rules:
 - ALWAYS return an array, even for a single plan.
-- 4–6 exercises per plan, specific to that day's muscle group(s).
-- targetWeight 0 = bodyweight.
-- scheduleDays: 0=Sun … 6=Sat. No two plans may share a day.
+- CRITICAL: The total number of scheduleDays across ALL plans combined MUST equal exactly ${daysPerWeek}. Count them before returning. Never add extra days.
+- scheduleDays: 0=Sun … 6=Sat. Sort days Mon-first: spread across [1,2,3,4,5,6,0] in order. E.g. 3 days = [1,3,5] (Mon/Wed/Fri).
+- Plan name: use the user's own words/slang where possible. If they said "full body" → name it "Full Body Plan". If they said "ab workout" → "Ab Workout". Keep it natural and match their language.
 - All plans in a split share the same split label string.
-- scheduleTime/scheduleEndTime: realistic gym hours (~1 hour session).
-- Tailor difficulty to experience and STR (${context.stats?.str ?? 10}/150).`;
+- Pick an appropriate emoji and a vivid hex color for the plan type.
+${formatRules}`;
 
       console.log('[GymPlan] prefs:', JSON.stringify(prefs));
-      console.log('[GymPlan] splitInstructions used:', splitInstructions.slice(0, 80));
+      console.log('[GymPlan] planType:', isStudy ? 'study' : isEndurance ? 'endurance' : isYoga ? 'yoga' : isSport ? 'sport' : 'gym');
       const result = await model.generateContent(prompt);
       let text = result.response.text().trim();
       console.log('[GymPlan] raw Gemini response:', text.slice(0, 300));
@@ -607,14 +707,14 @@ Available actions:
 Log steps:
 { "type": "log_steps", "steps": 8000 }
 
-Log a single food/meal (always include micros with your best estimate — use null only if truly unknown):
-{ "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "sugar": 3, "micros": { "vitA": 90, "vitC": 12, "vitD": 0.2, "vitE": 1.2, "vitK": 40, "vitB6": 0.6, "vitB12": 0.3, "folate": 60, "calcium": 45, "iron": 2.1, "magnesium": 38, "zinc": 1.8, "potassium": 420, "sodium": 380 } }
+Log a single food/meal (always include micros with your best estimate — use null only if truly unknown). PORTION SIZING: unless the user specifies an exact amount (e.g. "200g", "a large bowl"), scale the estimated calories and macros to a realistic portion for THIS user based on their height, weight, age and TDEE from the profile above. A 90kg active male needs larger portions than a 55kg sedentary female — adjust accordingly and mention your assumption briefly in your reply:
+{ "type": "log_food", "name": "Chicken salad", "calories": 450, "protein": 35, "carbs": 20, "fat": 12, "saturatedFat": 2, "unsaturatedFat": 10, "sugar": 3, "micros": { "vitA": 90, "vitC": 12, "vitD": 0.2, "vitE": 1.2, "vitK": 40, "vitB6": 0.6, "vitB12": 0.3, "folate": 60, "calcium": 45, "iron": 2.1, "magnesium": 38, "zinc": 1.8, "potassium": 420, "sodium": 380 } }
 
-Log multiple foods at once — IMPORTANT: if the user mentions more than one food item or meal in a single message (e.g. "I had eggs for breakfast, a sandwich for lunch and pasta for dinner"), you MUST use this action to log each as a separate entry. Never combine multiple foods into one log_food entry:
-{ "type": "log_food_multiple", "meals": [ { "name": "Scrambled eggs", "calories": 220, "protein": 18, "carbs": 2, "fat": 14, "sugar": 0, "micros": { "vitA": 90, "vitC": 0, "vitD": 1.1, "vitE": 1.0, "vitK": 0.4, "vitB6": 0.2, "vitB12": 0.9, "folate": 28, "calcium": 56, "iron": 1.8, "magnesium": 12, "zinc": 1.3, "potassium": 140, "sodium": 180 } }, { "name": "Tuna sandwich", "calories": 380, "protein": 28, "carbs": 40, "fat": 8, "sugar": 3, "micros": { "vitA": 10, "vitC": 2, "vitD": 0.5, "vitE": 0.8, "vitK": 5, "vitB6": 0.4, "vitB12": 1.2, "folate": 30, "calcium": 80, "iron": 2.5, "magnesium": 30, "zinc": 1.0, "potassium": 280, "sodium": 520 } } ] }
+Log multiple foods at once — IMPORTANT: if the user mentions more than one food item or meal in a single message (e.g. "I had eggs for breakfast, a sandwich for lunch and pasta for dinner"), you MUST use this action to log each as a separate entry. Never combine multiple foods into one log_food entry. Apply the same portion-sizing rule as log_food — scale each entry to the user's body stats unless they specified a quantity:
+{ "type": "log_food_multiple", "meals": [ { "name": "Scrambled eggs", "calories": 220, "protein": 18, "carbs": 2, "fat": 14, "saturatedFat": 4, "unsaturatedFat": 10, "sugar": 0, "micros": { "vitA": 90, "vitC": 0, "vitD": 1.1, "vitE": 1.0, "vitK": 0.4, "vitB6": 0.2, "vitB12": 0.9, "folate": 28, "calcium": 56, "iron": 1.8, "magnesium": 12, "zinc": 1.3, "potassium": 140, "sodium": 180 } }, { "name": "Tuna sandwich", "calories": 380, "protein": 28, "carbs": 40, "fat": 8, "saturatedFat": 1, "unsaturatedFat": 7, "sugar": 3, "micros": { "vitA": 10, "vitC": 2, "vitD": 0.5, "vitE": 0.8, "vitK": 5, "vitB6": 0.4, "vitB12": 1.2, "folate": 30, "calcium": 80, "iron": 2.5, "magnesium": 30, "zinc": 1.0, "potassium": 280, "sodium": 520 } } ] }
 
-Log food for a PAST date (when user says they forgot to log, or mentions food they had yesterday / a specific past day) — DO NOT use log_food/log_food_multiple for past dates. Use this action instead so the app can show a confirmation before writing. The "date" must be YYYY-MM-DD. Your reply must ask the user to confirm, e.g. "I'll add [meals] to [day] — shall I go ahead?":
-{ "type": "confirm_past_food_log", "date": "2026-03-27", "dateLabel": "yesterday (27 Mar)", "meals": [ { "name": "Chicken burger", "calories": 600, "protein": 30, "carbs": 40, "fat": 20, "sugar": 5 } ] }
+Log food for a PAST date (when user says they forgot to log, or mentions food they had yesterday / a specific past day) — DO NOT use log_food/log_food_multiple for past dates. Use this action instead so the app can show a confirmation before writing. The "date" must be YYYY-MM-DD. Apply the same body-stat portion-sizing rule. Your reply must ask the user to confirm, e.g. "I'll add [meals] to [day] — shall I go ahead?":
+{ "type": "confirm_past_food_log", "date": "2026-03-27", "dateLabel": "yesterday (27 Mar)", "meals": [ { "name": "Chicken burger", "calories": 600, "protein": 30, "carbs": 40, "fat": 20, "saturatedFat": 7, "unsaturatedFat": 13, "sugar": 5 } ] }
 
 Log water (ml):
 { "type": "log_water", "amount": 500 }
@@ -664,9 +764,36 @@ For all-day events (no specific time):
 Remove a calendar event (use the event id from the user's calendar context above):
 { "type": "delete_calendar_event", "id": "abc1234" }
 
-Build a full workout/training plan — ask the user about: training type, goal, experience level, days per week, focus area, and whether they want a split (e.g. Push/Pull/Legs, Upper/Lower) or full body. Once you have enough info (can be from one message or across several), trigger:
-{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience (6 months – 2 years)", "daysPerWeek": "4", "focus": "Full body", "split": "Upper/Lower" } }
-The "split" field must be one of: "Full Body", "Push/Pull/Legs", "Upper/Lower", "Body Part", "Running". If the user explicitly asks for a split, set it accordingly. If they haven't specified, infer from daysPerWeek (1-2→Full Body, 3→Full Body, 4→Upper/Lower, 5-6→Push/Pull/Legs).
+Edit an existing training plan (gym, running, cycling, swimming, or any plan) — when the user mentions editing, changing, updating or adjusting any plan, follow this exact 3-step flow:
+STEP 1 — Read it back briefly: find the plan in "ALL GYM PLANS" above, confirm you can see it in one short line (e.g. "Got it — your Push Day: Bench 4×8 @60kg, OHP 4×8 @40kg, Dips 3×12."). Use the [id:...] value shown there as planId.
+STEP 2 — Ask max 1 focused question: what specifically do they want changed and why? Keep it to one sentence.
+STEP 3 — Once you know exactly what to change, generate the full updated fields and trigger:
+{ "type": "update_gym_plan", "planId": "abc1234", "patch": { "exercises": [...], "weeks": [...] } }
+Only include fields that actually change in patch{}. Never trigger update_gym_plan without completing steps 1 and 2 first.
+IMPORTANT: If the user has already told you what to change in their first message (e.g. "edit my push day and swap bench for incline press"), skip step 2 and go straight from step 1 to step 3.
+DELETED PLAN RULE: If the user says they deleted a plan (e.g. "I deleted it", "can you rebuild it", "it's gone"), NEVER use update_gym_plan. Always use generate_gym_plan instead to create a fresh plan.
+
+Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
+
+─── GYM / FITNESS PLANS ───
+TRIGGER when you know: (1) goal, (2) days per week. That's all. Max 1 question before triggering.
+Progressive vs repeating — infer from context, only ask if genuinely unclear:
+- "same each week" / "keep it simple" → progressive = "no"
+- "get harder" / "build up" / "progress" → progressive = "yes"
+- Default: gym → "yes", endurance/sport/other → "no"
+{ "type": "generate_gym_plan", "preferences": { "type": "Weights and gym training", "goal": "Build muscle", "experience": "Some experience", "daysPerWeek": "3", "focus": "Full body", "split": "Full Body", "progressive": "no" } }
+For gym/weights the "split" field: infer from daysPerWeek if not stated (1-3→Full Body, 4→Upper/Lower, 5-6→Push/Pull/Legs). Use the user's gymExperience/runExperience from context for "experience".
+
+─── STUDY / REVISION PLANS ───
+When a user asks for a revision plan, study plan, or exam prep — ask up to 2 focused questions (only what you don't already know):
+Q1 (if not mentioned): "What subjects are you studying, and when's your exam?" — covers both in one.
+Q2 (if not mentioned after Q1): "How confident are you in each subject — strong, average, or weak?"
+Once you know subjects + time until exam → trigger immediately. Confidence is optional but helpful.
+{ "type": "generate_gym_plan", "preferences": { "type": "Study – A-Level Revision", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+- subjects: comma-separated list of subjects
+- weeksUntilExam: number of weeks until exam (convert "June" or a date to weeks from today: ${today})
+- daysPerWeek: total study days per week (ask if not stated, default 5)
+- Set type to match what they said: "Study – [subjects]" or "Revision – [exam name]"
 
 Build a full meal plan / meal library — ask the user about: nutrition goal, diet type, meals per day, cooking preference. Once you have enough info, trigger:
 { "type": "generate_meal_plan", "preferences": { "nutritionGoal": "Lose weight", "dietType": "No restrictions", "mealsPerDay": "3", "cookingPref": "Happy to cook" } }
@@ -681,6 +808,7 @@ Rules:
 - Keep reply short (2-3 sentences max)
 - Be warm and direct like a coach
 - If unsure of a value (e.g. calories), make a reasonable estimate and mention it
+- FOOD PORTION SIZING: when the user logs food without specifying an exact quantity or weight, use their height, weight, age, activity level and TDEE from the "User profile" section above to estimate a realistic portion size for them personally. A heavier, taller or more active person eats larger portions than a lighter sedentary one — scale the calories and macros accordingly. Always briefly mention your assumption in the reply (e.g. "Logged as a ~180g portion based on your size")
 - When awarding XP or stats as a reward/encouragement, pick amounts that feel meaningful but not game-breaking (XP: 10-100, stats: 1-10)
 - For plan generation: gather info conversationally — don't ask all questions at once. 1-2 questions per message. Once you have enough to build a great plan, trigger the action immediately
 - When triggering generate_gym_plan or generate_meal_plan, your reply should be a very short confirmation like "Perfect, I have everything I need!" — keep it to one sentence, the app will show the timing and auto-save message itself
@@ -794,7 +922,7 @@ Just ask me anything — I'm here to coach you! 🏆"`,
     const systemPrompt = SECTION_PROMPTS[section] ?? SECTION_PROMPTS.dashboard;
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: `${systemPrompt}\n\nCurrent hero context: ${JSON.stringify(context)}\n\nKeep responses concise (2-3 sentences max). Be encouraging and specific to their data.`,
+      systemInstruction: `${systemPrompt}\n\nCurrent user context: ${JSON.stringify(context)}\n\nKeep responses concise (2-3 sentences max). Be encouraging and specific to their data.`,
     });
 
     const result = await model.generateContent(message);
