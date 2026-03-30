@@ -195,7 +195,7 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const formatEvent = (e: typeof store.calendarEvents[0]) => {
     const time = e.allDay ? 'all day' : `${e.startTime}${e.endTime ? '–' + e.endTime : ''}`;
     const type = classifyEvent(e.title, e.notes);
-    return `"${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [${type}]${e.notes ? ' notes: ' + e.notes : ''}`;
+    return `[id:${e.id}] "${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [${type}]${e.notes ? ' notes: ' + e.notes : ''}`;
   };
   const sortedEvents   = [...store.calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
   const todayEvents    = sortedEvents.filter(e => e.date === today);
