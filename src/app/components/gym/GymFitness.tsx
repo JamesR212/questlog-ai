@@ -1865,6 +1865,33 @@ export default function GymFitness() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Delete plan confirmation overlay */}
+      {confirmDeleteId && (() => {
+        const prog = programmeGroups.find(pg => pg.key === confirmDeleteId);
+        if (!prog) return null;
+        return (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6" onClick={() => setConfirmDeleteId(null)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative bg-ql-hdr border border-ql rounded-2xl shadow-2xl p-6 w-full max-w-sm"
+              onClick={e => e.stopPropagation()}>
+              <p className="text-ql text-base font-bold mb-1">Delete &ldquo;{prog.label}&rdquo;?</p>
+              <p className="text-ql-3 text-sm mb-5">This removes the plan and all future calendar events.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { prog.plans.forEach(p => removeGymPlan(p.id)); setConfirmDeleteId(null); }}
+                  className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors">
+                  Yes, delete
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="flex-1 py-2.5 bg-ql-surface2 border border-ql text-ql text-sm font-semibold rounded-xl transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -2068,25 +2095,6 @@ export default function GymFitness() {
                         className="text-ql-3 hover:text-red-500 text-sm transition-colors px-1">
                         ✕
                       </button>
-                      {confirmDeleteId === prog.key && (
-                        <div className="absolute right-0 top-7 z-50 bg-ql-hdr border border-ql rounded-2xl shadow-2xl p-4 w-52"
-                          onClick={e => e.stopPropagation()}>
-                          <p className="text-ql text-sm font-semibold mb-1">Delete plan?</p>
-                          <p className="text-ql-3 text-xs mb-3">This removes the plan and all future calendar events.</p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => { prog.plans.forEach(p => removeGymPlan(p.id)); setConfirmDeleteId(null); }}
-                              className="flex-1 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-xl transition-colors">
-                              Yes, delete
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="flex-1 py-1.5 bg-ql-surface2 border border-ql text-ql text-xs font-semibold rounded-xl transition-colors">
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                     <span className="text-ql-3 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
                   </div>
