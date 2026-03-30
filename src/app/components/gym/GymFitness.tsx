@@ -2015,20 +2015,33 @@ export default function GymFitness() {
                     {/* Week selector — only for progressive plans */}
                     {!isRepeating && progWeeks.length > 0 && (
                       <div className="flex gap-2 px-4 py-2.5 overflow-x-auto border-b border-ql">
-                        {progWeeks.map(w => (
-                          <button
-                            key={w.weekNumber}
-                            onClick={() => setSelectedWeekByProg(prev => ({ ...prev, [prog.key]: w.weekNumber }))}
-                            className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                              selectedWeek === w.weekNumber
-                                ? 'text-white'
-                                : 'bg-ql-surface2 border border-ql text-ql-3'
-                            }`}
-                            style={selectedWeek === w.weekNumber ? { backgroundColor: prog.color } : {}}
-                          >
-                            {w.label ?? `Week ${w.weekNumber}`}
-                          </button>
-                        ))}
+                        {(() => {
+                          // Calculate the highest week the user has earned across all plans in this programme
+                          const totalSessions = prog.plans.reduce((sum, p) => sum + gymSessions.filter(s => s.planId === p.id).length, 0);
+                          const totalDaysPerWeek = Math.max(1, prog.plans.reduce((sum, p) => sum + p.scheduleDays.length, 0));
+                          const earnedWeekIdx = Math.floor(totalSessions / totalDaysPerWeek);
+                          const earnedWeekNumber = progWeeks[Math.min(earnedWeekIdx, progWeeks.length - 1)]?.weekNumber ?? 1;
+                          return progWeeks.map(w => {
+                            const isLocked = w.weekNumber > earnedWeekNumber;
+                            return (
+                              <button
+                                key={w.weekNumber}
+                                disabled={isLocked}
+                                onClick={() => !isLocked && setSelectedWeekByProg(prev => ({ ...prev, [prog.key]: w.weekNumber }))}
+                                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                                  isLocked
+                                    ? 'bg-ql-surface2 border border-ql text-ql-3 opacity-40 cursor-not-allowed'
+                                    : selectedWeek === w.weekNumber
+                                    ? 'text-white'
+                                    : 'bg-ql-surface2 border border-ql text-ql-3'
+                                }`}
+                                style={!isLocked && selectedWeek === w.weekNumber ? { backgroundColor: prog.color } : {}}
+                              >
+                                {isLocked ? `🔒 ${w.label ?? `Week ${w.weekNumber}`}` : (w.label ?? `Week ${w.weekNumber}`)}
+                              </button>
+                            );
+                          });
+                        })()}
                       </div>
                     )}
 
@@ -2039,20 +2052,20 @@ export default function GymFitness() {
                       </div>
                     )}
 
-                    {/* One row per scheduled day — sorted Mon→Sun (1,2,3,4,5,6,0) */}
-                    {prog.plans.flatMap(plan => {
-                      const exs = weekExercises(plan, selectedWeek);
+                    {/* One row per scheduled day — globally sorted Mon→Sun across ALL plans */}
+                    {(() => {
                       const MON_FIRST = [1,2,3,4,5,6,0];
-                      const sortedDays = [...plan.scheduleDays].sort(
-                        (a, b) => MON_FIRST.indexOf(a) - MON_FIRST.indexOf(b)
-                      );
-                      return sortedDays.map((dayNum, dayI) => {
-                        // Map each day positionally to its exercise; cycle if fewer exercises than days
-                        const ex = exs.length > 0 ? exs[dayI % exs.length] : null;
-                        const rowKey = `${plan.id}::${dayI}`;
-                        const isExpanded = expandedDayByProg[prog.key] === rowKey;
+                      // Collect ALL (plan, dayNum) pairs across every plan, then sort globally
+                      const allDayRows = prog.plans
+                        .flatMap(plan => plan.scheduleDays.map(dayNum => ({ plan, dayNum })))
+                        .sort((a, b) => MON_FIRST.indexOf(a.dayNum) - MON_FIRST.indexOf(b.dayNum));
+
+                      return allDayRows.map(({ plan, dayNum }) => {
+                        // ALL exercises in this plan are done on EVERY scheduled day — show them all
+                        const exs = weekExercises(plan, selectedWeek);
+                        const rowKey = `${plan.id}::${dayNum}`;
+                        const isDayExpanded = expandedDayByProg[prog.key] === rowKey;
                         const dayTime = plan.dayTimes?.[String(dayNum)] ?? plan.scheduleTime ?? '';
-                        const isOnlyExercise = exs.length <= 1; // single-exercise plans: same every day
 
                         return (
                           <div key={rowKey} className="border-b border-ql last:border-b-0">
@@ -2060,27 +2073,24 @@ export default function GymFitness() {
                               className="w-full flex items-center gap-3 px-4 py-3 text-left"
                               onClick={() => setExpandedDayByProg(prev => ({
                                 ...prev,
-                                [prog.key]: isExpanded ? null : rowKey,
+                                [prog.key]: isDayExpanded ? null : rowKey,
                               }))}
                             >
                               <div className="flex-1 min-w-0">
-                                {/* Day name as label */}
                                 <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
                                   {DAY_FULL_LABEL[dayNum]}{dayTime ? ` · ${fmt12(dayTime)}` : ''}
                                 </p>
-                                {/* Exercise name as headline */}
+                                {/* For multi-plan splits show plan name; otherwise show exercise count */}
                                 <p className="text-ql text-sm font-medium truncate">
-                                  {ex ? ex.name : 'No exercises yet'}
+                                  {prog.plans.length > 1 ? plan.name : (exs.length > 0 ? `${exs.length} exercise${exs.length !== 1 ? 's' : ''}` : 'No exercises yet')}
                                 </p>
-                                {/* Sets/reps inline for quick scan */}
-                                {ex && (
-                                  <p className="text-ql-3 text-[10px] mt-0.5">
-                                    {ex.sets}×{ex.targetReps}
-                                    {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' bodyweight'}
+                                {exs.length > 0 && (
+                                  <p className="text-ql-3 text-[10px] mt-0.5 truncate">
+                                    {exs.slice(0, 4).map(e => e.name).join(' · ')}{exs.length > 4 ? ` +${exs.length - 4} more` : ''}
                                   </p>
                                 )}
                               </div>
-                              {dayI === 0 && (sessionToday(plan.id) ? (
+                              {sessionToday(plan.id) ? (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0"
                                   style={{ backgroundColor: plan.color }}>✓ Done</span>
                               ) : (
@@ -2089,22 +2099,21 @@ export default function GymFitness() {
                                   className="text-xs font-semibold px-3 py-1.5 rounded-xl text-white shrink-0 transition-colors"
                                   style={{ backgroundColor: plan.color }}
                                 >Log</button>
-                              ))}
-                              <span className="text-ql-3 text-[10px] ml-1">{isExpanded ? '▲' : '▼'}</span>
+                              )}
+                              <span className="text-ql-3 text-[10px] ml-1">{isDayExpanded ? '▲' : '▼'}</span>
                             </button>
 
-                            {/* Expanded: full exercise details + recovery notes */}
-                            {isExpanded && (
+                            {/* Expanded: ALL exercises for this session + recovery notes */}
+                            {isDayExpanded && (
                               <div className="px-4 pb-3 flex flex-col gap-1.5 bg-ql-surface2">
                                 {plan.recoveryNotes && (
-                                  <p className="text-ql-3 text-[10px] mb-1">🔁 {plan.recoveryNotes}</p>
+                                  <p className="text-ql-3 text-[10px] mb-2 italic">🔁 {plan.recoveryNotes}</p>
                                 )}
-                                {!ex ? (
+                                {exs.length === 0 ? (
                                   <p className="text-ql-3 text-xs italic py-2">No exercises — tap Edit to add some.</p>
-                                ) : isOnlyExercise ? (
-                                  // Single exercise: show all sets detail
+                                ) : (
                                   exs.map(e => (
-                                    <div key={e.id} className="flex items-center justify-between py-1 border-b border-ql last:border-b-0">
+                                    <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-ql last:border-b-0">
                                       <span className="text-ql text-sm">{e.name}</span>
                                       <span className="text-ql-3 text-xs tabular-nums font-medium">
                                         {e.sets}×{e.targetReps}
@@ -2112,17 +2121,8 @@ export default function GymFitness() {
                                       </span>
                                     </div>
                                   ))
-                                ) : (
-                                  // Per-day exercise: show just this day's exercise with full detail
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-ql text-sm">{ex.name}</span>
-                                    <span className="text-ql-3 text-xs tabular-nums font-medium">
-                                      {ex.sets}×{ex.targetReps}
-                                      {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}
-                                    </span>
-                                  </div>
                                 )}
-                                {sessionToday(plan.id) && dayI === 0 && (
+                                {sessionToday(plan.id) && (
                                   <button
                                     onClick={() => { const s = todaySession(plan.id); if (s) removeGymSession(s.id); }}
                                     className="mt-1 text-ql-3 hover:text-red-400 text-xs underline transition-colors self-start"
@@ -2133,7 +2133,7 @@ export default function GymFitness() {
                           </div>
                         );
                       });
-                    })}
+                    })()}
                   </div>
                 )}
               </div>

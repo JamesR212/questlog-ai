@@ -221,8 +221,11 @@ Stats: STR=${context.stats?.str ?? 10}, CON=${context.stats?.con ?? 10}, Level=$
 
 ${splitInstructions}
 
-RECOVERY RULES: Never schedule the same muscle group on consecutive days. No two plans may share a scheduleDays value. recoveryNotes must explain the recovery logic.`;
-        formatRules = `- exercises[] must mirror the Week 1 exercises (used as fallback). 4–6 exercises per plan, specific to that muscle group.
+RECOVERY RULES: Never schedule the same muscle group on consecutive days. No two plans may share a scheduleDays value. recoveryNotes must explain the recovery logic.
+EXERCISE COUNT: Each plan must have 5–8 exercises. A real gym session has multiple exercises per visit — never generate fewer than 5. Each exercise targets a specific muscle within that plan's muscle group.`;
+        formatRules = `- exercises[] must mirror the Week 1 exercises (used as fallback). 5–8 exercises per plan, each targeting a distinct muscle within the plan's focus.
+- For Full Body plans: include compound movements (squat/deadlift/bench/row/press) PLUS 2–3 accessory exercises.
+- For split plans (Push/Pull/Legs/Upper/Lower): include 5–8 exercises hitting every major muscle in that split.
 - targetWeight 0 = bodyweight. Tailor weights to experience and STR (${context.stats?.str ?? 10}/150).
 ${progressiveBlock}
 - scheduleTime/scheduleEndTime: realistic gym hours (~1 hour session).`;
