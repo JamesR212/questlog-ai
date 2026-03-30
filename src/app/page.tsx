@@ -197,10 +197,11 @@ export default function Home() {
     }
   }, [user]);
 
-  // ── Real-time listener: merge in changes from other devices ─────────────
-  // onSnapshot fires every time any device pushes to Firestore.
-  // We skip our own pushes (matched by _updatedAt == LAST_PUSH_KEY) and only
-  // merge genuinely external updates so the app stays live across devices.
+  // ── Real-time listener: apply changes from other devices (last-write-wins) ─
+  // onSnapshot fires whenever any device pushes to Firestore.
+  // For live real-time sync, the active device is authoritative — we apply its
+  // state directly (including deletions). We only skip our OWN push echoes.
+  // Merging is reserved for the initial login pull (offline catch-up only).
   useEffect(() => {
     if (!user || !cloudReady || !pullOk.current) return;
     const ref = doc(db, 'users', user.uid, 'data', 'store');
@@ -211,13 +212,10 @@ export default function Home() {
       // Skip if this snapshot is the echo of our own last push
       const lastPush = localStorage.getItem('questlog-last-push');
       if (_updatedAt === lastPush) return;
-      // Another device pushed newer data — merge it in without overwriting local
-      const currentLocal = useGameStore.getState() as unknown as Record<string, unknown>;
-      const merged = mergeStates(cloudData, currentLocal);
-      useGameStore.setState(merged);
-      // Update our last-push marker so we don't re-merge this snapshot
+      // Another device pushed — apply their state directly so deletions propagate
+      useGameStore.setState(cloudData);
       localStorage.setItem('questlog-last-push', _updatedAt as string);
-      console.log('[sync] real-time update from another device — merged (ts:', _updatedAt, ')');
+      console.log('[sync] real-time update from another device — applied (ts:', _updatedAt, ')');
     }, (err) => {
       console.warn('[sync] snapshot error:', err);
     });
