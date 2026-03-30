@@ -70,7 +70,7 @@ function isDueOn(habit: HabitDef, ds: string): boolean {
 function WeeklySnapshotGrid() {
   const {
     habitDefs, habitLog, wakeQuest, stepLog, stepGoal, mealLog, nutritionGoal,
-    waterLog, waterGoal,
+    waterLog, waterGoal, gpsActivities,
     snapshotHiddenBuiltins, snapshotAddedOptional, accountCreatedDate,
     setSnapshotHiddenBuiltins, setSnapshotAddedOptional,
     logHabit, unlogHabit, logSteps, deleteMeal, logMeal, addWaterEntry, deleteWaterEntry,
@@ -101,7 +101,7 @@ function WeeklySnapshotGrid() {
     return () => ro.disconnect();
   }, [showYear]);
 
-  type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' | 'hydration' };
+  type Row = { id: RowId; emoji: string; label: string; type: 'sleep' | 'wake' | 'habit' | 'steps' | 'nutrition' | 'hydration' | 'activity'; activityKey?: string };
 
   const builtinRows: Row[] = ([
     { id: '__sleep__',     emoji: '🌙', label: 'Sleep',     type: 'sleep'     as const, section: 'sleep'     },
@@ -114,14 +114,42 @@ function WeeklySnapshotGrid() {
     ...habitDefs.map(h => ({ id: h.id, emoji: h.emoji, label: h.name, type: 'habit' as const })),
   ];
 
+  // Activity rows — auto-generated from logged GPS activities (one row per unique activity type)
+  const ACTIVITY_EMOJI: Record<string, string> = {
+    run: '🏃', walk: '🚶', cycle: '🚴',
+    yoga: '🧘', pilates: '🤸', hiit: '💪', swim: '🏊', swimming: '🏊',
+    tennis: '🎾', football: '⚽', basketball: '🏀', rugby: '🏉', golf: '⛳',
+  };
+  const ACTIVITY_LABEL: Record<string, string> = {
+    run: 'Running', walk: 'Walking', cycle: 'Cycling',
+  };
+  function getActivityKey(a: { type: string; activityName?: string }): string {
+    if (a.type !== 'other') return a.type;
+    return (a.activityName ?? 'activity').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+  const activityRows: Row[] = (() => {
+    const seen = new Map<string, { type: string; activityName?: string }>();
+    for (const a of (gpsActivities ?? [])) {
+      const k = getActivityKey(a);
+      if (!seen.has(k)) seen.set(k, a);
+    }
+    return Array.from(seen.entries()).map(([k, a]) => {
+      const name = a.activityName ?? '';
+      const label = ACTIVITY_LABEL[k] ?? (name ? name.charAt(0).toUpperCase() + name.slice(1) : k.charAt(0).toUpperCase() + k.slice(1));
+      return { id: `__activity_${k}__`, emoji: ACTIVITY_EMOJI[k] ?? '⚡', label, type: 'activity' as const, activityKey: k };
+    });
+  })();
+
   const allRows: Row[] = [
     ...builtinRows.filter(r => !hiddenBuiltins.has(r.id)),
     ...optionalRows.filter(r => addedOptional.has(r.id)),
+    ...activityRows,
   ];
   // allRows including hidden builtins — used for year view
   const allRowsForYear: Row[] = [
     ...builtinRows,
     ...optionalRows.filter(r => addedOptional.has(r.id)),
+    ...activityRows,
   ];
 
   type CellState = 'done' | 'late' | 'missed' | 'unscheduled' | 'future';
@@ -173,6 +201,16 @@ function WeeklySnapshotGrid() {
       return 'missed';
     }
 
+    if (row.type === 'activity') {
+      if (isFuture) return 'future';
+      const key = row.activityKey ?? '';
+      const did = (gpsActivities ?? []).some(a => {
+        const aDate = (a.startTime ?? '').slice(0, 10);
+        return aDate === ds && getActivityKey(a) === key;
+      });
+      return did ? 'done' : 'unscheduled';
+    }
+
     // habit
     const habit = habitDefs.find(h => h.id === row.id);
     if (!habit) return 'unscheduled';
@@ -184,6 +222,7 @@ function WeeklySnapshotGrid() {
   function toggleCell(row: Row, ds: string) {
     const state = cellState(row, ds);
     if (state === 'future') return;
+    if (row.type === 'activity') return; // read-only — logged via AI or GPS tracker
     if (row.type === 'wake' || row.type === 'sleep') {
       const checkIn = wakeQuest.checkIns.find(c => c.date === ds);
       if (checkIn) deleteWakeCheckIn(checkIn.id);
