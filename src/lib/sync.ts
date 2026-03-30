@@ -18,19 +18,64 @@ function sanitise(data: StoreData): StoreData {
   return out;
 }
 
-const LAST_PUSH_KEY = 'questlog-last-push';
+const LAST_PUSH_KEY   = 'questlog-last-push';
+const BACKUP_KEY      = 'questlog-backup';      // survives resetGameStore
 
+// ── Data richness score ────────────────────────────────────────────────────
+// Higher = more user data. Used to choose between local and cloud when
+// timestamps alone are ambiguous, and to guard against pushing empty state.
+export function dataScore(state: StoreData): number {
+  return (
+    ((state.gymPlans       as unknown[])?.length ?? 0) * 10 +
+    ((state.habitDefs      as unknown[])?.length ?? 0) * 10 +
+    ((state.calendarEvents as unknown[])?.length ?? 0) *  3 +
+    ((state.gpsActivities  as unknown[])?.length ?? 0) *  3 +
+    ((state.gymSessions    as unknown[])?.length ?? 0) *  2 +
+    ((state.mealLog        as unknown[])?.length ?? 0) *  1 +
+    ((state.performanceLog as unknown[])?.length ?? 0) *  1 +
+    ((state.vices          as unknown[])?.length ?? 0) *  1
+  );
+}
+
+// ── Backup helpers ─────────────────────────────────────────────────────────
+// questlog-backup is written after every successful push and is never wiped
+// by resetGameStore (which only touches questlog-storage via Zustand persist).
+export function saveBackup(state: StoreData): void {
+  try {
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(sanitise(state)));
+  } catch { /* storage full — ignore */ }
+}
+
+export function loadBackup(): StoreData | null {
+  try {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// ── Push ───────────────────────────────────────────────────────────────────
 export async function pushToCloud(userId: string, storeState: StoreData) {
   try {
     const payload = sanitise(storeState);
+
+    // Safety guard: never push a suspiciously empty state that could overwrite
+    // good cloud data. If we have a backup with real data and the payload has
+    // significantly less, something has gone wrong — skip this push.
+    const backup = loadBackup();
+    if (backup && dataScore(payload) < dataScore(backup) * 0.3 && dataScore(backup) > 20) {
+      console.warn('[sync] push blocked — payload has far less data than backup (score:', dataScore(payload), 'vs backup:', dataScore(backup), '). Possible empty-state bug.');
+      return;
+    }
+
     const ts = new Date().toISOString();
-    console.log('[sync] pushing to cloud for user:', userId, 'keys:', Object.keys(payload).length);
+    console.log('[sync] pushing to cloud for user:', userId, 'keys:', Object.keys(payload).length, 'score:', dataScore(payload));
     await setDoc(doc(db, 'users', userId, 'data', 'store'), {
       ...payload,
       _updatedAt: ts,
     });
-    // Record successful push time locally — used on reload to detect unsynced local changes
+    // Record successful push time and save full backup
     localStorage.setItem(LAST_PUSH_KEY, ts);
+    saveBackup(payload);
     console.log('[sync] push success');
   } catch (e) {
     console.error('[sync] push error:', e);

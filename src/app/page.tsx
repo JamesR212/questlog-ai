@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile } from '@/lib/sync';
+import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile, dataScore, saveBackup, loadBackup } from '@/lib/sync';
 import { updatePublicProfile } from '@/lib/friends';
 import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
@@ -69,9 +69,12 @@ export default function Home() {
     hydratedUid.current = user.uid;
     setCloudReady(false);
 
-    // Save local state BEFORE resetting — restored as fallback if pull fails
+    // ── Layer 1: capture everything before wiping ────────────────────────
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const localFallback = useGameStore.getState() as any;
+    // Save to a separate backup key BEFORE resetGameStore wipes questlog-storage.
+    // questlog-backup is never touched by resetGameStore so it survives across sessions.
+    saveBackup(localFallback);
     resetGameStore();
 
     const userId = user.uid;
@@ -85,13 +88,15 @@ export default function Home() {
     // Pull and merge cloud data, then check subscription
     pullFromCloud(userId).then(async result => {
       if (!result.ok) {
-        // All pull attempts failed — restore local fallback so user sees cached data,
-        // and block all pushes so we never overwrite cloud with empty/wrong state.
-        console.error('[sync] pull failed — restoring local fallback, blocking push');
+        // All pull attempts failed — restore the richest data we have
+        console.error('[sync] pull failed — restoring best available local data');
         pullOk.current = false;
         setPullFailed(true);
-        // Restore whatever was in the store before reset (may be empty on first-ever open)
-        useGameStore.setState(localFallback);
+        const backup = loadBackup();
+        const fallbackScore = dataScore(localFallback);
+        const backupScore   = backup ? dataScore(backup) : 0;
+        // Use whichever local source has more data
+        useGameStore.setState(backupScore > fallbackScore ? backup! : localFallback);
         setCloudReady(true);
         const subSnap = await getDoc(doc(db, 'subscriptions', userId)).catch(() => null);
         if (subSnap?.exists()) {
@@ -107,13 +112,31 @@ export default function Home() {
       pullOk.current = true;
       const cloudData = result.data;
       if (cloudData) {
-        // If local data is more recent than cloud (e.g. user refreshed before debounce flushed),
-        // prefer local so we don't overwrite changes that haven't reached Firestore yet.
-        if (localIsNewer(result.cloudUpdatedAt)) {
-          console.log('[sync] local data is newer than cloud — keeping local to avoid data loss');
+        const cloudScore   = dataScore(cloudData);
+        const localScore   = dataScore(localFallback);
+        const backupScore  = dataScore(loadBackup() ?? {});
+
+        // ── Layer 2: pick the richest, most recent source ──────────────
+        // Prefer local only if it's genuinely newer AND has comparable data.
+        // "Comparable" = local has at least 80% as much data as cloud.
+        // This prevents an empty/stale local from overwriting good cloud data.
+        const localNewer = localIsNewer(result.cloudUpdatedAt) && localScore >= cloudScore * 0.8;
+
+        if (localNewer) {
+          console.log('[sync] local is newer and comparable — keeping local (local:', localScore, 'cloud:', cloudScore, ')');
           useGameStore.setState(localFallback);
         } else {
+          console.log('[sync] using cloud data (cloud:', cloudScore, 'local:', localScore, ')');
           useGameStore.setState(cloudData);
+        }
+
+        // ── Layer 3: backup rescue ─────────────────────────────────────
+        // After applying state, if we ended up with suspiciously empty store
+        // but our backup has real data, restore from backup.
+        const appliedScore = dataScore(useGameStore.getState() as unknown as Record<string, unknown>);
+        if (appliedScore === 0 && backupScore > 20) {
+          console.warn('[sync] applied state is empty but backup has data — restoring backup (score:', backupScore, ')');
+          useGameStore.setState(loadBackup()!);
         }
       }
       setCloudReady(true);
