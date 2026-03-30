@@ -139,6 +139,8 @@ export async function POST(req: NextRequest) {
         const weeksUntilExam = Math.min(Math.max(parseInt(prefs.weeksUntilExam ?? '8', 10), 4), 16);
         const confidence = prefs.confidence ?? '';
         const hoursPerDay = parseFloat(prefs.hoursPerDay ?? '2');
+        const focusStyle = (prefs.focusStyle ?? '').toLowerCase();
+        const oneSubjectPerDay = focusStyle.includes('one') || focusStyle.includes('single') || focusStyle.includes('focus');
         const needsBreaks = hoursPerDay > 2;
         const breakNote = needsBreaks
           ? `IMPORTANT: User is studying ${hoursPerDay}h/day — recoveryNotes MUST recommend a 5–10 min break every 45–60 mins and a longer 20–30 min break after every 2 hours. Mention this in the plan.`
@@ -159,9 +161,10 @@ ${confidence ? `Confidence per subject: ${confidence}` : ''}
 ${breakNote}
 
 Generate EXACTLY ${subjectCount} plan${subjectCount > 1 ? 's' : ''} — one plan per subject, named exactly after the subject (e.g. "${subjectList[0]} Revision").
-Each "exercise" = one study session type (e.g. "Topic Review", "Past Paper Practice", "Flashcard Drill", "Timed Questions", "Essay Practice").
+Focus style: ${oneSubjectPerDay ? 'ONE SUBJECT PER DAY — each day is dedicated fully to one subject. Do not mix subjects on the same day.' : 'MIXED — each session can cover multiple topics or subjects in one day.'}
+Each "exercise" = one study session type for that subject. Name it descriptively: e.g. "Topic Review – ${hoursPerDay}h", "Past Papers – ${hoursPerDay}h", "Flashcard Drill – ${hoursPerDay}h". Do NOT use gym language.
 ${confidence ? 'Weaker subjects get more days per week. Stronger subjects get fewer.' : 'Spread days evenly across subjects.'}
-Use "sets" = sessions per week for that topic block. "targetReps" = 0. "targetWeight" = 0.
+Use "sets" = 1. "targetReps" = 0. "targetWeight" = 0. NEVER show weight or reps to the user — this is a study plan not a gym plan.
 Spread scheduleDays across ALL plans so no two plans share the same day. Total days across all plans MUST equal exactly ${daysPerWeek}.
 recoveryNotes = spaced repetition tips, rest day advice, burnout prevention${needsBreaks ? ', AND mandatory break schedule (5–10 min every 45–60 mins, 20–30 min break after 2h)' : ''}.`;
 
@@ -831,15 +834,17 @@ Gather these in up to 3 conversational questions (ask only what you don't know, 
 
 Q1: "Which subjects (or modules) are you revising, and when's your exam?" — always ask this first if not stated.
 Q2: "How many hours a day are you looking to study?" — always ask, do not assume.
-Q3 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
+Q3: "Do you prefer to focus on one subject per day, or mix multiple topics in a session? (Some people find it easier to deep-focus on one thing at a time — totally fine either way!)" — always ask, important for personalisation.
+Q4 (optional): "How confident are you in each subject — strong, average, or weak?" — helpful but not blocking.
 
 BREAK RULE: If hoursPerDay > 2, add a note in recoveryNotes recommending a break every 45–60 mins (e.g. 5–10 min break, longer break after 2h). Mention this naturally in your reply too.
 
-Once you know subjects + exam date + daily hours → trigger immediately.
-{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
+Once you know subjects + exam date + daily hours + focus style → trigger immediately.
+{ "type": "generate_gym_plan", "preferences": { "planType": "Revision – A-Level", "goal": "Pass A-levels with top grades", "subjects": "Maths, Physics, Chemistry", "weeksUntilExam": "12", "hoursPerDay": "3", "focusStyle": "one subject per day", "confidence": "Maths: strong, Physics: weak, Chemistry: average", "daysPerWeek": "5" } }
 - subjects: comma-separated — use EXACTLY what the user said, do not add or assume extra subjects
 - weeksUntilExam: convert any date/month to weeks from today (${today})
 - hoursPerDay: hours per day the user wants to study
+- focusStyle: "one subject per day" or "mixed topics" — drives how sessions are structured
 - daysPerWeek: total study days per week (ask if not stated, default 5)
 - planType: "Study – [subject]" or "Revision – [exam name]" matching what they said
 

@@ -597,9 +597,11 @@ function ExerciseReceipt({ notes }: { notes?: string }) {
       {exercises.map((ex, i) => (
         <div key={i} className="flex items-center justify-between px-3 py-1.5">
           <span className="text-ql text-[11px] truncate mr-3">{ex.n}</span>
-          <span className="text-ql-3 text-[11px] font-mono tabular-nums shrink-0">
-            {ex.s}×{ex.r}{ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}
-          </span>
+          {(ex.r > 0 || ex.w > 0) && (
+            <span className="text-ql-3 text-[11px] font-mono tabular-nums shrink-0">
+              {ex.s}×{ex.r}{ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}
+            </span>
+          )}
         </div>
       ))}
     </div>
@@ -1010,7 +1012,7 @@ function GymPlanDetailSheet({ plan, performanceLog, onClose }: {
                               <div key={i} className="flex items-center justify-between">
                                 <p className="text-ql text-xs">{ex.n}</p>
                                 <p className="text-ql-3 text-[11px] font-mono tabular-nums">
-                                  {ex.s}×{ex.r}{ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}
+                                  {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
                                 </p>
                               </div>
                             ))}
@@ -1073,7 +1075,7 @@ function GymPlanDetailSheet({ plan, performanceLog, onClose }: {
                               <div key={i} className="flex items-center justify-between">
                                 <p className="text-ql text-xs">{ex.n}</p>
                                 <p className="text-ql-3 text-[11px] font-mono tabular-nums">
-                                  {ex.s}×{ex.r}{ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}
+                                  {(ex.r > 0 || ex.w > 0) ? `${ex.s}×${ex.r}${ex.w > 0 ? ` @ ${ex.w}kg` : ' BW'}` : ''}
                                 </p>
                               </div>
                             ))}
@@ -1879,7 +1881,7 @@ export default function GymFitness() {
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-ql-2">{ex.name}</span>
                   <span className="text-ql-3 text-xs tabular-nums">
-                    {ex.sets}×{ex.targetReps}{ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}
+                    {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
                   </span>
                 </div>
               ))}
@@ -1944,7 +1946,7 @@ export default function GymFitness() {
                     <div key={ex.id} className="flex items-center justify-between text-xs text-ql-3">
                       <span>{ex.name}</span>
                       <span className="tabular-nums">
-                        {ex.sets}×{ex.targetReps}{ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}
+                        {(ex.targetReps > 0 || ex.targetWeight > 0) ? `${ex.sets}×${ex.targetReps}${ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ' BW'}` : ''}
                       </span>
                     </div>
                   ))}
@@ -2119,8 +2121,7 @@ export default function GymFitness() {
                                     <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-ql last:border-b-0">
                                       <span className="text-ql text-sm">{e.name}</span>
                                       <span className="text-ql-3 text-xs tabular-nums font-medium">
-                                        {e.sets}×{e.targetReps}
-                                        {e.targetWeight > 0 ? ` @ ${e.targetWeight}kg` : ' BW'}
+                                        {(e.targetReps > 0 || e.targetWeight > 0) ? `${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @ ${e.targetWeight}kg` : ' BW'}` : ''}
                                       </span>
                                     </div>
                                   ))
