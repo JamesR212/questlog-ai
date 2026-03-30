@@ -1064,20 +1064,31 @@ function calcTodayBurn(store: ReturnType<typeof useGameStore.getState>, today: s
 
   for (const a of todayGps) {
     let kcal = 0;
-    if (a.type === 'run')   kcal = Math.round(weight * a.distance * 1.036);
-    if (a.type === 'cycle') kcal = Math.round(weight * a.distance * 0.28);
-    if (a.type === 'walk')  kcal = Math.round(weight * a.distance * 0.53);
+    const isOther = a.type === 'other';
+    // Prefer AI-stored caloriesBurned (accounts for terrain, intensity etc.)
+    // Fall back to distance-based formula only for GPS-tracked activities without a stored value
+    if ((a as {caloriesBurned?: number}).caloriesBurned) {
+      kcal = Math.round((a as {caloriesBurned?: number}).caloriesBurned!);
+    } else if (a.type === 'run')   { kcal = Math.round(weight * a.distance * 1.036); }
+    else if (a.type === 'cycle')   { kcal = Math.round(weight * a.distance * 0.28); }
+    else if (a.type === 'walk')    { kcal = Math.round(weight * a.distance * 0.53); }
     if (kcal > 0) {
       const mins = Math.round(a.duration / 60);
-      const icon = a.type === 'run' ? '🏃' : a.type === 'cycle' ? '🚴' : '🚶';
+      const icon = a.type === 'run' ? '🏃' : a.type === 'cycle' ? '🚴' : isOther ? '⚡' : '🚶';
+      const name = isOther && (a as {activityName?: string}).activityName
+        ? (a as {activityName?: string}).activityName!
+        : a.type.charAt(0).toUpperCase() + a.type.slice(1);
+      const distStr = a.distance > 0 ? ` · ${a.distance.toFixed(1)}km` : '';
       activityRows.push({
-        label: `${icon} ${a.type.charAt(0).toUpperCase() + a.type.slice(1)} · ${a.distance.toFixed(1)}km · ${mins} min`,
-        kcal, gps: true, estimated: false,
+        label: `${icon} ${name}${distStr} · ${mins} min`,
+        kcal, gps: !isOther, estimated: false,
       });
     }
   }
-  // Deduct GPS walk overlap with NEAT steps
-  const walkKcalGps = todayGps.filter(a => a.type === 'walk').reduce((s, a) => s + Math.round(weight * a.distance * 0.53), 0);
+  // Deduct GPS walk overlap with NEAT steps — use stored caloriesBurned if available
+  const walkKcalGps = todayGps.filter(a => a.type === 'walk').reduce((s, a) => {
+    return s + ((a as {caloriesBurned?: number}).caloriesBurned ?? Math.round(weight * a.distance * 0.53));
+  }, 0);
   const walkOverlap = Math.min(walkKcalGps, neatKcal);
 
   // Gym sessions today (resistance training ~7 MET × 45 min)
