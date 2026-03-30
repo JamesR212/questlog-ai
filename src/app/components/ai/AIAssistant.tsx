@@ -131,11 +131,14 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const gymPlansContext = store.gymPlans.length === 0 ? '  None' :
     store.gymPlans.map(p => {
       const dayStr  = p.scheduleDays.map(d => dayNames[d]).join(',');
-      const exList  = (p.exercises ?? []).map(e =>
-        `${e.name} ${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @${e.targetWeight}kg` : ' (bodyweight)'}`
-      ).join('; ');
+      const fmtEx   = (e: import('@/types').GymExercise) =>
+        `${e.name} ${e.sets}x${e.targetReps}${e.targetWeight > 0 ? `@${e.targetWeight}kg` : '(bw)'}[id:${e.id}]`;
+      const exList  = (p.exercises ?? []).map(fmtEx).join('; ');
+      // Show ALL weeks in full so AI can reproduce them accurately when patching
       const weekSum = p.weeks && p.weeks.length > 0
-        ? ` | ${p.weeks.length} progressive weeks (wk1: ${(p.weeks[0].exercises ?? []).map(e => `${e.name} ${e.sets}×${e.targetReps}${e.targetWeight > 0 ? ` @${e.targetWeight}kg` : ''}`).join('; ')})`
+        ? ` | ${p.weeks.length} progressive weeks:\n${p.weeks.map(w =>
+            `      wk${w.weekNumber}${w.label ? ' ' + w.label : ''}: ${(w.exercises ?? []).map(fmtEx).join('; ')}`
+          ).join('\n')}`
         : '';
       const splitStr   = p.split         ? ` | split: ${p.split}`           : '';
       const recovStr   = p.recoveryNotes ? ` | recovery: ${p.recoveryNotes}` : '';
@@ -476,13 +479,20 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     const planId = String(action.planId ?? '');
     const patch  = action.patch as Record<string, unknown> | undefined;
     if (planId && patch) {
-      const exists = useGameStore.getState().gymPlans.some(p => p.id === planId);
-      if (exists) {
-        store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
-      } else {
+      const existing = useGameStore.getState().gymPlans.find(p => p.id === planId);
+      if (!existing) {
         // Plan was deleted — return a sentinel so the caller can re-generate
         return 'PLAN_NOT_FOUND';
       }
+      // Safety: never replace a non-empty exercises/weeks array with an empty one
+      // (guards against the AI sending a partial patch that wipes exercises)
+      if (Array.isArray(patch.exercises) && (patch.exercises as unknown[]).length === 0 && (existing.exercises?.length ?? 0) > 0) {
+        delete patch.exercises;
+      }
+      if (Array.isArray(patch.weeks) && (patch.weeks as unknown[]).length === 0 && (existing.weeks?.length ?? 0) > 0) {
+        delete patch.weeks;
+      }
+      store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
     }
   }
 }

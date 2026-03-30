@@ -810,6 +810,7 @@ STEP 3 — Once you know exactly what to change, generate the full updated field
 { "type": "update_gym_plan", "planId": "abc1234", "patch": { "exercises": [...], "weeks": [...] } }
 Only include fields that actually change in patch{}. Never trigger update_gym_plan without completing steps 1 and 2 first.
 IMPORTANT: If the user has already told you what to change in their first message (e.g. "edit my push day and swap bench for incline press"), skip step 2 and go straight from step 1 to step 3.
+CRITICAL — COMPLETE ARRAYS ONLY: When patching "exercises" or "weeks", you MUST include the COMPLETE array — every exercise, every week. Copy all unchanged exercises exactly as shown in "ALL GYM PLANS" above (preserve their [id:...] values), and only modify the specific ones being changed. NEVER send a partial array with just the changed exercises — this will delete all the others. NEVER send exercises:[] or weeks:[] unless the user explicitly asked to remove everything.
 DELETED PLAN RULE: If the user says they deleted a plan (e.g. "I deleted it", "can you rebuild it", "it's gone"), NEVER use update_gym_plan. Always use generate_gym_plan instead to create a fresh plan.
 
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
