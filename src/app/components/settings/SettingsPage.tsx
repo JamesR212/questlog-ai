@@ -142,6 +142,7 @@ export default function SettingsPage() {
     clockFormat, setClockFormat,
     gymExperience, setGymExperience,
     runExperience, setRunExperience,
+    bodyCompositionLog,
   } = useGameStore();
 
   const handleSignOut = async () => {
@@ -465,6 +466,49 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+
+          {/* Body Fat % */}
+          {(() => {
+            const latest = [...bodyCompositionLog].sort((a, b) => b.date.localeCompare(a.date))[0];
+            const bfMid = latest && latest.bodyFatLow != null && latest.bodyFatHigh != null
+              ? Math.round((latest.bodyFatLow + latest.bodyFatHigh) / 2)
+              : null;
+            return (
+              <div className="px-4 py-3.5 border-b border-ql flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-ql-3 text-sm">Body Fat %</span>
+                  {bfMid != null ? (
+                    <span className="text-ql text-sm font-semibold tabular-nums">{bfMid}%</span>
+                  ) : (
+                    <span className="text-ql-3 text-xs">N/A</span>
+                  )}
+                </div>
+                {bfMid != null ? (
+                  <>
+                    <input
+                      type="range"
+                      min={3}
+                      max={50}
+                      value={bfMid}
+                      readOnly
+                      className="ql-slider w-full pointer-events-none"
+                      style={{ '--slider-pct': `${((bfMid - 3) / 47) * 100}%` } as React.CSSProperties}
+                    />
+                    <div className="flex justify-between text-[10px] text-ql-3">
+                      <span>3% (Elite)</span>
+                      <span>{latest!.bodyFatLow}–{latest!.bodyFatHigh}% range</span>
+                      <span>50%</span>
+                    </div>
+                    <p className="text-ql-3 text-[11px]">From your last body scan · {latest!.date}</p>
+                  </>
+                ) : (
+                  <p className="text-ql-3 text-[11px] leading-relaxed">
+                    No body fat data yet. Ask GAINN AI — tap the chat icon and say &quot;do a body scan&quot; to get an estimate.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Height */}
           <div className="flex items-center px-4 py-3.5 gap-4">
