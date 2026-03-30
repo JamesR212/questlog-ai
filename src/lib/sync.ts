@@ -18,14 +18,19 @@ function sanitise(data: StoreData): StoreData {
   return out;
 }
 
+const LAST_PUSH_KEY = 'questlog-last-push';
+
 export async function pushToCloud(userId: string, storeState: StoreData) {
   try {
     const payload = sanitise(storeState);
+    const ts = new Date().toISOString();
     console.log('[sync] pushing to cloud for user:', userId, 'keys:', Object.keys(payload).length);
     await setDoc(doc(db, 'users', userId, 'data', 'store'), {
       ...payload,
-      _updatedAt: new Date().toISOString(),
+      _updatedAt: ts,
     });
+    // Record successful push time locally — used on reload to detect unsynced local changes
+    localStorage.setItem(LAST_PUSH_KEY, ts);
     console.log('[sync] push success');
   } catch (e) {
     console.error('[sync] push error:', e);
@@ -34,15 +39,14 @@ export async function pushToCloud(userId: string, storeState: StoreData) {
 
 // Discriminated result: ok=false means a real error — caller must NOT push to cloud
 export type PullResult =
-  | { ok: true;  data: StoreData | null } // data=null means new user (no doc yet)
-  | { ok: false; data: null };             // network/firestore error — do NOT push
+  | { ok: true;  data: StoreData | null; cloudUpdatedAt: string | null } // data=null means new user
+  | { ok: false; data: null; cloudUpdatedAt: null };                      // network error — do NOT push
 
 async function attemptPull(userId: string): Promise<PullResult> {
   const snap = await getDoc(doc(db, 'users', userId, 'data', 'store'));
-  if (!snap.exists()) return { ok: true, data: null };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  if (!snap.exists()) return { ok: true, data: null, cloudUpdatedAt: null };
   const { _updatedAt, ...data } = snap.data();
-  return { ok: true, data };
+  return { ok: true, data, cloudUpdatedAt: (_updatedAt as string) ?? null };
 }
 
 // Retries up to 3 times (1s apart) before returning ok:false
@@ -59,7 +63,17 @@ export async function pullFromCloud(userId: string): Promise<PullResult> {
     }
   }
   console.error('[sync] all pull attempts failed — blocking push to protect cloud data');
-  return { ok: false, data: null };
+  return { ok: false, data: null, cloudUpdatedAt: null };
+}
+
+/** Returns true if local data is more recent than cloud and should be preferred. */
+export function localIsNewer(cloudUpdatedAt: string | null): boolean {
+  const lastPush = localStorage.getItem(LAST_PUSH_KEY);
+  if (!lastPush) return false;          // never pushed — cloud is authoritative
+  if (!cloudUpdatedAt) return false;    // new user, no cloud doc
+  // Local is newer if the last successful push is more recent than the cloud timestamp.
+  // A small grace window (2s) handles clock skew.
+  return new Date(lastPush) > new Date(new Date(cloudUpdatedAt).getTime() - 2000);
 }
 
 export async function upsertProfile(userId: string, fields: { username?: string; display_name?: string }) {

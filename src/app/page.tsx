@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { pushToCloud, pullFromCloud, upsertProfile } from '@/lib/sync';
+import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile } from '@/lib/sync';
 import { updatePublicProfile } from '@/lib/friends';
 import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
@@ -106,7 +106,16 @@ export default function Home() {
       }
       pullOk.current = true;
       const cloudData = result.data;
-      if (cloudData) useGameStore.setState(cloudData);
+      if (cloudData) {
+        // If local data is more recent than cloud (e.g. user refreshed before debounce flushed),
+        // prefer local so we don't overwrite changes that haven't reached Firestore yet.
+        if (localIsNewer(result.cloudUpdatedAt)) {
+          console.log('[sync] local data is newer than cloud — keeping local to avoid data loss');
+          useGameStore.setState(localFallback);
+        } else {
+          useGameStore.setState(cloudData);
+        }
+      }
       setCloudReady(true);
 
       // Check if returning from Stripe checkout
