@@ -329,6 +329,8 @@ VICES & SPENDING (last 30 days):
 - Estimated vice spend: ${store.currencySymbol}${totalViceSpend.toFixed(0)}
 - Other tracked spending: ${store.currencySymbol}${totalSpending.toFixed(0)} across ${recentSpending.length} entries
 - Savings goal: ${store.currencySymbol}${store.savingsGoal} — saved via vice log: ${store.currencySymbol}${savingsSoFar.toFixed(2)}
+VICE DEFINITIONS (use these IDs when logging vice skips):
+${store.viceDefs.map(d => `  [id:${d.id}] ${d.icon} ${d.name} — ${store.currencySymbol}${d.goldRate}/skip`).join('\n')}
 - Login streak: ${store.loginStreak} days
 
 SUBSCRIPTIONS:
@@ -395,6 +397,24 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
     if (habit) store.logHabit(habit.id, today);
   } else if (type === 'log_sleep') {
     store.logSleep(today, Boolean(action.onTime));
+  } else if (type === 'log_vice_skip') {
+    const viceId = String(action.viceId ?? '');
+    const count  = Math.max(1, Number(action.count ?? 1));
+    const date   = action.date ? String(action.date) : today;
+    const def    = useGameStore.getState().viceDefs.find(d => d.id === viceId);
+    if (def) {
+      const goldSaved = def.goldRate * count;
+      useGameStore.setState(state => ({
+        vices: [...state.vices, {
+          id: Math.random().toString(36).slice(2, 9),
+          type: viceId,
+          count,
+          date: new Date(date + 'T12:00:00').toISOString(),
+          goldSaved,
+        }],
+        stats: { ...state.stats, gold: state.stats.gold + goldSaved },
+      }));
+    }
   } else if (type === 'set_step_goal') {
     store.setStepGoal(Number(action.steps));
 

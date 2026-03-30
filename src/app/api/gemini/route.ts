@@ -784,6 +784,13 @@ Log a one-off activity (use when the user mentions any physical activity that is
 Mark habit complete (match habit name from the list above):
 { "type": "log_habit", "habitName": "Morning Run" }
 
+Log a skipped/resisted vice — use when the user says they skipped, avoided, resisted, or didn't do a vice (e.g. "skipped 4 pints", "didn't smoke today", "avoided junk food last night"):
+{ "type": "log_vice_skip", "viceId": "pints", "count": 4, "date": "2026-03-30" }
+- viceId: use the exact id from "VICE DEFINITIONS" above (e.g. "pints", "cigs", "junk"). Match by name if needed.
+- count: number of units skipped (e.g. 4 pints, 1 pack of cigs). Default 1 if not stated.
+- date: YYYY-MM-DD. Past tense ("didn't go", "skipped last night", "avoided yesterday") = yesterday or the stated date. Default today.
+- Always confirm gold saved in reply: "Logged — you resisted 4 pints and saved £24 gold! 💪"
+
 Log sleep (onTime = did they hit their sleep/wake target):
 { "type": "log_sleep", "onTime": true }
 
