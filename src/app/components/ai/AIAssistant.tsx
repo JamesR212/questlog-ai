@@ -1227,7 +1227,8 @@ export default function AIAssistant() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && send()}
                 placeholder={listening ? 'Listening…' : 'Ask anything…'}
-                className={`w-full bg-ql-surface2 border rounded-2xl px-4 py-2.5 text-ql text-sm outline-none transition-colors placeholder:text-ql-3 ${
+                style={{ fontSize: 16 }}
+                className={`w-full bg-ql-surface2 border rounded-2xl px-4 py-2.5 text-ql outline-none transition-colors placeholder:text-ql-3 ${
                   listening ? 'border-red-500 placeholder:text-red-400' : 'border-ql focus:border-ql-accent'
                 }`}
               />
