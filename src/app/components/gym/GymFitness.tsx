@@ -1681,7 +1681,6 @@ export default function GymFitness() {
     stepLog, stepGoal, gpsActivities, floorsGoal,
     performanceStats, performanceLog, deletePerformanceEntry,
     gpsTrackingEnabled, calendarEvents, sleepLog, disabledSections,
-    userId, syncStatus, forceCloudPush, forceCloudPull,
   } = useGameStore();
   const plansEnabled = !disabledSections.includes('plans');
   const [activeTab,    setActiveTab]    = useState<'plans' | 'steps' | 'performance' | 'track'>(plansEnabled ? 'plans' : 'steps');
@@ -1936,34 +1935,6 @@ export default function GymFitness() {
 
       {/* ── Plans tab ── */}
       {activeTab === 'plans' && <>
-
-      {/* Sync Centre — only shown when logged in */}
-      {userId && (
-        <div className="rounded-2xl border border-ql bg-ql-surface p-3 flex items-center justify-between gap-3">
-          <p className="text-ql-3 text-[11px] leading-snug">
-            {syncStatus === 'pushing' && '☁️ Pushing…'}
-            {syncStatus === 'pulling' && '📲 Pulling…'}
-            {syncStatus === 'error'   && '⚠️ Sync failed — try again'}
-            {syncStatus === 'idle'    && '🔄 Sync'}
-          </p>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={forceCloudPush}
-              disabled={syncStatus !== 'idle'}
-              className="text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-ql-surface2 text-ql-2 border border-ql disabled:opacity-40"
-            >
-              ☁️ This device → Cloud
-            </button>
-            <button
-              onClick={forceCloudPull}
-              disabled={syncStatus !== 'idle'}
-              className="text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-ql-accent/10 text-ql-accent border border-ql-accent disabled:opacity-40"
-            >
-              📲 Cloud → This device
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* AI error */}
       {aiError && (

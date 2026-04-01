@@ -143,7 +143,20 @@ export default function SettingsPage() {
     gymExperience, setGymExperience,
     runExperience, setRunExperience,
     bodyCompositionLog,
+    syncStatus, forceCloudPush, forceCloudPull, userId,
   } = useGameStore();
+
+  // ── 5-tap secret trapdoor ─────────────────────────────────────────────────
+  const [versionTaps,    setVersionTaps]    = useState(0);
+  const [showSyncAdmin,  setShowSyncAdmin]  = useState(false);
+  const versionTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleVersionTap = () => {
+    const next = versionTaps + 1;
+    setVersionTaps(next);
+    if (versionTapTimer.current) clearTimeout(versionTapTimer.current);
+    if (next >= 5) { setShowSyncAdmin(true); setVersionTaps(0); return; }
+    versionTapTimer.current = setTimeout(() => setVersionTaps(0), 2000);
+  };
 
   const handleSignOut = async () => {
     const { signOut } = await import('firebase/auth');
@@ -670,6 +683,52 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Version footer + subtle sync indicator ──────────────────── */}
+      <div className="flex items-center justify-between pt-2 pb-1">
+        <button
+          onClick={handleVersionTap}
+          className="text-ql-3 text-[10px] select-none"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          GAINN v1.0
+        </button>
+        {/* Silent sync pulse — visible only while syncing */}
+        {(syncStatus === 'pushing' || syncStatus === 'pulling') && (
+          <span className="text-ql-3 text-[9px] animate-pulse">
+            {syncStatus === 'pushing' ? 'saving…' : 'syncing…'}
+          </span>
+        )}
+        {syncStatus === 'error' && (
+          <span className="text-red-500 text-[9px]">sync failed</span>
+        )}
+      </div>
+
+      {/* ── Admin trapdoor (5-tap unlock) ───────────────────────────── */}
+      {showSyncAdmin && userId && (
+        <div className="rounded-2xl border border-ql bg-ql-surface p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wide">Sync Admin</p>
+            <button onClick={() => setShowSyncAdmin(false)} className="text-ql-3 text-xs">✕</button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { forceCloudPush(); setShowSyncAdmin(false); }}
+              disabled={syncStatus !== 'idle'}
+              className="flex-1 text-[11px] font-semibold px-3 py-2 rounded-xl bg-ql-surface2 text-ql-2 border border-ql disabled:opacity-40"
+            >
+              ☁️ Push this device
+            </button>
+            <button
+              onClick={() => { forceCloudPull(); setShowSyncAdmin(false); }}
+              disabled={syncStatus !== 'idle'}
+              className="flex-1 text-[11px] font-semibold px-3 py-2 rounded-xl bg-ql-accent/10 text-ql-accent border border-ql-accent disabled:opacity-40"
+            >
+              📲 Pull from cloud
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
