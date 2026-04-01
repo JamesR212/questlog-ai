@@ -153,7 +153,7 @@ function StudyBlocksOverlay({
   if (totalDur <= 0 || exercises.length === 0) return null;
 
   return (
-    <div className="absolute inset-x-0 bottom-0 pointer-events-none px-1.5 pb-1 flex flex-col gap-0.5 overflow-hidden" style={{ top: 36 }}>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {exercises.map(ex => {
         const timeMatch = ex.name.match(/(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})/);
         if (!timeMatch) return null;
@@ -164,8 +164,10 @@ function StudyBlocksOverlay({
 
         const clampedStart = Math.max(blockStart, eventStartH);
         const clampedEnd   = Math.min(blockEnd,   eventEndH);
-        const heightPx     = (clampedEnd - clampedStart) * HOUR_HEIGHT;
-        if (heightPx < 8) return null;
+        // Pixel-accurate position: offset from event top by the block's actual start time
+        const topPx    = (clampedStart - eventStartH) * HOUR_HEIGHT;
+        const heightPx = Math.max((clampedEnd - clampedStart) * HOUR_HEIGHT - 2, 4);
+        if (heightPx < 4) return null;
 
         const isRest = /break|lunch|rest/i.test(ex.name);
         const label  = cleanBlockName(ex.name, timeMatch);
@@ -173,10 +175,10 @@ function StudyBlocksOverlay({
         return (
           <div
             key={ex.id}
-            className={`rounded-lg overflow-hidden shrink-0 flex items-start px-2 pt-1 ${
+            className={`absolute inset-x-1.5 rounded-lg overflow-hidden flex items-start px-2 pt-1 ${
               isRest ? 'bg-black/20' : 'bg-white/15'
             }`}
-            style={{ height: Math.max(heightPx - 2, 6) }}
+            style={{ top: topPx, height: heightPx }}
           >
             {heightPx >= 18 && (
               <p className="text-white/80 text-[7.5px] font-semibold truncate leading-tight">
