@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from './firebase';
 
 // Keys that should NOT be synced (device-specific UI state)
@@ -296,6 +296,28 @@ export async function forcePushToCloud(userId: string, storeState: StoreData) {
   } catch (e) {
     console.error('[sync] force push error:', e);
     throw e;
+  }
+}
+
+// ── Immediate tombstone push ────────────────────────────────────────────────
+// Called right after a delete so the tombstone reaches Firestore immediately —
+// not delayed by the 5s debounce. Uses arrayUnion so it never overwrites other data.
+// This kills the zombie-resurrection bug where a pull between delete and debounce
+// would resurface the deleted item.
+export async function pushTombstoneImmediate(userId: string, ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  try {
+    const now = Date.now();
+    const tsFields: Record<string, number> = {};
+    ids.forEach(id => { tsFields[`tombstoneTimestamps.${id}`] = now; });
+    await updateDoc(doc(db, 'users', userId, 'data', 'store'), {
+      deletedIds: arrayUnion(...ids),
+      ...tsFields,
+    });
+    console.log('[sync] tombstone pushed immediately for', ids.length, 'id(s)');
+  } catch (e) {
+    // Non-fatal — the 5s debounce push will catch it. Log and move on.
+    console.warn('[sync] immediate tombstone push failed (will retry via debounce):', e);
   }
 }
 

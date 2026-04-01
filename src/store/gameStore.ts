@@ -671,7 +671,8 @@ export const useGameStore = create<GameStore>()(
           gymPlans: state.gymPlans.map((p) => p.id === id ? { ...p, ...patch } : p),
         })),
 
-      removeGymPlan: (id) =>
+      removeGymPlan: (id) => {
+        let newTombstones: string[] = [];
         set((state) => {
           const plan = state.gymPlans.find(p => p.id === id);
           const linkedHabitId = plan?.linkedHabitId;
@@ -683,7 +684,7 @@ export const useGameStore = create<GameStore>()(
           const removedCalIds = state.calendarEvents
             .filter(e => e.planId === id || (!e.planId && e.title === plan?.name && e.date >= today))
             .map(e => e.id);
-          const newTombstones = [id, linkedHabitId, linkedStatId, ...removedCalIds].filter(Boolean) as string[];
+          newTombstones = [id, linkedHabitId, linkedStatId, ...removedCalIds].filter(Boolean) as string[];
           const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
           return {
             gymPlans:        state.gymPlans.filter((p) => p.id !== id),
@@ -693,17 +694,22 @@ export const useGameStore = create<GameStore>()(
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
             calendarEvents: state.calendarEvents.filter(e => {
-              // Remove ALL events linked to this plan by ID (plan-created events are
-              // just scheduled slots, not logs — gym sessions live in gymSessions separately)
               if (e.planId === id) return false;
-              // Title-based fallback: only remove future/today events without planId
-              // (past events without planId might be manually created user events)
               if (!e.planId && e.title === plan?.name && e.date >= today) return false;
               return true;
             }),
             deletedIds,
           };
-        }),
+        });
+        // Immediately push tombstones to Firestore — don't wait for the 5s debounce.
+        // This prevents zombie resurrection if the app closes before the debounce fires.
+        const userId = useGameStore.getState().userId;
+        if (userId && newTombstones.length > 0) {
+          import('@/lib/sync').then(({ pushTombstoneImmediate }) => {
+            pushTombstoneImmediate(userId, newTombstones).catch(console.error);
+          });
+        }
+      },
 
       logGymSession: (planId) =>
         set((state) => {
@@ -763,12 +769,13 @@ export const useGameStore = create<GameStore>()(
           habitDefs: state.habitDefs.map((h) => h.id === id ? { ...h, ...patch } : h),
         })),
 
-      removeHabit: (id) =>
+      removeHabit: (id) => {
+        let newTombstones: string[] = [];
         set((state) => {
           const habit = state.habitDefs.find(h => h.id === id);
           const linkedPlanId = habit?.linkedPlanId;
           const linkedStatId = habit?.linkedStatId;
-          const newTombstones = [id, linkedPlanId, linkedStatId].filter(Boolean) as string[];
+          newTombstones = [id, linkedPlanId, linkedStatId].filter(Boolean) as string[];
           const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
           return {
             habitDefs:       state.habitDefs.filter((h) => h.id !== id),
@@ -779,7 +786,14 @@ export const useGameStore = create<GameStore>()(
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
             deletedIds,
           };
-        }),
+        });
+        const userId = useGameStore.getState().userId;
+        if (userId && newTombstones.length > 0) {
+          import('@/lib/sync').then(({ pushTombstoneImmediate }) => {
+            pushTombstoneImmediate(userId, newTombstones).catch(console.error);
+          });
+        }
+      },
 
       logHabit: (habitId, date) =>
         set((state) => {
@@ -826,11 +840,18 @@ export const useGameStore = create<GameStore>()(
           deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
         })),
 
-      deleteCalendarEvent: (id) =>
+      deleteCalendarEvent: (id) => {
         set((state) => ({
           calendarEvents: state.calendarEvents.filter((e) => e.id !== id),
           deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
-        })),
+        }));
+        const userId = useGameStore.getState().userId;
+        if (userId) {
+          import('@/lib/sync').then(({ pushTombstoneImmediate }) => {
+            pushTombstoneImmediate(userId, [id]).catch(console.error);
+          });
+        }
+      },
 
       cleanOrphanedPlanEvents: () =>
         set((state) => {
