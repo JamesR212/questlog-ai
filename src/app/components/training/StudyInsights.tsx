@@ -39,6 +39,8 @@ export default function StudyInsights() {
       if (/break|lunch|gym|☕|🍽|🏋/i.test(ex.name)) continue; // skip non-study blocks
       const subject = extractSubject(ex.name);
       if (!subject || subject.length < 2) continue;
+      // Skip scheduling labels that aren't real subjects
+      if (/^(exam\s+week|mock(\s+exam)?|revision\s+week|study\s+week|reading\s+week)$/i.test(subject)) continue;
       blockCounts[subject] = (blockCounts[subject] ?? 0) + 1;
     }
   }
