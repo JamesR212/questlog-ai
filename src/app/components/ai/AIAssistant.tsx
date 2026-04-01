@@ -41,6 +41,7 @@ function classifyEvent(title: string, notes: string): string {
   if (/\b(sleep|nap|bed|early night)\b/.test(t)) return 'sleep';
   if (/\b(work|meeting|office|shift|busy|presentation|deadline)\b/.test(t)) return 'work';
   if (/\b(travel|flight|drive|commute|trip|holiday|abroad)\b/.test(t)) return 'travel';
+  if (/\b(party|wedding|birthday|concert|gig|festival|event|appointment|date night|dinner out|drinks|social|night out|club|theatre|cinema|movie night)\b/.test(t)) return 'social';
   return 'general';
 }
 
@@ -770,7 +771,9 @@ export default function AIAssistant() {
   const highDemandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [introCountdown, setIntroCountdown] = useState(10);
   const [buildProgress,  setBuildProgress]  = useState(-1); // -1=hidden, 0–100
-  const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [emojiCycle,     setEmojiCycle]     = useState(0);
+  const buildTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const emojiTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const [listening,   setListening]   = useState(false);
 
   const startLoading = (label = 'Thinking…') => {
@@ -856,19 +859,33 @@ export default function AIAssistant() {
 
     // ── Start construction progress animation ────────────────────────────
     setBuildProgress(0);
+    setEmojiCycle(0);
     if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+    if (emojiTimerRef.current) clearInterval(emojiTimerRef.current);
     buildTimerRef.current = setInterval(() => {
       setBuildProgress(p => {
         if (p >= 92) { clearInterval(buildTimerRef.current!); return 92; }
-        return p + 1.5; // reaches ~92% in ~15 sec at 250ms intervals
+        // Ease-out: fast at first, slows down significantly near 92
+        const remaining = 92 - p;
+        const increment = Math.max(0.25, remaining * 0.055);
+        return Math.min(92, p + increment);
       });
     }, 250);
+    // Start emoji cycling once progress hits 80%
+    const startEmojiCycle = () => {
+      if (emojiTimerRef.current) return;
+      emojiTimerRef.current = setInterval(() => setEmojiCycle(c => c + 1), 350);
+    };
+    const emojiWatchRef = setInterval(() => {
+      setBuildProgress(p => { if (p >= 80) { startEmojiCycle(); clearInterval(emojiWatchRef); } return p; });
+    }, 500);
 
     // Add the building message with animation flag
     setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true, planBuildingType: type }]);
 
     const finishProgress = (success: boolean, successMsg: string) => {
       if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+      if (emojiTimerRef.current) { clearInterval(emojiTimerRef.current); emojiTimerRef.current = null; }
       setBuildProgress(100);
       setTimeout(() => {
         // Replace building message with done message
@@ -1199,11 +1216,15 @@ export default function AIAssistant() {
         } else if (data.action?.type === 'update_gym_plan' && !Array.isArray(data.actions)) {
           // Show same building animation for plan edits
           setBuildProgress(0);
+          setEmojiCycle(0);
           if (buildTimerRef.current) clearInterval(buildTimerRef.current);
+          if (emojiTimerRef.current) clearInterval(emojiTimerRef.current);
           buildTimerRef.current = setInterval(() => {
             setBuildProgress(p => {
               if (p >= 92) { clearInterval(buildTimerRef.current!); return 92; }
-              return p + 4; // faster than new plan — reaches ~92% in ~6s
+              const remaining = 92 - p;
+              const increment = Math.max(0.5, remaining * 0.1); // faster for edits, same easing
+              return Math.min(92, p + increment);
             });
           }, 250);
           setMessages(prev => [...prev, { role: 'ai', text: '', isPlanBuilding: true, planBuildingType: 'gym' }]);
@@ -1676,20 +1697,23 @@ export default function AIAssistant() {
                           </p>
                         </div>
                       </div>
-                      {/* Animated dots */}
-                      {buildProgress < 100 && (
+                      {/* Animated emoji row — all visible once progress hits 80, each cycling independently */}
+                      {buildProgress >= 80 && buildProgress < 100 && (
                         <div className="flex gap-1.5 px-1">
-                          {(m.planBuildingType === 'meal' ? ['🥗','🍳','🥩','🥦','🍚'] : ['🧱','⚙️','📐','🔩','🏋️']).map((e, di) => (
-                            <span
-                              key={di}
-                              className="text-sm"
-                              style={{
-                                opacity: buildProgress > di * 20 ? 1 : 0.2,
-                                transition: 'opacity 0.5s ease',
-                                transform: buildProgress > di * 20 ? 'scale(1)' : 'scale(0.7)',
-                              }}
-                            >{e}</span>
-                          ))}
+                          {(m.planBuildingType === 'meal'
+                            ? ['🥗','🍳','🥩','🥦','🍚','🫐','🧄','🍋']
+                            : ['🧱','⚙️','📐','🔩','🏋️','📚','🗓️','✅']
+                          ).slice(0, 5).map((_, di) => {
+                            const pool = m.planBuildingType === 'meal'
+                              ? ['🥗','🍳','🥩','🥦','🍚','🫐','🧄','🍋']
+                              : ['🧱','⚙️','📐','🔩','🏋️','📚','🗓️','✅'];
+                            const emoji = pool[(di + emojiCycle) % pool.length];
+                            return (
+                              <span key={di} className="text-sm" style={{ transition: 'opacity 0.3s ease' }}>
+                                {emoji}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

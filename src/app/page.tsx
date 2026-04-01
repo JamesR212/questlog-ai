@@ -378,10 +378,14 @@ export default function Home() {
         });
       }
     };
+    // beforeunload: best-effort push on desktop tab-close (pagehide handles iOS/bfcache)
+    const onBeforeUnload = () => { flushSync(); };
     window.addEventListener('pagehide', flushSync);
+    window.addEventListener('beforeunload', onBeforeUnload);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pagehide', flushSync);
+      window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [user, cloudReady]);

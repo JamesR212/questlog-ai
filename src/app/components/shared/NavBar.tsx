@@ -4,11 +4,12 @@ import { useGameStore } from '@/store/gameStore';
 import type { ActiveSection } from '@/types';
 
 const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysShow?: boolean }[] = [
-  { section: 'dashboard', icon: '🏠',  label: 'Home'     },
-  { section: 'nutrition', icon: '🥗',  label: 'Food'     },
-  { section: 'vices',     icon: '💰',  label: 'Finance'  },
-  { section: 'training',  icon: '✅',  label: 'Habits'   },
-  { section: 'gym',       icon: '🏃',  label: 'Exercise' },
+  { section: 'dashboard',    icon: '🏠',  label: 'Home'     },
+  { section: 'nutrition',    icon: '🥗',  label: 'Food'     },
+  { section: 'vices',        icon: '💰',  label: 'Finance'  },
+  { section: 'calendarview', icon: '📅',  label: 'Calendar' },
+  { section: 'training',     icon: '✅',  label: 'Habits'   },
+  { section: 'gym',          icon: '🏃',  label: 'Exercise' },
 ];
 
 export default function NavBar() {
@@ -48,7 +49,7 @@ export default function NavBar() {
                 {item.section === 'vices' && disabledSections.includes('finance') ? '🚫' : item.icon}
               </span>
               <span className={`text-[10px] font-medium transition-colors duration-200 ${
-                active ? 'text-ql-accent' : 'text-ql-3'
+                active ? 'text-white' : 'text-ql-3'
               }`}>
                 {item.section === 'vices' && disabledSections.includes('finance') ? 'Vices' : item.label}
               </span>

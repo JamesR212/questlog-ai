@@ -153,7 +153,7 @@ function StudyBlocksOverlay({
   if (totalDur <= 0 || exercises.length === 0) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-x-0 top-[4.5px] bottom-[2px] overflow-hidden rounded-b-lg pointer-events-none">
       {exercises.map(ex => {
         const timeMatch = ex.name.match(/(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})/);
         if (!timeMatch) return null;
@@ -181,7 +181,7 @@ function StudyBlocksOverlay({
             style={{ top: topPx, height: heightPx }}
           >
             {heightPx >= 18 && (
-              <p className="text-white/80 text-[7.5px] font-semibold truncate leading-tight">
+              <p className="text-white/80 text-[9px] font-semibold truncate leading-tight">
                 {label}
               </p>
             )}
@@ -660,7 +660,15 @@ export default function CalendarView() {
   // Events for selected day: merge stored calendarEvents + derived plan events
   // Stored events take priority — deduplicate by planId OR bare title (handles pre-planId events)
   const bareTitle = (s: string) => s.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u{1F900}-\u{1F9FF}☕🍽\s]+/u, '').trim().toLowerCase();
-  const storedDayEvents   = calendarEvents.filter(e => e.date === selectedDate);
+  // Deduplicate stored events by title+startTime+endTime — prevents AI double-adds showing side by side
+  const storedDayEventsRaw = calendarEvents.filter(e => e.date === selectedDate);
+  const seenEventKeys = new Set<string>();
+  const storedDayEvents = storedDayEventsRaw.filter(e => {
+    const key = `${bareTitle(e.title)}|${e.startTime ?? ''}|${e.endTime ?? ''}`;
+    if (seenEventKeys.has(key)) return false;
+    seenEventKeys.add(key);
+    return true;
+  });
   const storedPlanIds     = new Set(storedDayEvents.filter(e => e.planId).map(e => e.planId!));
   const storedBareTitles  = new Set(storedDayEvents.map(e => bareTitle(e.title)));
   const derivedPlanEvents = plansForDate(selectedDate).filter(
@@ -763,6 +771,24 @@ export default function CalendarView() {
             const linkedPlan   = ev.planId ? gymPlans.find(p => p.id === ev.planId) : null;
             const showBlocks   = linkedPlan && isStudyPlan(linkedPlan) && height >= 80 && !!ev.startTime && !!ev.endTime;
 
+            // Fix 2: clip visual height to last study block's end time
+            let displayHeight = height;
+            if (showBlocks && linkedPlan && ev.startTime && ev.endTime) {
+              const eventStartH       = timeToHours(ev.startTime);
+              const clampedEventStart = Math.max(eventStartH, startHour);
+              const clampedEventEnd   = Math.min(timeToHours(ev.endTime), endHour);
+              let lastBlockEndH       = eventStartH;
+              for (const ex of (linkedPlan.exercises ?? [])) {
+                const m = ex.name.match(/(\d{1,2}:\d{2})\s*[–\-]\s*(\d{1,2}:\d{2})/);
+                if (!m) continue;
+                lastBlockEndH = Math.max(lastBlockEndH, timeToHours(m[2]));
+              }
+              const clampedLastEnd = Math.min(lastBlockEndH, clampedEventEnd);
+              if (clampedLastEnd > clampedEventStart) {
+                displayHeight = Math.max((clampedLastEnd - clampedEventStart) * HOUR_HEIGHT, 24) + 4;
+              }
+            }
+
             return (
               <button
                 key={ev.id}
@@ -770,23 +796,29 @@ export default function CalendarView() {
                 className="absolute rounded-xl overflow-hidden border border-white/20 shadow-sm text-left transition-opacity active:opacity-70"
                 style={{
                   top:    top + 1,
-                  height: height - 2,
+                  height: displayHeight - 2,
                   left:   leftOffset,
                   width:  `calc(${colWidth} - 2px)`,
                   backgroundColor: ev.color || '#007aff',
                 }}
               >
-                {/* Title & time */}
-                <div className="px-2 pt-1 pb-0.5 shrink-0">
-                  <p className="text-white text-[11px] font-semibold leading-tight truncate">
+                {/* Fix 1: study plan title → small text in top-right, normal title otherwise */}
+                {showBlocks ? (
+                  <p className="absolute top-1 right-1.5 z-10 text-white/70 text-[8px] font-semibold leading-tight max-w-[65%] truncate text-right pointer-events-none">
                     {ev.title}
                   </p>
-                  {height >= 36 && (
-                    <p className="text-white/75 text-[9px] leading-tight mt-0.5 truncate">
-                      {fmtTime(ev.startTime)}{ev.endTime ? ` – ${fmtTime(ev.endTime)}` : ''}
+                ) : (
+                  <div className="px-2 pt-1 pb-0.5 shrink-0">
+                    <p className="text-white text-[11px] font-semibold leading-tight truncate">
+                      {ev.title}
                     </p>
-                  )}
-                </div>
+                    {height >= 36 && (
+                      <p className="text-white/75 text-[9px] leading-tight mt-0.5 truncate">
+                        {fmtTime(ev.startTime)}{ev.endTime ? ` – ${fmtTime(ev.endTime)}` : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Study block mini-boxes */}
                 {showBlocks && linkedPlan && (

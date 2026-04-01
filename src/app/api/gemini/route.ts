@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
         // SERVER-SIDE SAFETY NET: auto-derive constraints from calendar events that look like work shifts.
         // This catches the common case where the AI adds shifts to the calendar but forgets to encode
         // them as dayConstraints in the plan preferences. AI-provided constraints take priority.
-        const workShiftPattern = /\b(work|shift|job|starbucks|costa|cafe|bar|pub|restaurant|nhs|hospital|school|college|uni|class|lecture|office|warehouse|retail|supermarket|amazon)\b/i;
+        const workShiftPattern = /\b(work|shift|job|starbucks|costa|cafe|bar|pub|restaurant|nhs|hospital|school|college|uni|class|lecture|office|warehouse|retail|supermarket|amazon|party|wedding|birthday|concert|gig|festival|appointment|dinner out|drinks|night out|social event|theatre|cinema)\b/i;
         for (const ev of calendarCtx) {
           if (!ev.startTime || !ev.endTime) continue;
           if (!workShiftPattern.test(String(ev.title ?? ''))) continue;
@@ -463,6 +463,7 @@ MANDATORY RULES:
 6. Maximise study time: fit as many complete study blocks as possible within the window without overflowing.
 7. SINGLE-TRACK SCHEDULING: You are a single-track scheduler. Only ONE block is active at any given timestamp. Even with multiple subjects, two study blocks MUST NEVER share or overlap a time slot. Subject B's startTime MUST equal Subject A's endTime — never earlier. Before returning, verify no two blocks have overlapping time ranges.
 8. PASSIVE EXCEPTION: The only allowed overlap is a block explicitly marked as a "Passive Activity" (e.g. background music, TV). Standard revision/study blocks have no exceptions — they are always sequential.
+9. ACTIVITY vs SUBJECT RULE: If the user mentions something that could be either a subject OR a physical/lifestyle activity (e.g. "run", "walk", "gym", "sport", "swim", "yoga", "nap", "lunch"), ALWAYS clarify before adding it. Ask: "Just to check — is '[item]' a subject you're revising, or an activity/break you want built into your schedule?" If confirmed as an activity, add it as a named break block (e.g. "🏃 Run  HH:MM–HH:MM") — it will NOT appear in the Subject Split chart. Never guess silently.
 All exercises: sets=1, targetReps=duration in minutes, targetWeight=0. NEVER use gym language.
 recoveryNotes = spaced repetition tips, rest day advice, burnout prevention. Do NOT repeat the break schedule here.
 ${isStudyEdit
@@ -1095,11 +1096,11 @@ STEP 1 — CHRONOLOGICAL DRY RUN (do this before calling generate_gym_plan):
 
 STEP 2 — BLOCK-LEVEL COLLISION CHECK (check each block individually, not just the end):
   For each block in the new cascaded sequence:
-  a) Does this specific block overlap any Fixed Event in upcomingCalendar with color #f97316?
+  a) Does this specific block overlap ANY timed event in upcomingCalendar? This includes work shifts (#f97316), AND social/fixed commitments (parties, weddings, concerts, appointments, birthday events, nights out — any event the user added manually that has a startTime).
   b) Does this specific block start or end after the day's hard cutoff (dayEndTimes[dow] or 21:00)?
   IF any individual block overlaps:
     STOP. DO NOT call generate_gym_plan.
-    Name the specific block that collides and which day: "Pushing lunch by 30m would move your '[Block Name]' block to [new_start]–[new_end] on [Day], which overlaps your [Work Shift] at [time].
+    Name the specific block that collides and which day: "Pushing lunch by 30m would move your '[Block Name]' block to [new_start]–[new_end] on [Day], which overlaps your [Event Name] at [time].
     Options: A) Skip the extension on [conflicted days] B) Shorten it to [safe amount] on [conflicted days] C) Drop [Block Name] to make it fit.
     Which works for you?"
   IF no individual block overlaps on any day: proceed to STEP 3.
@@ -1107,7 +1108,7 @@ STEP 2 — BLOCK-LEVEL COLLISION CHECK (check each block individually, not just 
 STEP 3 — TRIGGER generate_gym_plan:
   Pass existingPlanId + editRequest (including any per-day resolution the user picked in STEP 2).
 
-HARD WALL RULE: Work shifts (#f97316) are HARD WALLS. Study blocks MUST end before a work shift starts. No overlap permitted — not even 1 minute.
+HARD WALL RULE: Work shifts (#f97316) AND social/fixed commitments (parties, weddings, concerts, appointments, nights out) are HARD WALLS. Study blocks MUST end before any hard wall starts. No overlap permitted — not even 1 minute. When a social event is added to the calendar that overlaps a revision block, you MUST ask: "[Event] at [time] overlaps your [Subject] block. Shall I move the study earlier, skip it that day, or keep both?"
 </revision_domino_shifting>
 
 CALENDAR-AWARE ADVICE RULES (apply these automatically when relevant — be specific with numbers):
@@ -1317,7 +1318,7 @@ Add many calendar events in one go — use this for work shifts, class schedules
   { "title": "Work Shift", "date": "2026-04-06", "startTime": "17:00", "endTime": "21:00", "allDay": false, "location": "", "notes": "", "color": "#f97316", "reminder": 30 },
   { "title": "Work Shift", "date": "2026-04-12", "startTime": "07:00", "endTime": "12:00", "allDay": false, "location": "", "notes": "", "color": "#f97316", "reminder": 30 }
 ] }
-- color: use orange #f97316 for work shifts, purple #7c3aed for workouts, blue #4a9eff for sport/social, green #16a34a for meals/nutrition, red #ef4444 for rest/health
+- color: use orange #f97316 for work/school shifts, purple #7c3aed for workouts, blue #4a9eff for sport AND all social events (parties, weddings, birthdays, concerts, nights out, appointments), green #16a34a for meals/nutrition, red #ef4444 for rest/health
 - date: calculate exact YYYY-MM-DD from context ("Sunday" = next Sunday from today ${today}, "this Saturday" = the coming Saturday, etc.)
 - CONSTRAINT EXTRACTION FOR BULK EVENTS — when user lists multiple shifts or events:
   STEP 1: Read the ENTIRE message and list every event you found
@@ -1424,6 +1425,7 @@ USE generate_gym_plan (full rebuild) for:
   • The user says "rebuild", "redo", "start fresh", "make me a new plan"
   • Completely new split type (e.g. full body → Push/Pull/Legs)
   • STUDY/REVISION PLANS — ANY timetable change (start time, end time, per-day constraint, break structure, adding gym/lunch time). Study session blocks have times baked into their names and must be fully recalculated. update_gym_plan CANNOT do this — ALWAYS use generate_gym_plan with existingPlanId + editRequest. Using update_gym_plan on a study plan WILL corrupt it (delete days, wrong times). Never use update_gym_plan for study plans.
+    PER-DAY END TIME CONSTRAINT: When the user says "finish early on [day] for [reason]" (e.g. "end by 3pm on Friday for a party"), this REQUIRES a full generate_gym_plan rebuild with existingPlanId. The editRequest must specify the per-day constraint (e.g. "On Friday end by 15:00 due to party — cut all blocks after that time and don't overflow"). Do NOT use update_gym_plan or only update scheduleEndTime — the exercises array will still show the old blocks past the cutoff. The blocks themselves must be regenerated.
     MULTI-DAY STUDY GROUP RULE — Most revision plans span multiple days (e.g. 5 subjects × 5 days). When the user asks to change breaks or the daily structure (e.g. "add gym to lunch", "extend lunch"), this applies to ALL days. If ambiguous, ASK: "Apply to all your revision days, or just [day]?" — never assume. When the answer is "all days" (or the context shows a GROUP), rebuild ALL plans in the group (daysPerWeek = total group size from context) so no days are lost.
     Example: user says "add gym for an hour in the breaks" on a 5-day plan → ask "Apply to all 5 days?" → if yes → generate_gym_plan with existingPlanId, daysPerWeek=5, gymBreakMins="60"
     DOMINO SHIFT RULE: When a break is extended (e.g. "extend lunch by 30 mins"), all blocks after it cascade forward by the same amount — the day gets longer, no study blocks are cut. See <timetable_edit_rules> in the study plan section for the full domino shift logic.
@@ -1512,9 +1514,12 @@ NOTE: All XML tags in this section (<gathering_info>, <pre_generation_conflict_c
 NEVER ASSUME SUBJECTS OR MODULES. ALWAYS ASK.
 Gather in up to 3 exchanges (max 2 questions per message):
 
-Q0 (MANDATORY — ask FIRST if wakeTime is "07:00" AND bedTime is "23:00", i.e. defaults not confirmed):
-"Before I build your timetable, what time do you usually wake up and go to bed? I need this so I never schedule sessions while you're sleeping. 🌙"
-→ Store answers as scheduleTime (wake) and scheduleEndTime (bed). Skip Q0 if the user has already set custom wake/bed times in their profile.
+Q0 — REVISION WINDOW (ask ONLY if scheduleTime and scheduleEndTime are not already known):
+"What time do you like to start revision each day, and what's the latest you'd want to finish? (e.g. 9am to 9pm)"
+→ Store as scheduleTime (start) and scheduleEndTime (end). These are the revision window — separate from wake/bed times.
+SKIP Q0 entirely if scheduleTime and scheduleEndTime are already provided, OR if the user's wakeTime and bedTime are already set in their profile — use wakeTime as the default start and bedTime as the default end without asking.
+NEVER ask the user for their wake-up or bedtime — those are already logged in their profile. Read them from context.
+CRITICAL: After Q0 is answered (or skipped), IMMEDIATELY ask Q1 in the same or very next message. Do NOT stop or summarise — keep the conversation moving.
 
 Q1: "Which subjects (or modules) are you revising, and when's your exam?" — ALWAYS ask first if not stated.
 Q2: "How many days a week do you want to study?" — MANDATORY. NEVER assume or default silently.
@@ -1659,7 +1664,16 @@ Rules:
   WRONG: { "reply": "Perfect, building your plan!", "action": null }
   CORRECT: { "reply": "Perfect, building your plan!", "action": { "type": "generate_gym_plan", "preferences": { ... } } }
   The reply should be a single short sentence. The action must be fully populated.
-- CALENDAR OVERLAP RULE — Before adding or moving ANY calendar event, check if the proposed date/time clashes with an existing event the user did NOT ask to change. If there is an overlap: DO NOT proceed silently. Instead, reply explaining the clash and ask the user what they'd like to do — e.g. "I noticed you already have [Event Name] at [time] on [date]. Would you like to keep both running at the same time, replace it, or pick a different time for the new one?" Some users intentionally overlap events (e.g. watching sport while doing a workout). If the user confirms they want both, add the new event without removing the existing one. Only block if the user hasn't confirmed — always let the user decide.
+- RESOLUTION FOLLOW-THROUGH RULE: When the Gatekeeper asked the user about a conflict and the user picks a resolution ("shorten day", "skip it", "move it earlier"), you MUST emit the action in the SAME response — not just confirm it in text. Saying "Done, shortened to 3pm!" without an action JSON is a hallucination. The database will NOT update without a tool call.
+  SHORTEN DAY resolution → use generate_gym_plan with existingPlanId + editRequest: "Shorten [day] to end by [HH:MM] — cut all blocks after that time" + dayConstraints: { "[dow]": { "endTime": "[HH:MM]" } }
+  SKIP resolution → use generate_gym_plan with existingPlanId + editRequest removing that day from scheduleDays
+  MOVE EARLIER resolution → use generate_gym_plan with existingPlanId + editRequest adjusting start/end times
+  Never tell the user something is "synced", "updated", or "done" unless you are also emitting the action JSON in the same response.
+- CALENDAR OVERLAP RULE — GATEKEEPER PROTOCOL: Before calling add_calendar_event or any calendar tool, you MUST run through these checks FIRST. Do NOT call the tool and then mention a conflict — ask BEFORE any action.
+  STEP A — DUPLICATE CHECK: Does an event with the same name (case-insensitive) already exist on the same date at the same time? If yes: DO NOT add it. Reply: "You've already got [Event Name] on your calendar at [time] on [date]!" No tool call.
+  STEP B — OVERLAP CHECK: Does the proposed event overlap any existing timed event on that date? If yes: DO NOT proceed silently. Reply explaining the clash and ask what they'd like to do — e.g. "I noticed you already have [Event Name] at [time] on [date]. Would you like to keep both, replace it, or pick a different time?" Only call add_calendar_event after the user confirms.
+  STEP C — STUDY/REVISION CONFLICT: If the overlap is with a study or revision block (interleaved plan), treat it as a hard conflict. Reply: "Your [event] at [time] overlaps your [Subject] revision block. Shall I move the study earlier, skip it that day, or keep both?" Never add silently.
+  GENERAL RULE: Some users intentionally overlap events (e.g. watching sport during a workout). If the user explicitly confirms they want both, add without removing the existing one. Only a confirmed instruction allows overlap.
 - CALENDAR CONFLICT CHECK — BEFORE finalising the scheduleDays for a new or edited plan, check the user's CALENDAR in context. Look for recurring events, work days, sports nights, or busy days that fall on the proposed training days. If you spot a conflict (e.g. user has football every Tuesday but you want to schedule on [2,4,6]), mention it briefly in your reply and pick days that avoid it. If it's unclear whether it matters, still flag it ("I noticed you have football on Tuesdays — I've moved that session to Wednesday. Let me know if that doesn't work!"). Do NOT block plan generation for this — just adjust and mention it.
 - When the user mentions their weight, log it immediately with log_weight (convert lbs/stone to kg)
 - When the user mentions food they had on a PAST day (yesterday, "last Tuesday", "3 days ago", etc.), ALWAYS use confirm_past_food_log — never use log_food for past dates. Calculate the exact YYYY-MM-DD date from today (${today}) and set dateLabel to a human-friendly string like "yesterday (27 Mar)"

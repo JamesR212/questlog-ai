@@ -938,11 +938,14 @@ export const useGameStore = create<GameStore>()(
         if (!state.userId) return;
         set({ syncStatus: 'pulling' });
         try {
-          const { pullFromCloud } = await import('@/lib/sync');
+          const { pullFromCloud, mergeStates } = await import('@/lib/sync');
           const result = await pullFromCloud(state.userId);
           if (result.ok && result.data) {
-            // Direct overwrite — no merge. This is the "phone accepts laptop truth" path.
-            useGameStore.setState({ ...result.data, userId: state.userId, syncStatus: 'idle' });
+            // Merge cloud into local so locally-added items (new plans, events, etc.)
+            // are never wiped by a stale cloud snapshot.
+            const local = useGameStore.getState() as unknown as Record<string, unknown>;
+            const merged = mergeStates(result.data, local);
+            useGameStore.setState({ ...merged, userId: state.userId, syncStatus: 'idle' });
             // Re-run cleanup so any lingering ghost events are removed
             useGameStore.getState().deduplicatePlanDays();
             useGameStore.getState().cleanStaleScheduleEvents();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import type { CalendarEvent, HabitDef } from '@/types';
+import type { CalendarEvent, GymPlan, HabitDef } from '@/types';
 import HabitEmoji from '../shared/HabitEmoji';
 import { buildDailyBars, buildWeeklyBars, buildMonthlyBars } from '../training/StepTracker';
 import type { StepBar, StepPeriod } from '../training/StepTracker';
@@ -439,6 +439,66 @@ function MetricChart({ bars, goal, color = '#4a9eff', goalColor = '#22c55e' }: {
   );
 }
 
+// ─── Plan detail modal ────────────────────────────────────────────────────────
+function PlanDetailModal({ plan, clockFormat, onClose }: { plan: GymPlan; clockFormat: '12h' | '24h'; onClose: () => void }) {
+  const isStudyPlan = plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
+  const isRunPlan   = /run|jog|walk|cardio|marathon|\d+k\b/i.test(plan.name);
+  const exercises   = plan.exercises;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-lg bg-ql-hdr rounded-t-3xl border-t border-ql shadow-2xl flex flex-col max-h-[85vh]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-5 border-b border-ql shrink-0 flex items-center gap-3">
+          <div className="w-1.5 self-stretch rounded-full shrink-0" style={{ backgroundColor: plan.color }} />
+          <span className="text-2xl">{plan.emoji}</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-ql text-base font-bold">{plan.name}</h3>
+            <p className="text-ql-3 text-[10px]">
+              {exercises.length} {isStudyPlan ? 'session block' : 'exercise'}{exercises.length !== 1 ? 's' : ''}
+              {plan.scheduleTime
+                ? ` · ${fmtTime(plan.scheduleTime, clockFormat)}${plan.scheduleEndTime ? ` – ${fmtTime(plan.scheduleEndTime, clockFormat)}` : ''}`
+                : ''}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-ql-3 text-2xl leading-none ml-2">×</button>
+        </div>
+
+        {/* Exercise / session list */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 flex flex-col gap-2 pb-6">
+          {exercises.length === 0 && (
+            <p className="text-ql-3 text-sm text-center py-6">No exercises added yet.</p>
+          )}
+          {exercises.map((ex, i) => (
+            <div key={ex.id} className="bg-ql-surface rounded-2xl border border-ql px-4 py-3 flex items-center gap-3">
+              <span className="text-ql-3 text-xs w-5 shrink-0 font-mono">{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-ql text-sm font-medium">{ex.name}</p>
+                {!isStudyPlan && !isRunPlan && (ex.sets > 0 || ex.targetReps > 0) && (
+                  <p className="text-ql-3 text-[10px] mt-0.5">
+                    {ex.sets > 0 ? `${ex.sets} sets` : ''}
+                    {ex.targetReps > 0 ? ` × ${ex.targetReps} reps` : ''}
+                    {ex.targetWeight > 0 ? ` @ ${ex.targetWeight}kg` : ex.targetReps > 0 ? ' BW' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+          {plan.recoveryNotes && (
+            <div className="bg-ql-surface rounded-2xl border border-ql px-4 py-3 mt-1">
+              <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wide mb-1">Notes</p>
+              <p className="text-ql text-sm">{plan.recoveryNotes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main calendar page ───────────────────────────────────────────────────────
 export default function CalendarPage() {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, habitDefs, habitLog, logHabit, unlogHabit, gymPlans, gymSessions, mealLog, nutritionGoal, wakeQuest, sleepLog, stepLog, stepGoal, waterLog, waterGoal, setActiveSection, setTrainingTab, setNutritionTab, disabledSections, clockFormat } = useGameStore();
@@ -452,6 +512,7 @@ export default function CalendarPage() {
   const [formInit,  setFormInit]  = useState<Omit<CalendarEvent, 'id'>>(BLANK_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | 'unsupported'>('default');
+  const [selectedPlan, setSelectedPlan] = useState<GymPlan | null>(null);
   const [showFoodDetail,  setShowFoodDetail]  = useState(false);
   const [showWaterDetail, setShowWaterDetail] = useState(false);
   const [foodMetric, setFoodMetric] = useState<'calories'|'protein'|'carbs'|'fat'|'sugar'>('calories');
@@ -848,33 +909,54 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* ── Gym plans for this day ── */}
-      {dayGymPlans.length > 0 && (
-        <div className="mt-2 flex flex-col gap-2">
-          <p className="text-ql text-xs font-semibold text-ql-3 uppercase tracking-wide">Gym</p>
-          {dayGymPlans.map(plan => {
-            const done = gymSessionsOnDate(selected).some(s => s.planId === plan.id);
-            return (
-              <div key={plan.id}
-                className={`bg-ql-surface rounded-2xl border px-4 py-3 flex items-center gap-3 transition-all ${
-                  done ? 'border-ql-accent/30 opacity-80' : 'border-ql'
-                }`}
-              >
-                <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: plan.color }} />
-                <span className="text-base">{plan.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${done ? 'line-through text-ql-3' : 'text-ql'}`}>{plan.name}</p>
-                  <p className="text-ql-3 text-[10px] mt-0.5">
-                    {plan.exercises.length} exercise{plan.exercises.length !== 1 ? 's' : ''}
-                    {plan.scheduleTime ? ` · ${fmt(plan.scheduleTime)}` : ''}
-                  </p>
-                </div>
-                {done && <span className="text-ql-accent text-xs font-bold">Done</span>}
+      {/* ── Gym / Revision plans for this day ── */}
+      {dayGymPlans.length > 0 && (() => {
+        const isStudy = (p: typeof dayGymPlans[0]) =>
+          p.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(p.name);
+        const gymOnlyPlans   = dayGymPlans.filter(p => !isStudy(p));
+        const studyOnlyPlans = dayGymPlans.filter(p => isStudy(p));
+        const renderPlanCard = (plan: typeof dayGymPlans[0]) => {
+          const done = gymSessionsOnDate(selected).some(s => s.planId === plan.id);
+          return (
+            <button key={plan.id}
+              onClick={() => setSelectedPlan(plan)}
+              className={`w-full bg-ql-surface rounded-2xl border px-4 py-3 flex items-center gap-3 transition-all text-left ${
+                done ? 'border-ql-accent/30 opacity-80' : 'border-ql'
+              }`}
+            >
+              <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: plan.color }} />
+              <span className="text-base">{plan.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium ${done ? 'line-through text-ql-3' : 'text-ql'}`}>{plan.name}</p>
+                <p className="text-ql-3 text-[10px] mt-0.5">
+                  {plan.exercises.length} exercise{plan.exercises.length !== 1 ? 's' : ''}
+                  {plan.scheduleTime ? ` · ${fmt(plan.scheduleTime)}` : ''}
+                </p>
               </div>
-            );
-          })}
-        </div>
-      )}
+              {done
+                ? <span className="text-ql-accent text-xs font-bold shrink-0">Done</span>
+                : <span className="text-ql-3 text-xs shrink-0">›</span>
+              }
+            </button>
+          );
+        };
+        return (
+          <>
+            {gymOnlyPlans.length > 0 && (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-ql text-xs font-semibold text-ql-3 uppercase tracking-wide">Gym</p>
+                {gymOnlyPlans.map(renderPlanCard)}
+              </div>
+            )}
+            {studyOnlyPlans.length > 0 && (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-ql text-xs font-semibold text-ql-3 uppercase tracking-wide">Revision</p>
+                {studyOnlyPlans.map(renderPlanCard)}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* ── Steps / Nutrition / Hydration for selected day ── */}
       {!disabledSections.includes('stats') && (() => {
@@ -1305,6 +1387,9 @@ export default function CalendarPage() {
         </div>
       );
     })()}
+      {selectedPlan && (
+        <PlanDetailModal plan={selectedPlan} clockFormat={clockFormat} onClose={() => setSelectedPlan(null)} />
+      )}
     </>
   );
 }

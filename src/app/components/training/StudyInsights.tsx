@@ -13,7 +13,7 @@ function extractSubject(blockName: string): string {
 }
 
 function isBreakBlock(name: string): boolean {
-  return /break|lunch|gym|☕|🍽|🏋/i.test(name);
+  return /break|lunch|gym|☕|🍽|🏋|run|walk|jog|exercise|sport|swim|cycle|yoga|stretch|nap|rest|activity|🏃|🚶|🧘|🚴|🏊/i.test(name);
 }
 
 function isSchedulingLabel(subject: string): boolean {
