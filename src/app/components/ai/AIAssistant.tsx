@@ -13,6 +13,7 @@ interface Message {
   pendingFoodLog?: PendingFoodLog;
   isPlanBuilding?: boolean; // shows construction progress animation
   planBuildingType?: 'gym' | 'meal'; // controls animation labels/emojis
+  repairPreferences?: Record<string, string>; // set on PLAN_NOT_FOUND to show Repair button
 }
 
 interface PendingMeal {
@@ -251,6 +252,11 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
   const tdee = Math.round(bmr * (activityMultiplier[store.characterAppearance.activityLevel ?? 'moderate'] ?? 1.55));
   const tdeeWithActivity = hasEnduranceToday ? Math.round(tdee + 400) : hasGymToday ? Math.round(tdee + 250) : tdee;
 
+  const recentMemory = (store.coachMemory ?? []).slice(-5);
+  const memoryBlock = recentMemory.length > 0
+    ? `\nCoach memory (most recent observations — use these to personalise responses):\n${recentMemory.map((n, i) => `${i + 1}. ${n}`).join('\n')}`
+    : '';
+
   return `User profile:
 - Name: ${store.userName || 'User'}
 - Age: ${age}, Height: ${height}cm, Current weight: ${currentWeight}kg (starting: ${firstWeight?.weight ?? startingWeight}kg, change: ${weightChangeTxt})
@@ -259,7 +265,7 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 - Estimated daily calorie need (TDEE): ~${tdee} kcal baseline${hasEnduranceToday ? ` / ~${tdeeWithActivity} kcal today (endurance activity)` : hasGymToday ? ` / ~${tdeeWithActivity} kcal today (gym)` : ''}
 - Nutrition goals: ${nutritionGoalCtx}
 - RPG stats: ${rpgStats}
-- Time on GAINN: ${timeOnApp}
+- Time on GAINN: ${timeOnApp}${memoryBlock}
 
 CALENDAR — TODAY (${labelDate(today)}):
 ${todaySchedule}
@@ -488,6 +494,44 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
       reminder:  Number(action.reminder  ?? 0),
     });
 
+  } else if (type === 'add_calendar_events_bulk') {
+    // Bulk recurring event creation — for work shifts, classes, or any repeating schedule
+    // events: array of { title, date, startTime, endTime, color, notes, location, reminder }
+    const events = action.events as Record<string, unknown>[] | undefined;
+    if (Array.isArray(events)) {
+      events.forEach(e => {
+        store.addCalendarEvent({
+          title:     String(e.title     ?? 'Event'),
+          date:      String(e.date      ?? today),
+          startTime: String(e.startTime ?? ''),
+          endTime:   String(e.endTime   ?? ''),
+          allDay:    Boolean(e.allDay   ?? (!e.startTime)),
+          location:  String(e.location  ?? ''),
+          notes:     String(e.notes     ?? ''),
+          color:     String(e.color     ?? '#f97316'),
+          reminder:  Number(e.reminder  ?? 0),
+        });
+      });
+    }
+
+  } else if (type === 'update_calendar_event') {
+    // Update an existing calendar event by id — patch any fields (title, date, startTime, endTime, etc.)
+    const eventId = String(action.id ?? '');
+    if (eventId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const patch: Partial<import('@/types').CalendarEvent> = {};
+      if (action.title     !== undefined) patch.title     = String(action.title);
+      if (action.date      !== undefined) patch.date      = String(action.date);
+      if (action.startTime !== undefined) patch.startTime = String(action.startTime);
+      if (action.endTime   !== undefined) patch.endTime   = String(action.endTime);
+      if (action.allDay    !== undefined) patch.allDay    = Boolean(action.allDay);
+      if (action.location  !== undefined) patch.location  = String(action.location);
+      if (action.notes     !== undefined) patch.notes     = String(action.notes);
+      if (action.color     !== undefined) patch.color     = String(action.color);
+      if (action.reminder  !== undefined) patch.reminder  = Number(action.reminder);
+      store.updateCalendarEvent(eventId, patch);
+    }
+
   } else if (type === 'delete_calendar_event') {
     const eventId = String(action.id ?? '');
     if (eventId) store.deleteCalendarEvent(eventId);
@@ -606,11 +650,22 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
           .filter(d => d >= 0 && d <= 6);
       }
 
+      // CRITICAL: merge dayTimes/dayEndTimes with existing values — never replace wholesale.
+      // The AI sends only the days it's changing; all other constraints must be preserved.
+      // Without this merge, setting Wednesday off wipes a previously-set Thursday constraint.
+      if (patch.dayTimes && typeof patch.dayTimes === 'object') {
+        patch.dayTimes = { ...(existing.dayTimes ?? {}), ...(patch.dayTimes as Record<string, string>) };
+      }
+      if (patch.dayEndTimes && typeof patch.dayEndTimes === 'object') {
+        patch.dayEndTimes = { ...(existing.dayEndTimes ?? {}), ...(patch.dayEndTimes as Record<string, string>) };
+      }
+
       store.updateGymPlan(planId, patch as unknown as import('@/types').GymPlan);
 
       // Refresh future calendar events when days OR times change
-      const daysChanged  = Array.isArray(patch.scheduleDays);
-      const timesChanged = patch.scheduleTime !== undefined || patch.scheduleEndTime !== undefined;
+      const daysChanged     = Array.isArray(patch.scheduleDays);
+      const timesChanged    = patch.scheduleTime     !== undefined || patch.scheduleEndTime    !== undefined
+                           || patch.dayTimes         !== undefined || patch.dayEndTimes        !== undefined;
 
       if (daysChanged || timesChanged) {
         const updated = useGameStore.getState().gymPlans.find(p => p.id === planId);
@@ -618,32 +673,40 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
           const today = new Date(); today.setHours(0, 0, 0, 0);
           const todayStr = today.toISOString().slice(0, 10);
 
+          // Helper: get start/end time for a specific weekday, respecting dayTimes override
+          const eventStartTime = (weekday: number) =>
+            updated.dayTimes?.[String(weekday)] ?? updated.scheduleTime ?? '';
+          const eventEndTime = (weekday: number) =>
+            updated.dayEndTimes?.[String(weekday)] ?? updated.scheduleEndTime ?? '';
+
           if (daysChanged) {
-            // Delete all future events (by planId OR old/new name for events without planId)
+            // Delete today's and all future events so new ones can be recreated cleanly
             useGameStore.setState(s => ({
               calendarEvents: s.calendarEvents.filter(e => {
-                if (e.date <= todayStr) return true;
+                if (e.date < todayStr) return true; // keep only past events
                 if (e.planId === planId) return false;
                 if (!e.planId && (e.title === oldPlanName || e.title === updated.name)) return false;
                 return true;
               }),
             }));
-            // Recreate events for the new days (next 8 weeks)
+            // Recreate events for the new days (next 8 weeks), using day-specific times
             const newDays = (patch.scheduleDays as number[]).sort((a, b) => a - b);
             newDays.forEach(weekday => {
               const d = new Date(today);
               let daysUntil = weekday - today.getDay();
               if (daysUntil < 0) daysUntil += 7;
               d.setDate(today.getDate() + daysUntil);
+              const start = eventStartTime(weekday);
+              const end   = eventEndTime(weekday);
               for (let w = 0; w < 8; w++) {
                 const date = new Date(d);
                 date.setDate(d.getDate() + w * 7);
                 store.addCalendarEvent({
                   title:     updated.name,
                   date:      date.toISOString().slice(0, 10),
-                  startTime: updated.scheduleTime ?? '',
-                  endTime:   updated.scheduleEndTime ?? '',
-                  allDay:    !updated.scheduleTime,
+                  startTime: start,
+                  endTime:   end,
+                  allDay:    !start,
                   location:  '',
                   notes:     '',
                   color:     updated.color,
@@ -653,17 +716,22 @@ function executeAction(action: Record<string, unknown>, store: ReturnType<typeof
               }
             });
           } else if (timesChanged) {
-            // Only time changed — update startTime/endTime on all future events for this plan
+            // Strip leading emoji from a string for loose title matching
+            const bareTitle = (s: string) => s.replace(/^[\p{Emoji}\s]+/u, '').trim().toLowerCase();
+            const planBare  = bareTitle(updated.name);
+            const oldBare   = bareTitle(oldPlanName);
+
             useGameStore.setState(s => ({
               calendarEvents: s.calendarEvents.map(e => {
-                if (e.date <= todayStr) return e;
-                if (e.planId !== planId && !(e.title === oldPlanName && !e.planId)) return e;
-                return {
-                  ...e,
-                  startTime: updated.scheduleTime ?? '',
-                  endTime:   updated.scheduleEndTime ?? '',
-                  allDay:    !updated.scheduleTime,
-                };
+                if (e.date < todayStr) return e;
+                // Match by planId OR by title (handles events created before planId was stored)
+                const titleMatch = bareTitle(e.title) === planBare || bareTitle(e.title) === oldBare;
+                if (e.planId !== planId && !titleMatch) return e;
+                const weekday = new Date(e.date + 'T12:00:00').getDay();
+                const start   = eventStartTime(weekday);
+                const end     = eventEndTime(weekday);
+                // Also stamp planId so future patches can find it
+                return { ...e, planId, startTime: start, endTime: end, allDay: !start };
               }),
             }));
           }
@@ -698,10 +766,25 @@ export default function AIAssistant() {
   const [input,          setInput]          = useState('');
   const [loading,        setLoading]        = useState(false);
   const [loadingLabel,   setLoadingLabel]   = useState('Thinking…');
+  const [highDemand,     setHighDemand]     = useState(false);
+  const highDemandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [introCountdown, setIntroCountdown] = useState(10);
   const [buildProgress,  setBuildProgress]  = useState(-1); // -1=hidden, 0–100
   const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [listening,   setListening]   = useState(false);
+
+  const startLoading = (label = 'Thinking…') => {
+    setLoading(true);
+    setLoadingLabel(label);
+    setHighDemand(false);
+    if (highDemandTimerRef.current) clearTimeout(highDemandTimerRef.current);
+    highDemandTimerRef.current = setTimeout(() => setHighDemand(true), 4000);
+  };
+  const stopLoading = () => {
+    setLoading(false);
+    setHighDemand(false);
+    if (highDemandTimerRef.current) { clearTimeout(highDemandTimerRef.current); highDemandTimerRef.current = null; }
+  };
   const messagesEndRef    = useRef<HTMLDivElement>(null);
   const inputRef          = useRef<HTMLInputElement>(null);
   const fileInputRef      = useRef<HTMLInputElement>(null);
@@ -800,6 +883,8 @@ export default function AIAssistant() {
         // store ourselves — never trust the AI to copy it correctly (it may return an object
         // which becomes "[object Object]" in the prompt and breaks JSON parsing).
         let resolvedExistingPlan = preferences.existingPlan;
+        let resolvedExistingScheduleDays: number[] | undefined;
+        let resolvedGroupDaysPerWeek: number | undefined;
         if (preferences.existingPlanId) {
           const existingPlan = s.gymPlans.find(p => p.id === preferences.existingPlanId);
           if (existingPlan) {
@@ -809,9 +894,51 @@ export default function AIAssistant() {
             const weekSum = existingPlan.weeks && existingPlan.weeks.length > 0
               ? ` | weeks: ${existingPlan.weeks.map(w => `wk${w.weekNumber}: ${(w.exercises ?? []).map(fmtEx).join('; ')}`).join(' | ')}`
               : '';
-            resolvedExistingPlan = `${existingPlan.name} — ${exList}${weekSum}`;
+            const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            const scheduleStr = existingPlan.scheduleDays.length > 0
+              ? ` | scheduleDays: [${existingPlan.scheduleDays.join(',')}] (${existingPlan.scheduleDays.map(d => dayNames[d]).join('/')})`
+              : '';
+            resolvedExistingPlan = `${existingPlan.name} — ${exList}${weekSum}${scheduleStr}`;
+            resolvedExistingScheduleDays = existingPlan.scheduleDays;
+
+            // For study plans: collect ALL plans in the same split group so the AI knows the full schedule
+            const isStudyPlanEdit = existingPlan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(existingPlan.name);
+            if (isStudyPlanEdit && existingPlan.split) {
+              const splitLabel = existingPlan.split.trim().toLowerCase();
+              const groupPlans = s.gymPlans.filter(p => p.split?.trim().toLowerCase() === splitLabel);
+              // BUG FIX: use total scheduled days across all plans, NOT number of plans
+              resolvedGroupDaysPerWeek = groupPlans.reduce((sum, p) => sum + (p.scheduleDays?.length ?? 0), 0);
+              // Build a summary of the whole group — include EXACT day assignments the AI must preserve
+              const groupSummary = groupPlans.map(p =>
+                `  • ${p.name} — scheduleDays: [${p.scheduleDays.join(',')}] (${p.scheduleDays.map(d => dayNames[d]).join('/')})${p.scheduleTime ? `, time: ${p.scheduleTime}–${p.scheduleEndTime}` : ''}`
+              ).join('\n');
+              resolvedExistingPlan = `GROUP (split: "${existingPlan.split}", ${groupPlans.length} plans, ${resolvedGroupDaysPerWeek} total days):\n${groupSummary}\n\nCRITICAL — PRESERVE DAY ASSIGNMENTS: Regenerate ALL ${groupPlans.length} plans using the EXACT scheduleDays shown above for each plan. Do NOT reassign or shuffle days. Only update the timetable block times within each plan.\n\nEditing plan: ${resolvedExistingPlan}`;
+              // Inject subjects derived from plan names so route.ts generates the correct number of plans.
+              // Strip common suffixes like "Revision", "Study", "Plan" to get the bare subject name.
+              if (!preferences.subjects) {
+                const extractSubject = (name: string) => name.replace(/\s*(revision|study|plan|timetable)\s*/gi, '').trim();
+                const groupSubjects = groupPlans.map(p => extractSubject(p.name)).filter(Boolean).join(', ');
+                if (groupSubjects) preferences = { ...preferences, subjects: groupSubjects };
+              }
+            }
           }
         }
+
+        // Build a compact snapshot of existing plans + calendar for the generate_gym_plan route
+        // so it can avoid conflicts and honour day constraints even without full buildUserContext
+        const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const existingPlansSnapshot = s.gymPlans.map(p => ({
+          id: p.id,
+          name: p.name,
+          split: p.split,      // required for backend to identify study plans in group edits
+          scheduleDays: p.scheduleDays,
+          dayTimes: p.dayTimes ?? {},
+          dayEndTimes: p.dayEndTimes ?? {},
+        }));
+        const upcomingCalSnapshot = s.calendarEvents
+          .filter(e => e.date >= new Date().toISOString().slice(0, 10))
+          .slice(0, 60) // cap at 60 events to keep payload small
+          .map(e => ({ date: e.date, day: dayNames[new Date(e.date + 'T12:00:00').getDay()], startTime: e.startTime, endTime: e.endTime, title: e.title }));
 
         const res = await fetch('/api/gemini', {
           method: 'POST',
@@ -821,6 +948,8 @@ export default function AIAssistant() {
             context: {
               stats: s.stats,
               gymLog: s.gymSessions,
+              existingPlans: existingPlansSnapshot,
+              upcomingCalendar: upcomingCalSnapshot,
               preferences: {
                 ...preferences,
                 // Always use stored experience so it's accurate regardless of what the assistant captured
@@ -828,6 +957,10 @@ export default function AIAssistant() {
                 runExperience: s.runExperience || preferences.runExperience || '',
                 // Always use the store-built string (never the AI's copy which may be an object)
                 ...(resolvedExistingPlan !== undefined ? { existingPlan: resolvedExistingPlan } : {}),
+                // Lock the schedule days so the AI cannot change them unless the user asked to
+                ...(resolvedExistingScheduleDays !== undefined ? { existingScheduleDays: resolvedExistingScheduleDays } : {}),
+                // For study plan group edits: pass full group size so all days are rebuilt
+                ...(resolvedGroupDaysPerWeek !== undefined ? { daysPerWeek: String(resolvedGroupDaysPerWeek) } : {}),
               },
             },
           }),
@@ -840,11 +973,33 @@ export default function AIAssistant() {
         }
         // Support both legacy { plan } and new { plans: [...] }
         const rawPlans: Record<string, unknown>[] = data.plans ?? (data.plan ? [data.plan] : []);
-        console.log('[GymPlan] rawPlans received:', JSON.stringify(rawPlans, null, 2));
         if (rawPlans.length > 0) {
-          // If regenerating an existing plan (edit flow), remove the old plan by ID first
+          // ── Clean up old plans before adding new ones ─────────────────────
+          // Rule: never stack plans on top of each other.
+          // Priority 1: if editing a specific plan by ID, remove that plan + all
+          //             plans in the same split group (handles multi-plan splits like PPL).
+          // Priority 2: if creating fresh, remove any existing plans that share the
+          //             same split label as the incoming plans (prevents accumulation).
+          // Priority 3: name-based exact match as a last-resort safety net.
+
+          const incomingSplit = String(rawPlans[0]?.split ?? '').trim().toLowerCase();
+
           if (preferences.existingPlanId) {
-            s.removeGymPlan(preferences.existingPlanId);
+            // Edit flow — remove the target plan plus any others in the same split group
+            const targetPlan = useGameStore.getState().gymPlans.find(p => p.id === preferences.existingPlanId);
+            const splitLabel = targetPlan?.split?.trim().toLowerCase() ?? '';
+            useGameStore.getState().gymPlans
+              .filter(p => splitLabel && p.split?.trim().toLowerCase() === splitLabel)
+              .forEach(p => s.removeGymPlan(p.id));
+            // Also remove by ID in case split label didn't match
+            if (useGameStore.getState().gymPlans.find(p => p.id === preferences.existingPlanId)) {
+              s.removeGymPlan(preferences.existingPlanId);
+            }
+          } else if (incomingSplit) {
+            // Fresh plan — remove all existing plans with the same split label
+            useGameStore.getState().gymPlans
+              .filter(p => p.split?.trim().toLowerCase() === incomingSplit)
+              .forEach(p => s.removeGymPlan(p.id));
           }
 
           rawPlans.forEach(p => {
@@ -855,7 +1010,7 @@ export default function AIAssistant() {
               targetReps:   Number(ex.targetReps   ?? 10),
               targetWeight: Number(ex.targetWeight ?? 0),
             });
-            // 1-to-1 swap by name (catches cases without existingPlanId)
+            // Last-resort: exact name match dedup
             const newName = String(p.name ?? '').toLowerCase().trim();
             const duplicate = useGameStore.getState().gymPlans.find(
               existing => existing.name.toLowerCase().trim() === newName
@@ -880,14 +1035,16 @@ export default function AIAssistant() {
               scheduleDays:    (p.scheduleDays    as number[]) ?? [],
               scheduleTime:    (p.scheduleTime    as string)  ?? '',
               scheduleEndTime: (p.scheduleEndTime as string)  ?? '',
-              dayTimes:    {},
-              dayEndTimes: {},
+              dayTimes:    (p.dayTimes    as Record<string,string> | undefined) ?? {},
+              dayEndTimes: (p.dayEndTimes as Record<string,string> | undefined) ?? {},
             });
 
             // ── Auto-add calendar events for every scheduled day ──────────
             const scheduleDays = (p.scheduleDays as number[]) ?? [];
             const scheduleTime    = (p.scheduleTime    as string) ?? '';
             const scheduleEndTime = (p.scheduleEndTime as string) ?? '';
+            const planDayTimes    = (p.dayTimes    as Record<string,string> | undefined) ?? {};
+            const planDayEndTimes = (p.dayEndTimes as Record<string,string> | undefined) ?? {};
             const planColor = (p.color as string) ?? '#7c3aed';
             const planName  = (p.name  as string) ?? 'Training Session';
             const weeksList = Array.isArray(p.weeks) ? (p.weeks as Record<string, unknown>[]) : [];
@@ -895,6 +1052,11 @@ export default function AIAssistant() {
             const today = new Date(); today.setHours(0, 0, 0, 0);
 
             scheduleDays.forEach(weekday => {
+              // Use per-day start/end times if the AI provided them (respects user constraints)
+              const dowKey = String(weekday);
+              const dayStart = planDayTimes[dowKey]    || scheduleTime;
+              const dayEnd   = planDayEndTimes[dowKey] || scheduleEndTime;
+
               const todayDay = today.getDay();
               let daysUntil = weekday - todayDay;
               if (daysUntil < 0) daysUntil += 7;
@@ -910,9 +1072,9 @@ export default function AIAssistant() {
                 s.addCalendarEvent({
                   title:     planName,
                   date:      d.toISOString().slice(0, 10),
-                  startTime: scheduleTime,
-                  endTime:   scheduleEndTime,
-                  allDay:    !scheduleTime,
+                  startTime: dayStart,
+                  endTime:   dayEnd,
+                  allDay:    !dayStart,
                   location:  '',
                   notes:     weekLabel ? `${planName}${weekLabel}` : '',
                   color:     planColor,
@@ -922,14 +1084,34 @@ export default function AIAssistant() {
               }
             });
           });
+
+          // Save coach memory — extract optimizationNote from first plan that has one
+          const memNote = rawPlans.map(p => String(p.optimizationNote ?? '')).find(n => n.trim().length > 5);
+          if (memNote) useGameStore.getState().addCoachMemory(memNote);
+
+          // Client-side safety net: dedup plan days then remove any stale calendar events
+          // that were auto-created for days now stripped by dedup. Runs after all plans are
+          // saved so the store reflects the final state before cleanup.
+          useGameStore.getState().deduplicatePlanDays();
+          useGameStore.getState().cleanStaleScheduleEvents();
+
           const label = rawPlans.length === 1
             ? `"${rawPlans[0].name as string}"`
             : rawPlans.map(p => `"${p.name as string}"`).join(', ');
           const prefType = (preferences.planType ?? preferences.type ?? '').toLowerCase();
           const isStudyPlan = prefType.includes('stud') || prefType.includes('revis') || prefType.includes('exam') || prefType.includes('learn') || prefType.includes('academic');
-          const doneMsg = isStudyPlan
-            ? `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Plans tab. Each subject has its own plan — head there to get started!`
-            : `✅ Done! ${label} added to your Gym tab and 📅 Calendar! You can edit times and days in "Edit Plan", or just tell me and I'll update them for you 😊`;
+          const subjectsPerDay = parseInt(String(preferences.subjectsPerDay ?? '1'), 10);
+          const isInterleaved = isStudyPlan && subjectsPerDay >= 2 && rawPlans.length >= 1;
+          const subjectList = preferences.subjects ? String(preferences.subjects).split(',').map(s => s.trim()) : [];
+          let doneMsg: string;
+          if (isInterleaved && subjectList.length >= 2) {
+            const grouped = rawPlans.map(p => String(p.name ?? '').replace(/\s*(revision|study|plan)\s*/gi, '').trim());
+            doneMsg = `✅ Done! I've interleaved ${subjectList.join(' and ')} into ${grouped.length === 1 ? 'a single track' : `${grouped.length} tracks`} — ${grouped.join(' on different days')} — so no two subjects ever clash on the same day. Head to Plans to get started!`;
+          } else if (isStudyPlan) {
+            doneMsg = `✅ Done! ${label} ${rawPlans.length === 1 ? 'has' : 'have'} been saved to your Plans tab. Each subject has its own dedicated days — head there to get started!`;
+          } else {
+            doneMsg = `✅ Done! ${label} added to your Gym tab and 📅 Calendar! You can edit times and days in "Edit Plan", or just tell me and I'll update them for you 😊`;
+          }
           finishProgress(true, doneMsg);
         } else {
           finishProgress(false, 'Plan generation hit a snag. Try again with a bit more detail about what you want.');
@@ -966,8 +1148,7 @@ export default function AIAssistant() {
     // Capture history BEFORE adding the new user message
     const historySnapshot = messages;
     setMessages(prev => [...prev, { role: 'user', text }]);
-    setLoading(true);
-    setLoadingLabel('Thinking…');
+    startLoading('Thinking…');
     try {
       const habitList = store.habitDefs.map(h => h.name).join(', ');
       // Build conversation history for Gemini (skip initial greeting, keep last 30 turns)
@@ -989,13 +1170,14 @@ export default function AIAssistant() {
             sectionContext: SECTION_CONTEXT[activeSection] ?? '',
             habitList,
             aiIntensity: store.aiIntensity ?? 50,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
         }),
       });
       const data = await res.json();
       const reply = data.reply ?? data.error ?? 'Sorry, something went wrong.';
       // Release the input immediately so user can keep chatting
-      setLoading(false);
+      stopLoading();
       if (data.action?.type === 'confirm_past_food_log') {
         const action = data.action as Record<string, unknown>;
         const pendingFoodLog: PendingFoodLog = {
@@ -1006,11 +1188,12 @@ export default function AIAssistant() {
         setMessages(prev => [...prev, { role: 'ai', text: reply, pendingFoodLog }]);
       } else {
         setMessages(prev => [...prev, { role: 'ai', text: reply }]);
-        if (data.action?.type === 'generate_gym_plan') {
+        // Skip single-action handling if data.actions array is present (prevents double execution)
+        if (data.action?.type === 'generate_gym_plan' && !Array.isArray(data.actions)) {
           generatePlan('gym', data.action.preferences ?? {});
-        } else if (data.action?.type === 'generate_meal_plan') {
+        } else if (data.action?.type === 'generate_meal_plan' && !Array.isArray(data.actions)) {
           generatePlan('meal', data.action.preferences ?? {});
-        } else if (data.action?.type === 'update_gym_plan') {
+        } else if (data.action?.type === 'update_gym_plan' && !Array.isArray(data.actions)) {
           // Show same building animation for plan edits
           setBuildProgress(0);
           if (buildTimerRef.current) clearInterval(buildTimerRef.current);
@@ -1025,8 +1208,18 @@ export default function AIAssistant() {
           if (actionResult === 'PLAN_NOT_FOUND') {
             clearInterval(buildTimerRef.current!);
             setBuildProgress(100);
+            // Build repair prefs from the patch so the Repair button can trigger a fresh generation
+            const repairPatch = (data.action.patch ?? {}) as Record<string, unknown>;
+            const repairPrefs: Record<string, string> = {};
+            if (repairPatch.name)         repairPrefs.name         = String(repairPatch.name);
+            if (repairPatch.goal)         repairPrefs.goal         = String(repairPatch.goal);
+            if (repairPatch.daysPerWeek)  repairPrefs.daysPerWeek  = String(repairPatch.daysPerWeek);
+            if (repairPatch.splitType)    repairPrefs.splitType    = String(repairPatch.splitType);
+            if (repairPatch.scheduleDays) repairPrefs.scheduleDays = JSON.stringify(repairPatch.scheduleDays);
             setTimeout(() => {
-              setMessages(prev => prev.map(m => m.isPlanBuilding ? { ...m, isPlanBuilding: false, text: reply } : m));
+              setMessages(prev => prev.map(m => m.isPlanBuilding
+                ? { ...m, isPlanBuilding: false, text: "⚠️ I couldn't find that plan — it may have been deleted. Tap **Repair** to rebuild it fresh, or just describe what you want and I'll create a new one.", repairPreferences: repairPrefs }
+                : m));
               setBuildProgress(-1);
             }, 300);
             // Plan was deleted — extract preferences from the patch and regenerate fresh
@@ -1048,12 +1241,47 @@ export default function AIAssistant() {
               setBuildProgress(-1);
             }, 600);
           }
-        } else if (data.action) {
+        } else if (data.action && !Array.isArray(data.actions)) {
           executeAction(data.action, store);
         }
         // Multi-action support — run each action in sequence
         if (Array.isArray(data.actions)) {
-          (data.actions as Record<string, unknown>[]).forEach(a => {
+          let actions = data.actions as Record<string, unknown>[];
+
+          // ── Action Consolidation: merge multiple generate_gym_plan actions into one ──
+          // If the AI fires two separate generate_gym_plan calls (e.g. one for Computing,
+          // one for Biology), they would spawn parallel API requests that can't see each
+          // other — server dedup has no effect and both claim the same days.
+          // Fix: merge all plan-generation actions into a single request so the server
+          // receives the full subject list and triggers the interleaving logic correctly.
+          const planActions = actions.filter(a => a?.type === 'generate_gym_plan');
+          if (planActions.length > 1) {
+            const merged = planActions.reduce<Record<string, string>>((acc, a) => {
+              const prefs = (a.preferences as Record<string, string>) ?? {};
+              // Combine subjects
+              const existingSubjects = acc.subjects ? acc.subjects.split(',').map(s => s.trim()) : [];
+              const newSubjects = prefs.subjects ? prefs.subjects.split(',').map(s => s.trim()) : (prefs.name ? [prefs.name] : []);
+              acc.subjects = [...new Set([...existingSubjects, ...newSubjects])].join(', ');
+              // Use highest subjectsPerDay
+              const existing = parseInt(acc.subjectsPerDay ?? '1', 10);
+              const incoming = parseInt(prefs.subjectsPerDay ?? '1', 10);
+              if (incoming > existing) acc.subjectsPerDay = String(incoming);
+              // Carry over other prefs from first action (daysPerWeek, hoursPerDay, etc.)
+              for (const key of Object.keys(prefs)) {
+                if (key !== 'subjects' && key !== 'subjectsPerDay' && !acc[key]) {
+                  acc[key] = prefs[key];
+                }
+              }
+              return acc;
+            }, {});
+            // Replace all plan-generation actions with the single merged one
+            actions = [
+              { type: 'generate_gym_plan', preferences: merged },
+              ...actions.filter(a => a?.type !== 'generate_gym_plan'),
+            ];
+          }
+
+          actions.forEach(a => {
             if (!a || !a.type) return;
             if (a.type === 'generate_gym_plan') {
               generatePlan('gym', (a.preferences as Record<string, string>) ?? {});
@@ -1066,10 +1294,72 @@ export default function AIAssistant() {
             }
           });
         }
+
+        // ── Agent loop: yield_for_db ────────────────────────────────────────
+        // When the AI saves fixed events (shifts/appointments) it signals "yield_for_db".
+        // We auto-fire Phase 2 with a system message that includes the derived dayConstraints,
+        // so the AI knows exactly what constraints to apply when it generates the plan.
+        if (data.status === 'yield_for_db') {
+          const constraintsJson = data.constraints_for_plan ? String(data.constraints_for_plan) : '';
+          const systemMsg = `SYSTEM: Fixed events have been successfully saved to the calendar.${constraintsJson ? ` You MUST include these dayConstraints in the generate_gym_plan preferences JSON: ${constraintsJson}` : ''} Continue gathering any remaining information, then generate the plan.`;
+          startLoading('Mapping your schedule…');
+          // Fix C: 200ms settle delay so Firestore writes complete before Phase 2 reads state
+          await new Promise(r => setTimeout(r, 200));
+          try {
+            const phase2History = [
+              ...historySnapshot
+                .slice(1).slice(-28)
+                .filter((m: Message) => !m.mediaUrl && m.text.trim() !== '')
+                .map((m: Message) => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text })),
+              { role: 'user', text },
+              { role: 'model', text: reply },
+            ];
+            const res2 = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mode: 'assistant',
+                message: systemMsg,
+                history: phase2History,
+                section: activeSection,
+                context: {
+                  // Use getState() not the render-snapshot `store` — calendar events
+                  // added in Phase 1 are now in the live store, not the stale snapshot.
+                  userContext: buildUserContext(useGameStore.getState()),
+                  sectionContext: SECTION_CONTEXT[activeSection] ?? '',
+                  habitList,
+                  aiIntensity: store.aiIntensity ?? 50,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
+              }),
+            });
+            const data2 = await res2.json();
+            stopLoading();
+            const reply2 = data2.reply ?? data2.error ?? 'Sorry, something went wrong.';
+            setMessages(prev => [...prev, { role: 'ai', text: reply2 }]);
+            if (data2.action?.type === 'generate_gym_plan') {
+              generatePlan('gym', data2.action.preferences ?? {});
+            } else if (data2.action?.type === 'generate_meal_plan') {
+              generatePlan('meal', data2.action.preferences ?? {});
+            } else if (data2.action) {
+              executeAction(data2.action, store);
+            }
+            if (Array.isArray(data2.actions)) {
+              (data2.actions as Record<string, unknown>[]).forEach((a: Record<string, unknown>) => {
+                if (!a?.type) return;
+                if (a.type === 'generate_gym_plan') generatePlan('gym', (a.preferences as Record<string, string>) ?? {});
+                else if (a.type === 'generate_meal_plan') generatePlan('meal', (a.preferences as Record<string, string>) ?? {});
+                else executeAction(a, store);
+              });
+            }
+          } catch {
+            stopLoading();
+          }
+        }
       }
     } catch {
       addAiMsg('Having trouble connecting. Try again in a moment.');
-      setLoading(false);
+      stopLoading();
     }
   };
 
@@ -1087,12 +1377,11 @@ export default function AIAssistant() {
       mediaUrl: previewUrl,
       mediaType: isImage ? 'image' : 'video',
     }]);
-    setLoading(true);
+    startLoading(isImage ? 'Analysing food…' : 'Uploading…');
 
     try {
       if (isImage) {
         // ── Food photo: base64 encode ─────────────────────────────────────
-        setLoadingLabel('Analysing food…');
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = e => {
@@ -1171,14 +1460,13 @@ export default function AIAssistant() {
     } catch (e: any) {
       addAiMsg(`Upload failed: ${e.message ?? 'Unknown error'}`);
     }
-    setLoading(false);
+    stopLoading();
   };
 
   const handleBodyPhoto = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
     setMessages(prev => [...prev, { role: 'user', text: '📸 Progress photo', mediaUrl: URL.createObjectURL(file), mediaType: 'image' }]);
-    setLoading(true);
-    setLoadingLabel('Analysing body composition…');
+    startLoading('Analysing body composition…');
     try {
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -1209,7 +1497,7 @@ export default function AIAssistant() {
     } catch {
       addAiMsg('Could not process the photo. Please try again.');
     }
-    setLoading(false);
+    stopLoading();
   };
 
   const toggleMic = () => {
@@ -1375,7 +1663,13 @@ export default function AIAssistant() {
                           <p className="text-ql-3 text-[10px]">
                             {buildProgress >= 100
                               ? (m.planBuildingType === 'meal' ? 'Saving to your Food tab' : 'Saving to your Plans tab')
-                              : `${Math.round(Math.min(buildProgress, 100))}% — hang tight, this one's worth the wait`}
+                              : m.planBuildingType === 'meal'
+                                ? `${Math.round(Math.min(buildProgress, 100))}% — sourcing recipes…`
+                                : buildProgress < 30
+                                  ? `${Math.round(buildProgress)}% — interleaving subjects…`
+                                  : buildProgress < 70
+                                    ? `${Math.round(buildProgress)}% — checking for collisions…`
+                                    : `${Math.round(buildProgress)}% — scrubbing calendar ghosts…`}
                           </p>
                         </div>
                       </div>
@@ -1484,18 +1778,43 @@ export default function AIAssistant() {
                 {m.pendingFoodLog?.confirmed && (
                   <p className="text-ql-3 text-[10px] mt-1 px-1">Logged to {m.pendingFoodLog.dateLabel}</p>
                 )}
+                {/* Repair button — shown when plan was not found (deleted) */}
+                {m.repairPreferences && (
+                  <button
+                    onClick={() => {
+                      setMessages(prev => prev.map((msg, idx) =>
+                        idx === i ? { ...msg, repairPreferences: undefined } : msg
+                      ));
+                      generatePlan('gym', m.repairPreferences!);
+                    }}
+                    className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-ql-accent text-white hover:opacity-90 transition-opacity"
+                  >
+                    🔧 Repair Plan
+                  </button>
+                )}
               </div>
             ))}
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-ql-surface2 border border-ql px-3 py-2 rounded-2xl rounded-bl-sm flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-ql-3 animate-bounce"
-                        style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
-                  </div>
-                  <span className="text-ql-3 text-xs">{loadingLabel}</span>
+                  {highDemand ? (
+                    <>
+                      <svg className="animate-spin shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" className="text-ql-3"/>
+                      </svg>
+                      <span className="text-ql-3 text-xs">GAINN AI is experiencing high demand…</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex gap-1">
+                        {[0, 1, 2].map(i => (
+                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-ql-3 animate-bounce"
+                            style={{ animationDelay: `${i * 0.15}s` }} />
+                        ))}
+                      </div>
+                      <span className="text-ql-3 text-xs">{loadingLabel}</span>
+                    </>
+                  )}
                 </div>
               </div>
             )}

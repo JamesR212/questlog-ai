@@ -37,6 +37,7 @@ import type {
 
 interface GameStore {
   stats: CharacterStats;
+  deletedIds: string[];           // tombstone list — IDs of items intentionally deleted on this device
   calendarEvents: CalendarEvent[];
   vices: ViceEntry[];
   viceDefs: ViceDef[];
@@ -85,6 +86,7 @@ interface GameStore {
   primaryGoals: string[];       // e.g. ["Build Muscle", "Lose Fat"]
   weightLog: WeightEntry[];     // timestamped weight measurements
   bodyCompositionLog: BodyCompositionEntry[];
+  coachMemory: string[];        // last N optimization notes from the AI coach
 
   trainingTab: 'habits' | 'plans' | 'performance' | 'steps';
   nutritionTab: 'food' | 'drink';
@@ -126,9 +128,14 @@ interface GameStore {
   removeHabit: (id: string) => void;
   logHabit: (habitId: string, date: string) => void;
   unlogHabit: (habitId: string, date: string) => void;
+  addDeletedId: (id: string) => void;
   addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
   updateCalendarEvent: (id: string, patch: Partial<CalendarEvent>) => void;
   deleteCalendarEvent: (id: string) => void;
+  cleanOrphanedPlanEvents: () => void;
+  deduplicatePlanDays: () => void;
+  cleanStaleScheduleEvents: () => void;
+  addCoachMemory: (note: string) => void;
   logVice: (viceDefId: string, count: number) => void;
   addGymEntry: (exercises: Exercise[]) => void;
   setWakeTarget: (time: string) => void;
@@ -352,6 +359,7 @@ const defaultStats: CharacterStats = {
 
 const INITIAL_STATE = {
   stats: defaultStats,
+  deletedIds: [],
   calendarEvents: [],
   vices: [],
   viceDefs: DEFAULT_VICE_DEFS,
@@ -418,6 +426,7 @@ const INITIAL_STATE = {
   primaryGoals: [],
   weightLog: [],
   bodyCompositionLog: [],
+  coachMemory: [],
   unlockedOutfits: [],
   stepLog: [],
   stepGoal: 10000,
@@ -451,6 +460,7 @@ export const useGameStore = create<GameStore>()(
   persist(
     (set) => ({
       stats: defaultStats,
+      deletedIds: [],
       calendarEvents: [],
       vices: [],
       viceDefs: DEFAULT_VICE_DEFS,
@@ -536,6 +546,7 @@ export const useGameStore = create<GameStore>()(
       paycheckLog: [],
       budgetItems: [],
       spendingLog: [],
+      coachMemory: [],
 
       setActiveSection: (section) => set({ activeSection: section }),
       setTrainingTab:  (tab) => set({ trainingTab: tab }),
@@ -658,6 +669,14 @@ export const useGameStore = create<GameStore>()(
           const linkedHabitId = plan?.linkedHabitId;
           const linkedStatId  = plan?.linkedStatId;
           const today = new Date().toISOString().slice(0, 10);
+          // Collect IDs of calendar events being removed so they're tombstoned
+          // Use strictly < today so today's event is also removed (prevents duplication when
+          // editing a plan — removeGymPlan is called before addGymPlan recreates events)
+          const removedCalIds = state.calendarEvents
+            .filter(e => e.planId === id || (!e.planId && e.title === plan?.name && e.date >= today))
+            .map(e => e.id);
+          const newTombstones = [id, linkedHabitId, linkedStatId, ...removedCalIds].filter(Boolean) as string[];
+          const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
           return {
             gymPlans:        state.gymPlans.filter((p) => p.id !== id),
             gymSessions:     state.gymSessions.filter((s) => s.planId !== id),
@@ -665,14 +684,16 @@ export const useGameStore = create<GameStore>()(
             habitLog:        linkedHabitId ? state.habitLog.filter(e => e.habitId !== linkedHabitId) : state.habitLog,
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
-            // Remove future calendar events linked to this plan; keep past ones as a log.
-            // Match by planId OR by title (for older events created before planId was added).
             calendarEvents: state.calendarEvents.filter(e => {
-              if (e.date <= today) return true;
+              // Remove ALL events linked to this plan by ID (plan-created events are
+              // just scheduled slots, not logs — gym sessions live in gymSessions separately)
               if (e.planId === id) return false;
-              if (!e.planId && e.title === plan?.name) return false;
+              // Title-based fallback: only remove future/today events without planId
+              // (past events without planId might be manually created user events)
+              if (!e.planId && e.title === plan?.name && e.date >= today) return false;
               return true;
             }),
+            deletedIds,
           };
         }),
 
@@ -739,6 +760,8 @@ export const useGameStore = create<GameStore>()(
           const habit = state.habitDefs.find(h => h.id === id);
           const linkedPlanId = habit?.linkedPlanId;
           const linkedStatId = habit?.linkedStatId;
+          const newTombstones = [id, linkedPlanId, linkedStatId].filter(Boolean) as string[];
+          const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
           return {
             habitDefs:       state.habitDefs.filter((h) => h.id !== id),
             habitLog:        state.habitLog.filter((e) => e.habitId !== id),
@@ -746,6 +769,7 @@ export const useGameStore = create<GameStore>()(
             gymSessions:     linkedPlanId ? state.gymSessions.filter(s => s.planId !== linkedPlanId) : state.gymSessions,
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
+            deletedIds,
           };
         }),
 
@@ -759,7 +783,7 @@ export const useGameStore = create<GameStore>()(
           let extraSessions: GymSession[] = [];
           let fitnessXp = 0;
           if (habit && isFitnessHabit(habit.name, habit.emoji)) {
-            const todayDow = new Date(date + 'T00:00:00').getDay();
+            const todayDow = new Date(date + 'T12:00:00').getDay();
             const plan = state.gymPlans.find(p => p.scheduleDays.includes(todayDow)) ?? state.gymPlans[0];
             if (plan && !state.gymSessions.some(s => s.planId === plan.id && s.date.slice(0, 10) === date)) {
               extraSessions = [{ id: generateId(), planId: plan.id, date: new Date().toISOString() }];
@@ -789,9 +813,101 @@ export const useGameStore = create<GameStore>()(
           calendarEvents: state.calendarEvents.map((e) => e.id === id ? { ...e, ...patch } : e),
         })),
 
+      addDeletedId: (id) =>
+        set((state) => ({
+          deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
+        })),
+
       deleteCalendarEvent: (id) =>
         set((state) => ({
           calendarEvents: state.calendarEvents.filter((e) => e.id !== id),
+          deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
+        })),
+
+      cleanOrphanedPlanEvents: () =>
+        set((state) => {
+          const planIds = new Set(state.gymPlans.map(p => p.id));
+          const orphans = state.calendarEvents.filter(e => e.planId && !planIds.has(e.planId));
+          if (orphans.length === 0) return state;
+          const orphanIds = orphans.map(e => e.id);
+          return {
+            calendarEvents: state.calendarEvents.filter(e => !orphanIds.includes(e.id)),
+            deletedIds: [...state.deletedIds, ...orphanIds.filter(id => !state.deletedIds.includes(id))],
+          };
+        }),
+
+      deduplicatePlanDays: () =>
+        set((state) => {
+          // First-come wins: each day-of-week may appear in exactly one plan's scheduleDays.
+          // Iterate plans in creation order (index) and strip any day already claimed.
+          const claimedDays = new Set<number>();
+          let changed = false;
+          const updatedPlans = state.gymPlans.map(plan => {
+            if (!Array.isArray(plan.scheduleDays)) return plan;
+            const deduped = plan.scheduleDays.filter(d => !claimedDays.has(d));
+            deduped.forEach(d => claimedDays.add(d));
+            if (deduped.length !== plan.scheduleDays.length) {
+              changed = true;
+              return { ...plan, scheduleDays: deduped };
+            }
+            claimedDays; // no-op to avoid lint warning
+            return plan;
+          });
+          if (!changed) return state;
+          return { gymPlans: updatedPlans };
+        }),
+
+      cleanStaleScheduleEvents: () =>
+        set((state) => {
+          // Remove calendar events linked to a plan when either:
+          // (a) the plan no longer owns that day-of-week (dedup stripped it), OR
+          // (b) the event title no longer matches any exercise in the plan (plan was edited,
+          //     exercise renamed — old event would stack on top of the new one otherwise).
+          // Always use T12:00:00 to anchor date parsing at local noon (timezone safety).
+          const staleIds: string[] = [];
+          for (const ev of state.calendarEvents) {
+            if (!ev.planId) continue;
+            const plan = state.gymPlans.find(p => p.id === ev.planId);
+            if (!plan) continue; // orphan — cleanOrphanedPlanEvents handles this
+
+            // (a) Day check
+            const dow = new Date(ev.date + 'T12:00:00').getDay();
+            if (!plan.scheduleDays.includes(dow)) {
+              staleIds.push(ev.id);
+              continue;
+            }
+
+            // (b) Title check — only for plan-generated timed events (skip the plan-level
+            //     "header" event whose title is the plan name itself)
+            const evBareTitle = ev.title.replace(/^[\p{Emoji}\s]+/u, '').trim().toLowerCase();
+            const planNameBare = plan.name.replace(/^[\p{Emoji}\s]+/u, '').trim().toLowerCase();
+            if (evBareTitle === planNameBare) continue; // this is the plan header event — keep it
+
+            // Collect all exercise names from the plan (base exercises + all weeks)
+            const allExerciseNames = new Set<string>();
+            (plan.exercises ?? []).forEach(e => allExerciseNames.add(e.name.toLowerCase()));
+            (plan.weeks ?? []).forEach(w =>
+              (w.exercises ?? []).forEach(e => allExerciseNames.add(e.name.toLowerCase()))
+            );
+
+            if (allExerciseNames.size > 0) {
+              // Check if any exercise name is a substring of the event title (exercise name
+              // is embedded: "Maths – Topic Review 09:00–09:45" contains "maths")
+              const titleMatches = [...allExerciseNames].some(name => evBareTitle.includes(name));
+              if (!titleMatches) staleIds.push(ev.id);
+            }
+          }
+          if (staleIds.length === 0) return state;
+          return {
+            calendarEvents: state.calendarEvents.filter(e => !staleIds.includes(e.id)),
+            deletedIds: [...state.deletedIds, ...staleIds.filter(id => !state.deletedIds.includes(id))],
+          };
+        }),
+
+      addCoachMemory: (note: string) =>
+        set((state) => ({
+          // Keep only the 10 most recent notes — oldest drops off automatically
+          coachMemory: [...state.coachMemory, note.trim()].slice(-10),
         })),
 
       logVice: (viceDefId, count) =>

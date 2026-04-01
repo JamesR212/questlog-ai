@@ -8,6 +8,7 @@ import FormAnalyzer from './FormAnalyzer';
 import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
 import StepTracker, { StepBars, getLast7Days, StepsChart, buildDailyBars, buildWeeklyBars, buildMonthlyBars, StepPeriod } from '../training/StepTracker';
 import ActivityTracker from '../tracking/ActivityTracker';
+import StudyInsights from '../training/StudyInsights';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -2060,6 +2061,9 @@ export default function GymFitness() {
         </div>
       )}
 
+      {/* Study subject split insights */}
+      <StudyInsights />
+
       {/* All plans — hierarchical drill-down */}
       {gymPlans.length > 0 && (
         <div className="flex flex-col gap-3">
@@ -2074,8 +2078,8 @@ export default function GymFitness() {
             return (
               <div key={prog.key} className="bg-ql-surface rounded-2xl shadow-ql border border-ql overflow-hidden">
                 {/* Programme header — tap to expand */}
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                <div
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer"
                   onClick={() => setExpandedProgramme(isExpanded ? null : prog.key)}
                 >
                   <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: prog.color }} />
@@ -2102,7 +2106,7 @@ export default function GymFitness() {
                     </div>
                     <span className="text-ql-3 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded content */}
                 {isExpanded && (
@@ -2161,12 +2165,13 @@ export default function GymFitness() {
                         const exs = weekExercises(plan, selectedWeek);
                         const rowKey = `${plan.id}::${dayNum}`;
                         const isDayExpanded = expandedDayByProg[prog.key] === rowKey;
-                        const dayTime = plan.dayTimes?.[String(dayNum)] ?? plan.scheduleTime ?? '';
+                        const dayTime    = plan.dayTimes?.[String(dayNum)] ?? plan.scheduleTime ?? '';
+                        const dayEndTime = plan.dayEndTimes?.[String(dayNum)] ?? plan.scheduleEndTime ?? '';
 
                         return (
                           <div key={rowKey} className="border-b border-ql last:border-b-0">
-                            <button
-                              className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                            <div
+                              className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer"
                               onClick={() => setExpandedDayByProg(prev => ({
                                 ...prev,
                                 [prog.key]: isDayExpanded ? null : rowKey,
@@ -2174,7 +2179,7 @@ export default function GymFitness() {
                             >
                               <div className="flex-1 min-w-0">
                                 <p className="text-ql-3 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
-                                  {DAY_FULL_LABEL[dayNum]}{dayTime ? ` · ${fmt12(dayTime)}` : ''}
+                                  {DAY_FULL_LABEL[dayNum]}{dayTime ? ` · ${fmt12(dayTime)}${dayEndTime ? ` – ${fmt12(dayEndTime)}` : ''}` : ''}
                                 </p>
                                 {/* For multi-plan splits show plan name; otherwise show exercise count */}
                                 <p className="text-ql text-sm font-medium truncate">
@@ -2199,7 +2204,7 @@ export default function GymFitness() {
                                 <span className="text-[10px] text-ql-3 shrink-0">🔒 Not yet</span>
                               )}
                               <span className="text-ql-3 text-[10px] ml-1">{isDayExpanded ? '▲' : '▼'}</span>
-                            </button>
+                            </div>
 
                             {/* Expanded: ALL exercises for this session + recovery notes */}
                             {isDayExpanded && (
