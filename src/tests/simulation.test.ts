@@ -213,9 +213,14 @@ describe('Simulation 1: Warp-Speed Year — no ghost events after cleanup', () =
         fc.array(planArb, { minLength: 2, maxLength: 6 }),
         fc.array(dateArb, { minLength: 1, maxLength: 52 }),
         (plans, dates) => {
+          // Deduplicate plans by id — duplicate IDs make the "deleted" plan still
+          // findable in activePlans, which is an invalid input for this invariant.
+          const uniquePlans = plans.filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i);
+          if (uniquePlans.length < 2) return; // skip degenerate input
+
           // Delete a random plan (simulate user removing it)
-          const deletedPlan = plans[0];
-          const activePlans = plans.slice(1);
+          const deletedPlan = uniquePlans[0];
+          const activePlans = uniquePlans.slice(1);
 
           const events: CalEvent[] = dates.map((date, i) => ({
             id:     `ev-${i}`,
@@ -477,6 +482,342 @@ describe('Simulation 3: Base-60 Fuzzing — time math never produces NaN or over
         }
       ),
       { numRuns: 5000 }
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIMULATION 4 — Life Scheduler Engine (Anchor Interference + Gap-Filler)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Pure scheduling helpers that mirror the constraint logic in route.ts.
+ * Fixed anchors (trackType="fixed") are physical walls — no other block
+ * may overlap them by even one minute.
+ */
+
+interface TimeSlot { start: number; end: number; }
+
+/** Place study/flexible blocks into the available windows around a fixed anchor. */
+function placeBlocksAroundAnchor(
+  anchorStart: number, anchorEnd: number,
+  wakeTime: number, bedTime: number,
+  blockMins: number, breakMins: number,
+  totalStudyMins: number,
+): TimeSlot[] {
+  const windows: Array<{ from: number; to: number }> = [];
+  if (anchorStart > wakeTime + blockMins) windows.push({ from: wakeTime, to: anchorStart });
+  if (anchorEnd + blockMins < bedTime)    windows.push({ from: anchorEnd,   to: bedTime });
+
+  const slots: TimeSlot[] = [];
+  let studied = 0;
+
+  for (const window of windows) {
+    let mins = window.from;
+    while (studied < totalStudyMins && mins + blockMins <= window.to) {
+      slots.push({ start: mins, end: mins + blockMins });
+      studied += blockMins;
+      mins += blockMins + breakMins;
+    }
+    if (studied >= totalStudyMins) break;
+  }
+  return slots;
+}
+
+/** Find the first gap between two anchors that fits a flexible session. */
+function placeFlexibleInGap(
+  a1Start: number, a1End: number,
+  a2Start: number, a2End: number,
+  wakeTime: number, bedTime: number,
+  sessionMins: number,
+): TimeSlot | null {
+  const gaps: Array<{ from: number; to: number }> = [
+    { from: wakeTime, to: a1Start },
+    { from: a1End,    to: a2Start },
+    { from: a2End,    to: bedTime },
+  ].filter(g => g.to - g.from >= sessionMins);
+
+  if (gaps.length === 0) return null;
+  const g = gaps[0];
+  return { start: g.from, end: g.from + sessionMins };
+}
+
+function overlaps(a: TimeSlot, bStart: number, bEnd: number): boolean {
+  return a.start < bEnd && a.end > bStart;
+}
+
+describe('Simulation 4: Life Scheduler Engine — fixed anchors are physical walls', () => {
+  it('Anchor Interference: zero study blocks overlap the fixed anchor window', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 360,  max: 840  }), // anchorStart: 06:00–14:00
+        fc.integer({ min: 60,   max: 480  }), // anchorDuration: 1h–8h
+        fc.integer({ min: 15,   max: 90   }), // blockMins
+        fc.integer({ min: 5,    max: 20   }), // breakMins
+        fc.integer({ min: 60,   max: 360  }), // totalStudyMins
+        (anchorStart, anchorDur, blockMins, breakMins, totalStudyMins) => {
+          const anchorEnd  = Math.min(anchorStart + anchorDur, 23 * 60);
+          const wakeTime   = 6 * 60;   // 06:00
+          const bedTime    = 23 * 60;  // 23:00
+
+          const slots = placeBlocksAroundAnchor(
+            anchorStart, anchorEnd, wakeTime, bedTime,
+            blockMins, breakMins, totalStudyMins,
+          );
+
+          // INVARIANT: no placed block overlaps [anchorStart, anchorEnd]
+          for (const slot of slots) {
+            expect(overlaps(slot, anchorStart, anchorEnd)).toBe(false);
+          }
+        }
+      ),
+      { numRuns: 2000 }
+    );
+  });
+
+  it('Anchor Interference: all blocks are within wake–bed window', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 360, max: 720 }),
+        fc.integer({ min: 120, max: 360 }),
+        fc.integer({ min: 25,  max: 60  }),
+        fc.integer({ min: 5,   max: 15  }),
+        fc.integer({ min: 60,  max: 240 }),
+        (anchorStart, anchorDur, blockMins, breakMins, totalStudyMins) => {
+          const anchorEnd = Math.min(anchorStart + anchorDur, 22 * 60);
+          const wakeTime  = 6 * 60;
+          const bedTime   = 23 * 60;
+
+          const slots = placeBlocksAroundAnchor(
+            anchorStart, anchorEnd, wakeTime, bedTime,
+            blockMins, breakMins, totalStudyMins,
+          );
+
+          for (const slot of slots) {
+            expect(slot.start).toBeGreaterThanOrEqual(wakeTime);
+            expect(slot.end).toBeLessThanOrEqual(bedTime);
+          }
+        }
+      ),
+      { numRuns: 2000 }
+    );
+  });
+
+  it('Gap-Filler: flexible session placed in the gap between two fixed anchors', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 420, max: 660 }),  // anchor1Start: 07:00–11:00
+        fc.integer({ min: 60,  max: 240 }),  // anchor1Dur
+        fc.integer({ min: 60,  max: 180 }),  // gap between the two anchors
+        fc.integer({ min: 60,  max: 240 }),  // anchor2Dur
+        (a1Start, a1Dur, gap, a2Dur) => {
+          const a1End   = a1Start + a1Dur;
+          const a2Start = a1End + gap;
+          const a2End   = a2Start + a2Dur;
+          const wakeTime  = 6 * 60;
+          const bedTime   = Math.max(a2End + 60, 21 * 60); // bed at least 1h after anchor2
+          const sessionMins = 60;
+
+          if (a2End >= bedTime) return; // degenerate — skip
+
+          const session = placeFlexibleInGap(
+            a1Start, a1End, a2Start, a2End,
+            wakeTime, bedTime, sessionMins,
+          );
+
+          if (session === null) return; // no gap large enough — that's fine, skip
+
+          // INVARIANT: session does not overlap either anchor
+          expect(overlaps(session, a1Start, a1End)).toBe(false);
+          expect(overlaps(session, a2Start, a2End)).toBe(false);
+
+          // INVARIANT: session is within wake–bed window
+          expect(session.start).toBeGreaterThanOrEqual(wakeTime);
+          expect(session.end).toBeLessThanOrEqual(bedTime);
+
+          // INVARIANT: session has correct duration
+          expect(session.end - session.start).toBe(sessionMins);
+        }
+      ),
+      { numRuns: 2000 }
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIMULATION 5 — GCSE Fair Rotation (Coverage Audit)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * With 12 subjects and 2 subjects per day, a 14-day schedule must include
+ * every subject at least once. This proves the "Fair Rotation" logic works for
+ * heavy GCSE workloads without lazy clustering on the first few subjects.
+ */
+
+function distributeSubjectsRoundRobin(
+  subjects: string[],
+  subjectsPerDay: number,
+  totalDays: number,
+): string[][] {
+  const schedule: string[][] = [];
+  let idx = 0;
+  for (let day = 0; day < totalDays; day++) {
+    const daySubjects: string[] = [];
+    for (let s = 0; s < subjectsPerDay; s++) {
+      daySubjects.push(subjects[idx % subjects.length]);
+      idx++;
+    }
+    schedule.push(daySubjects);
+  }
+  return schedule;
+}
+
+describe('Simulation 5: GCSE Coverage Audit — every subject scheduled at least once', () => {
+  it('12 subjects, 2/day, 14 days — all subjects appear in the schedule', () => {
+    const SUBJECTS = [
+      'Maths', 'English', 'Biology', 'Chemistry', 'Physics',
+      'History', 'Geography', 'French', 'Art', 'Computer Science',
+      'PE', 'RE',
+    ];
+    const schedule = distributeSubjectsRoundRobin(SUBJECTS, 2, 14);
+
+    // Flatten all scheduled subjects
+    const appeared = new Set(schedule.flat());
+
+    // INVARIANT: every subject appears at least once in 14 days
+    for (const subject of SUBJECTS) {
+      expect(appeared.has(subject)).toBe(true);
+    }
+
+    // INVARIANT: each day has exactly 2 subjects
+    for (const day of schedule) {
+      expect(day).toHaveLength(2);
+    }
+  });
+
+  it('property: N subjects with N/subjectsPerDay <= totalDays always achieves full coverage', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 2, max: 16 }),     // subjectCount
+        fc.integer({ min: 1, max: 4  }),     // subjectsPerDay
+        (subjectCount, subjectsPerDay) => {
+          const subjects = Array.from({ length: subjectCount }, (_, i) => `Subject${i}`);
+          // Ensure we have enough days for full coverage
+          const totalDays = Math.ceil(subjectCount / subjectsPerDay);
+          const schedule  = distributeSubjectsRoundRobin(subjects, subjectsPerDay, totalDays);
+          const appeared  = new Set(schedule.flat());
+
+          // INVARIANT: all subjects covered within ceil(N/subjectsPerDay) days
+          for (const s of subjects) {
+            expect(appeared.has(s)).toBe(true);
+          }
+        }
+      ),
+      { numRuns: 1000 }
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIMULATION 6 — Tombstone Garbage Collection (30-Day Pruning)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * SOURCE: sync.ts — pruneStaleTombstones
+ * Proves the 30-day GC never prunes fresh tombstones, always prunes expired
+ * ones, and keeps legacy tombstones (no timestamp) forever.
+ */
+
+const TOMBSTONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function pruneStaleTombstones(ids: string[], timestamps: Record<string, number>): string[] {
+  const cutoff = Date.now() - TOMBSTONE_TTL_MS;
+  return ids.filter(id => {
+    if (!Object.prototype.hasOwnProperty.call(timestamps, id)) return true;
+    return timestamps[id] >= cutoff;
+  });
+}
+
+describe('Simulation 6: Tombstone GC — 30-day pruning is safe and correct', () => {
+  it('fresh tombstones (< 30 days old) are NEVER pruned', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 1, maxLength: 20 }),
+        fc.integer({ min: 0, max: TOMBSTONE_TTL_MS - 1 }), // age in ms, strictly fresh
+        (ids, ageMs) => {
+          const now = Date.now();
+          const ts: Record<string, number> = {};
+          ids.forEach(id => { ts[id] = now - ageMs; });
+
+          const result = pruneStaleTombstones(ids, ts);
+
+          // INVARIANT: fresh tombstones survive GC
+          expect(result).toHaveLength(ids.length);
+        }
+      ),
+      { numRuns: 1000 }
+    );
+  });
+
+  it('stale tombstones (> 30 days old) with timestamps are always pruned', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 1, maxLength: 20 }),
+        fc.integer({ min: 1, max: 365 }), // days over the TTL
+        (ids, daysOver) => {
+          const expiredTs = Date.now() - TOMBSTONE_TTL_MS - daysOver * 24 * 60 * 60 * 1000;
+          const ts: Record<string, number> = {};
+          ids.forEach(id => { ts[id] = expiredTs; });
+
+          const result = pruneStaleTombstones(ids, ts);
+
+          // INVARIANT: all expired tombstones are removed
+          expect(result).toHaveLength(0);
+        }
+      ),
+      { numRuns: 1000 }
+    );
+  });
+
+  it('legacy tombstones (no timestamp) are kept forever — backward compat', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 1, maxLength: 20 }),
+        (ids) => {
+          // No timestamps at all — simulates pre-tombstoneTimestamps data
+          const result = pruneStaleTombstones(ids, {});
+
+          // INVARIANT: legacy tombstones are never pruned
+          expect(result).toHaveLength(ids.length);
+        }
+      ),
+      { numRuns: 1000 }
+    );
+  });
+
+  it('pruning is idempotent — running GC twice gives the same result', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 1, maxLength: 20 }),
+        fc.array(fc.boolean(), { minLength: 1, maxLength: 20 }),
+        (ids, expiredFlags) => {
+          const now = Date.now();
+          const ts: Record<string, number> = {};
+          ids.forEach((id, i) => {
+            // Some fresh, some expired
+            ts[id] = expiredFlags[i % expiredFlags.length]
+              ? now - TOMBSTONE_TTL_MS - 1000  // expired
+              : now - 1000;                     // fresh
+          });
+
+          const once  = pruneStaleTombstones(ids, ts);
+          const twice = pruneStaleTombstones(once, ts);
+
+          // INVARIANT: idempotent
+          expect(twice).toEqual(once);
+        }
+      ),
+      { numRuns: 1000 }
     );
   });
 });

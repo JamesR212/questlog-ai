@@ -57,6 +57,23 @@ export function dataScore(state: StoreData): number {
   );
 }
 
+// ── Tombstone pruning ─────────────────────────────────────────────────────
+// After 30 days any device will have synced and acknowledged the deletion.
+// IDs without a recorded timestamp are kept forever (safe for legacy data).
+const TOMBSTONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function pruneStaleTombstones(
+  ids: string[],
+  timestamps: Record<string, number>,
+): string[] {
+  const cutoff = Date.now() - TOMBSTONE_TTL_MS;
+  return ids.filter(id => {
+    // Use hasOwnProperty to avoid Object.prototype pollution (e.g. "valueOf")
+    if (!Object.prototype.hasOwnProperty.call(timestamps, id)) return true;
+    return timestamps[id] >= cutoff;
+  });
+}
+
 // ── Smart merge ────────────────────────────────────────────────────────────
 // Instead of picking local OR cloud (all-or-nothing), merge them so that
 // log entries from both devices are preserved. Arrays are unioned by `id`
@@ -89,14 +106,25 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
     'viceDefs', 'savedMeals',
   ];
 
-  // ── Tombstones: union deleted IDs from both sides ──────────────────────────
-  // Any ID that was intentionally deleted on EITHER device must stay deleted.
+  // ── Tombstones: union deleted IDs from both sides, then prune stale ─────────
+  // Any ID deleted on EITHER device stays deleted. After 30 days the tombstone
+  // is pruned — all devices will have synced by then. IDs with no recorded
+  // timestamp (legacy data) are kept forever.
   const cloudDeleted = new Set<string>((cloud.deletedIds as string[] | undefined) ?? []);
   const localDeleted = new Set<string>((local.deletedIds as string[] | undefined) ?? []);
-  const allDeleted   = new Set<string>([...cloudDeleted, ...localDeleted]);
+  const allDeletedRaw = [...cloudDeleted, ...localDeleted];
+
+  // Union tombstone timestamps from both sides
+  const cloudTs = ((cloud.tombstoneTimestamps ?? {}) as Record<string, number>);
+  const localTs = ((local.tombstoneTimestamps ?? {}) as Record<string, number>);
+  const mergedTs: Record<string, number> = { ...cloudTs, ...localTs };
+
+  // Prune expired tombstones
+  const allDeleted = new Set<string>(pruneStaleTombstones(allDeletedRaw, mergedTs));
 
   const merged: StoreData = { ...cloud }; // start with cloud as base
-  merged.deletedIds = Array.from(allDeleted); // union tombstones
+  merged.deletedIds = Array.from(allDeleted);
+  merged.tombstoneTimestamps = mergedTs;
 
   LOG_ARRAYS_BY_ID.forEach(key => {
     const c = cloud[key] as StoreData[] | undefined;
