@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile, dataScore, saveBackup, loadBackup, mergeStates } from '@/lib/sync';
+import { pushToCloud, pullFromCloud, localIsNewer, upsertProfile, dataScore, saveBackup, loadBackup, mergeStates, sanitise } from '@/lib/sync';
 import { updatePublicProfile } from '@/lib/friends';
 import { useGameStore, resetGameStore } from '@/store/gameStore';
 import type { User } from 'firebase/auth';
@@ -19,6 +19,7 @@ import ThemeApplier from './components/shared/ThemeApplier';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import HomePage from './components/dashboard/HomePage';
 import CalendarPage from './components/calendar/CalendarPage';
+import CalendarView from './components/calendar/CalendarView';
 import ViceTracker from './components/vice-tracker/ViceTracker';
 import HabitTracker from './components/habits/HabitTracker';
 import GymFitness from './components/gym/GymFitness';
@@ -42,6 +43,10 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function Home() {
   const { activeSection, hasOnboarded, setActiveSection } = useGameStore();
   const store = useGameStore();
+  // Only the fields that matter for the public profile — debounced separately at 30s
+  const profileKey = useGameStore(s =>
+    `${s.userName}|${s.stats?.level}|${s.stats?.xp}|${s.stats?.str}|${s.stats?.con}|${s.stats?.dex}|${s.profilePicUrl}`
+  );
 
   const [user, setUser]               = useState<User | null | undefined>(undefined);
   const [syncing, setSyncing]         = useState(false);
@@ -52,20 +57,22 @@ export default function Home() {
   const [authMode, setAuthMode]       = useState<'login' | 'signup'>('login');
   const [subscribed, setSubscribed]   = useState<boolean | null>(null); // null = checking
   const hydratedUid                   = useRef<string | null>(null);
-  // SAFETY: only allow cloud push after a clean pull — prevents empty-state overwriting cloud data
+  // SAFETY: only allow cloud push after a clean pull
   const pullOk                        = useRef<boolean>(false);
-  // Track when this device last made a LOCAL change (not from applying a remote snapshot)
-  const localModifiedAtRef            = useRef<number>(0);
-  // Flag set while we're applying a remote snapshot so the store subscription ignores it
+  // ms timestamp of the last local store change on THIS device (not from applying a remote snapshot)
+  const lastLocalChangeRef            = useRef<number>(0);
+  // true while we are mid-applying a remote snapshot — prevents subscription marking it as local
   const applyingRemoteRef             = useRef<boolean>(false);
+  // true while a push to Firestore is in-flight — block ALL snapshots during this window
+  const pushInFlightRef               = useRef<boolean>(false);
+  // JSON fingerprint of the last successfully-pushed payload — skip push if nothing real changed
+  const lastPushedFingerprintRef      = useRef<string>('');
 
-  // ── Track local store changes ────────────────────────────────────────────
-  // Whenever the store changes and it's NOT us applying a remote snapshot,
-  // stamp the time so we can reject stale incoming snapshots.
+  // ── Track local store changes ─────────────────────────────────────────────
   useEffect(() => {
     const unsub = useGameStore.subscribe(() => {
       if (!applyingRemoteRef.current) {
-        localModifiedAtRef.current = Date.now();
+        lastLocalChangeRef.current = Date.now();
       }
     });
     return () => unsub();
@@ -94,6 +101,7 @@ export default function Home() {
     resetGameStore();
 
     const userId = user.uid;
+    useGameStore.getState().setUserId(userId);
 
     // Ensure profile exists
     upsertProfile(userId, {
@@ -223,27 +231,89 @@ export default function Home() {
     const ref = doc(db, 'users', user.uid, 'data', 'store');
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) return;
-      const { _updatedAt, ...cloudData } = snap.data() as Record<string, unknown>;
+      const { _updatedAt, shareLocation: _shareLocation, ...cloudData } = snap.data() as Record<string, unknown>;
       if (!_updatedAt) return;
-      // Skip our own push echo
+      // Skip our own push echo (exact match)
       const lastPush = localStorage.getItem('questlog-last-push');
       if (_updatedAt === lastPush) return;
-      // Skip if this device made a local change MORE recently than this snapshot.
-      // e.g. laptop deletes at T=0, phone pushes at T=400ms (still has the item),
-      // snapshot arrives at T=400ms — laptop's localModifiedAt (T=0 ms ago) > snap time,
-      // so we reject it and let our own 800ms push win instead.
-      const snapTime = new Date(_updatedAt as string).getTime();
-      if (localModifiedAtRef.current > snapTime) {
-        console.log('[sync] skipping snapshot — local changes are newer (local:', localModifiedAtRef.current, 'snap:', snapTime, ')');
+      // Skip if this snapshot is OLDER than our last push — it's stale data from before our changes
+      if (lastPush && (_updatedAt as string) < lastPush) {
+        console.log('[sync] skipping snapshot — older than our last push (snapshot:', _updatedAt, 'lastPush:', lastPush, ')');
+        return;
+      }
+      // Skip if a push is currently in-flight — applying a snapshot mid-push would race against
+      // the optimistic local Firestore write, which fires before the await resolves
+      if (pushInFlightRef.current) {
+        console.log('[sync] skipping snapshot — push in flight');
+        return;
+      }
+      // Skip if we made a local change in the last 15 seconds — our push may still be
+      // in-flight (800ms debounce + network + slow AI response time)
+      if (Date.now() - lastLocalChangeRef.current < 15000) {
+        console.log('[sync] skipping snapshot — pending local changes within 15s grace window');
         return;
       }
       // Apply remote state — use the flag so the store subscription doesn't
-      // misidentify this as a local change
+      // misidentify this as a local change.
+      // IMPORTANT: after applying, re-enforce our local tombstones so the snapshot
+      // can never resurrect something we deleted on this device.
+      // ALSO: protect locally-added items (e.g. a new plan just created) that haven't
+      // been pushed yet — a stale snapshot must never wipe them.
       applyingRemoteRef.current = true;
+
+      const ARRAY_KEYS = [
+        'calendarEvents', 'gymPlans', 'habitDefs', 'gymSessions', 'habitLog',
+        'mealLog', 'sleepLog', 'vices', 'gpsActivities', 'performanceLog',
+        'bodyCompositionLog', 'stepLog', 'waterLog', 'weightLog', 'savedMeals',
+        'performanceStats', 'subscriptions', 'budgetItems', 'spendingLog', 'paycheckLog',
+      ];
+
+      // Capture local state BEFORE overwriting
+      const localState = useGameStore.getState() as unknown as Record<string, unknown>;
+      const localDeleted: string[] = (localState.deletedIds as string[] | undefined) ?? [];
+
+      // Union tombstones from both sides
+      const cloudDeleted: string[] = (cloudData.deletedIds as string[] | undefined) ?? [];
+      const allDeleted = new Set([...localDeleted, ...cloudDeleted]);
+
+      // Find items that exist locally but NOT in the cloud snapshot.
+      // These were added on this device since the last push and must be preserved.
+      const localOnlyItems: Record<string, { id?: string }[]> = {};
+      ARRAY_KEYS.forEach(key => {
+        const cloudArr = (cloudData[key] as { id?: string }[] | undefined) ?? [];
+        const localArr = (localState[key] as { id?: string }[] | undefined) ?? [];
+        const cloudIds = new Set(cloudArr.map(i => i?.id).filter(Boolean));
+        const localOnly = localArr.filter(i => i?.id && !cloudIds.has(i.id) && !allDeleted.has(i.id));
+        if (localOnly.length > 0) {
+          localOnlyItems[key] = localOnly;
+          console.log('[sync] preserving', localOnly.length, 'local-only item(s) in', key, '— not yet in cloud snapshot');
+        }
+      });
+
+      // Overwrite store with cloud snapshot
       useGameStore.setState(cloudData);
+
+      // Build a patch: tombstone filter + re-merge locally-added items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const patch: Record<string, unknown> = { deletedIds: Array.from(allDeleted) };
+      const stateAfter = useGameStore.getState() as unknown as Record<string, unknown>;
+      ARRAY_KEYS.forEach(key => {
+        const arr = stateAfter[key] as { id?: string }[] | undefined;
+        const localOnly = localOnlyItems[key] ?? [];
+        if (!Array.isArray(arr) && localOnly.length === 0) return;
+        let merged = Array.isArray(arr) ? arr.filter(item => item?.id && !allDeleted.has(item.id)) : [];
+        if (localOnly.length > 0) {
+          const mergedIds = new Set(merged.map(i => i?.id).filter(Boolean));
+          localOnly.forEach(item => { if (!mergedIds.has(item.id)) merged.push(item); });
+        }
+        const originalLen = Array.isArray(arr) ? arr.length : 0;
+        if (merged.length !== originalLen || localOnly.length > 0) patch[key] = merged;
+      });
+      useGameStore.setState(patch);
+
       applyingRemoteRef.current = false;
       localStorage.setItem('questlog-last-push', _updatedAt as string);
-      console.log('[sync] real-time update from another device — applied (ts:', _updatedAt, ')');
+      console.log('[sync] real-time update from another device — applied (ts:', _updatedAt, 'tombstones:', allDeleted.size, ')');
     }, (err) => {
       console.warn('[sync] snapshot error:', err);
     });
@@ -252,17 +322,29 @@ export default function Home() {
   }, [user?.uid, cloudReady]);
 
   // ── Debounced auto-sync to cloud on store changes ────────────────────────
-  const storeSnapshot = useDebounce(store, 800); // reduced from 3000ms → 800ms
+  const storeSnapshot    = useDebounce(store, 5_000); // 5s — no need to push faster than this
+  const debouncedProfile = useDebounce(profileKey, 30_000);
 
   useEffect(() => {
     if (!user || !cloudReady || !pullOk.current) return;
+    const s = useGameStore.getState();
+    // Only push if the syncable payload actually changed since the last push
+    const fingerprint = JSON.stringify(sanitise(s as unknown as Record<string, unknown>));
+    if (fingerprint === lastPushedFingerprintRef.current) return; // nothing real changed — skip
     setSyncing(true);
     setSyncError(false);
-    const s = useGameStore.getState();
+    pushInFlightRef.current = true;
     pushToCloud(user.uid, s)
-      .then(() => setSyncError(false))
+      .then(() => { setSyncError(false); lastPushedFingerprintRef.current = fingerprint; })
       .catch(() => setSyncError(true))
-      .finally(() => setSyncing(false));
+      .finally(() => { setSyncing(false); pushInFlightRef.current = false; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeSnapshot, user?.uid, cloudReady]);
+
+  // ── Public profile sync — 30s debounce, only fires when profile fields change ─
+  useEffect(() => {
+    if (!user || !cloudReady) return;
+    const s = useGameStore.getState();
     updatePublicProfile(user.uid, {
       username: s.userName || user.displayName || '',
       displayName: user.displayName || s.userName || '',
@@ -274,7 +356,7 @@ export default function Home() {
       profilePicUrl: s.profilePicUrl || '',
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeSnapshot, user?.uid, cloudReady]);
+  }, [debouncedProfile, user?.uid, cloudReady]);
 
   // ── Force immediate sync when user leaves the app ────────────────────────
   useEffect(() => {
@@ -399,8 +481,9 @@ export default function Home() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full px-4 py-5 pb-6">
+      <main className={`flex-1 max-w-lg mx-auto w-full ${activeSection === 'calendarview' ? 'overflow-hidden' : 'overflow-y-auto px-4 py-5 pb-6'}`}>
         {(activeSection === 'dashboard' || activeSection === 'calendar') && <HomePage />}
+        {activeSection === 'calendarview' && <CalendarView />}
         {activeSection === 'vices'     && <ViceTracker />}
         {activeSection === 'training'  && <TrainingHub />}
         {activeSection === 'habits'    && <HabitTracker />}

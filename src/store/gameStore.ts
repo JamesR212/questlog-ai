@@ -87,6 +87,8 @@ interface GameStore {
   weightLog: WeightEntry[];     // timestamped weight measurements
   bodyCompositionLog: BodyCompositionEntry[];
   coachMemory: string[];        // last N optimization notes from the AI coach
+  userId: string | null;        // Firebase uid — set on login, used for manual sync
+  syncStatus: 'idle' | 'pushing' | 'pulling' | 'error';
 
   trainingTab: 'habits' | 'plans' | 'performance' | 'steps';
   nutritionTab: 'food' | 'drink';
@@ -136,6 +138,10 @@ interface GameStore {
   deduplicatePlanDays: () => void;
   cleanStaleScheduleEvents: () => void;
   addCoachMemory: (note: string) => void;
+  setUserId: (id: string | null) => void;
+  setSyncStatus: (s: 'idle' | 'pushing' | 'pulling' | 'error') => void;
+  forceCloudPush: () => Promise<void>;
+  forceCloudPull: () => Promise<void>;
   logVice: (viceDefId: string, count: number) => void;
   addGymEntry: (exercises: Exercise[]) => void;
   setWakeTarget: (time: string) => void;
@@ -547,6 +553,8 @@ export const useGameStore = create<GameStore>()(
       budgetItems: [],
       spendingLog: [],
       coachMemory: [],
+      userId: null,
+      syncStatus: 'idle',
 
       setActiveSection: (section) => set({ activeSection: section }),
       setTrainingTab:  (tab) => set({ trainingTab: tab }),
@@ -906,9 +914,45 @@ export const useGameStore = create<GameStore>()(
 
       addCoachMemory: (note: string) =>
         set((state) => ({
-          // Keep only the 10 most recent notes — oldest drops off automatically
           coachMemory: [...state.coachMemory, note.trim()].slice(-10),
         })),
+
+      setUserId: (id) => set({ userId: id }),
+      setSyncStatus: (s) => set({ syncStatus: s }),
+
+      forceCloudPush: async () => {
+        const state = useGameStore.getState();
+        if (!state.userId) return;
+        set({ syncStatus: 'pushing' });
+        try {
+          const { forcePushToCloud } = await import('@/lib/sync');
+          await forcePushToCloud(state.userId, state as unknown as Record<string, unknown>);
+          set({ syncStatus: 'idle' });
+        } catch {
+          set({ syncStatus: 'error' });
+        }
+      },
+
+      forceCloudPull: async () => {
+        const state = useGameStore.getState();
+        if (!state.userId) return;
+        set({ syncStatus: 'pulling' });
+        try {
+          const { pullFromCloud } = await import('@/lib/sync');
+          const result = await pullFromCloud(state.userId);
+          if (result.ok && result.data) {
+            // Direct overwrite — no merge. This is the "phone accepts laptop truth" path.
+            useGameStore.setState({ ...result.data, userId: state.userId, syncStatus: 'idle' });
+            // Re-run cleanup so any lingering ghost events are removed
+            useGameStore.getState().deduplicatePlanDays();
+            useGameStore.getState().cleanStaleScheduleEvents();
+          } else {
+            set({ syncStatus: result.ok ? 'idle' : 'error' });
+          }
+        } catch {
+          set({ syncStatus: 'error' });
+        }
+      },
 
       logVice: (viceDefId, count) =>
         set((state) => {

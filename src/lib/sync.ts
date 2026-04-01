@@ -5,15 +5,30 @@ import { db } from './firebase';
 const EXCLUDE_KEYS = new Set([
   'activeSection', 'showLevelUp', 'levelUpMessage',
   'trainingTab', 'nutritionTab', 'googleFitTokens',
+  'shareLocation',
+  'userId', 'syncStatus', // runtime-only — set fresh on every login
 ]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type StoreData = Record<string, any>;
 
-function sanitise(data: StoreData): StoreData {
+// Recursively remove undefined values — Firestore rejects any field set to undefined.
+// JSON round-trip is the simplest reliable way: undefined values are dropped by JSON.stringify.
+function stripUndefined(value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  const out: StoreData = {};
+  for (const [k, v] of Object.entries(value as StoreData)) {
+    if (v !== undefined) out[k] = stripUndefined(v);
+  }
+  return out;
+}
+
+export function sanitise(data: StoreData): StoreData {
   const out: StoreData = {};
   for (const [k, v] of Object.entries(data)) {
-    if (!EXCLUDE_KEYS.has(k) && typeof v !== 'function') out[k] = v;
+    if (!EXCLUDE_KEYS.has(k) && typeof v !== 'function') out[k] = stripUndefined(v);
   }
   return out;
 }
@@ -74,13 +89,20 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
     'viceDefs', 'savedMeals',
   ];
 
+  // ── Tombstones: union deleted IDs from both sides ──────────────────────────
+  // Any ID that was intentionally deleted on EITHER device must stay deleted.
+  const cloudDeleted = new Set<string>((cloud.deletedIds as string[] | undefined) ?? []);
+  const localDeleted = new Set<string>((local.deletedIds as string[] | undefined) ?? []);
+  const allDeleted   = new Set<string>([...cloudDeleted, ...localDeleted]);
+
   const merged: StoreData = { ...cloud }; // start with cloud as base
+  merged.deletedIds = Array.from(allDeleted); // union tombstones
 
   LOG_ARRAYS_BY_ID.forEach(key => {
     const c = cloud[key] as StoreData[] | undefined;
     const l = local[key] as StoreData[] | undefined;
     if (Array.isArray(c) || Array.isArray(l)) {
-      merged[key] = unionBy(c ?? [], l ?? [], 'id');
+      merged[key] = unionBy(c ?? [], l ?? [], 'id').filter(item => !allDeleted.has(item?.id as string));
     }
   });
 
@@ -88,7 +110,7 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
     const c = cloud[key] as StoreData[] | undefined;
     const l = local[key] as StoreData[] | undefined;
     if (Array.isArray(c) || Array.isArray(l)) {
-      merged[key] = unionBy(c ?? [], l ?? [], 'date');
+      merged[key] = unionBy(c ?? [], l ?? [], 'date').filter(item => !allDeleted.has(item?.id as string));
     }
   });
 
@@ -96,7 +118,7 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
     const c = cloud[key] as StoreData[] | undefined;
     const l = local[key] as StoreData[] | undefined;
     if (Array.isArray(c) || Array.isArray(l)) {
-      merged[key] = unionBy(c ?? [], l ?? [], 'id');
+      merged[key] = unionBy(c ?? [], l ?? [], 'id').filter(item => !allDeleted.has(item?.id as string));
     }
   });
 
@@ -200,6 +222,25 @@ export function localIsNewer(cloudUpdatedAt: string | null): boolean {
   // Local is newer if the last successful push is more recent than the cloud timestamp.
   // A small grace window (2s) handles clock skew.
   return new Date(lastPush) > new Date(new Date(cloudUpdatedAt).getTime() - 2000);
+}
+
+// Force push — bypasses the data-score safety guard.
+// Only used for the manual "I am the truth" button. Never call from auto-sync.
+export async function forcePushToCloud(userId: string, storeState: StoreData) {
+  try {
+    const payload = sanitise(storeState);
+    const ts = new Date().toISOString();
+    await setDoc(doc(db, 'users', userId, 'data', 'store'), {
+      ...payload,
+      _updatedAt: ts,
+    });
+    localStorage.setItem(LAST_PUSH_KEY, ts);
+    saveBackup(payload);
+    console.log('[sync] force push success');
+  } catch (e) {
+    console.error('[sync] force push error:', e);
+    throw e;
+  }
 }
 
 export async function upsertProfile(userId: string, fields: { username?: string; display_name?: string }) {
