@@ -950,6 +950,9 @@ export default function AIAssistant() {
               gymLog: s.gymSessions,
               existingPlans: existingPlansSnapshot,
               upcomingCalendar: upcomingCalSnapshot,
+              // Wake/bed times — used by route.ts to hard-clamp the generation window
+              wakeTime: s.wakeQuest?.targetTime ?? '07:00',
+              bedTime:  s.bedTime ?? '23:00',
               preferences: {
                 ...preferences,
                 // Always use stored experience so it's accurate regardless of what the assistant captured

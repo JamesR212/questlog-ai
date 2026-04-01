@@ -280,16 +280,21 @@ export async function POST(req: NextRequest) {
         const hhmm = (m: number) => String(Math.floor(m / 60)).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0');
         const parseHHMM = (s: string) => { const [h,m] = s.split(':').map(Number); return h*60+(m||0); };
 
-        let defaultStartMins = 9 * 60; // 09:00 fallback
+        // Wake/bed window — user's real-life boundaries passed from the store.
+        // These are HARD limits: no session may start before wakeMins or end after bedMins.
+        const wakeMins = context.wakeTime ? parseHHMM(String(context.wakeTime)) : 7 * 60;  // 07:00 default
+        const bedMins  = context.bedTime  ? parseHHMM(String(context.bedTime))  : 23 * 60; // 23:00 default
+
+        let defaultStartMins = Math.max(wakeMins, 9 * 60); // start no earlier than wake, default 09:00
         if (prefs.scheduleTime && typeof prefs.scheduleTime === 'string') {
-          defaultStartMins = parseHHMM(prefs.scheduleTime);
+          defaultStartMins = Math.max(wakeMins, parseHHMM(prefs.scheduleTime));
         }
         // Note: dayConstraints affect individual days only (via dayTimes/dayEndTimes).
         // Do NOT derive the example window from constraints — it must reflect a standard full day.
 
-        let defaultEndMins: number | null = null;
+        let defaultEndMins: number | null = bedMins; // always cap at bed time
         if (prefs.scheduleEndTime && typeof prefs.scheduleEndTime === 'string') {
-          defaultEndMins = parseHHMM(prefs.scheduleEndTime);
+          defaultEndMins = Math.min(bedMins, parseHHMM(prefs.scheduleEndTime));
         }
         // Available minutes = total study time + all breaks overhead (gym break or lunch, whichever applies)
         const breakOverhead = gymBreakMins > 0 ? gymBreakMins : longBreakMins;
@@ -443,6 +448,12 @@ ${isStudyEdit ? `- Breaks and their positions: follow the EXACT sequence from th
 - Session types vary by week: Week 1–2 = Topic Review, Week 3–4 = Practice Questions, Week 5+ = Past Papers / Timed Conditions
 - Example layout for ${hoursPerDay}h/day, ${exampleStartStr}–${exampleEndStr}:
   ${isStudyEdit ? 'Follow the sequence and durations of the existing plan ONLY. Do NOT use any example layout — the existing plan IS the template.' : timetableExample}`}
+WAKE/BED WINDOW (ABSOLUTE HARD LIMITS — NEVER VIOLATE):
+User wakes at ${hhmm(wakeMins)} and sleeps at ${hhmm(bedMins)}.
+- NO block may start before ${hhmm(wakeMins)}.
+- NO block may end after ${hhmm(bedMins)}.
+- These limits override all other preferences. If hoursPerDay cannot fit within the window, silently truncate — do NOT overflow past ${hhmm(bedMins)}.
+
 MANDATORY RULES:
 1. TIME MATH — work block by block in sequence. For EVERY block: take the previous block's end time, add the duration in minutes using base-60 arithmetic (e.g. 09:00 + 45min = 09:45, NOT 09:50; 10:15 + 10min = 10:25), write the result as the next start time. Never guess — always derive each time from the one before it.
 2. EVERY exercise name MUST contain HH:MM–HH:MM using the times calculated in rule 1. Never skip or reuse a time.
@@ -1493,6 +1504,10 @@ NOTE: All XML tags in this section (<gathering_info>, <pre_generation_conflict_c
 <gathering_info>
 NEVER ASSUME SUBJECTS OR MODULES. ALWAYS ASK.
 Gather in up to 3 exchanges (max 2 questions per message):
+
+Q0 (MANDATORY — ask FIRST if wakeTime is "07:00" AND bedTime is "23:00", i.e. defaults not confirmed):
+"Before I build your timetable, what time do you usually wake up and go to bed? I need this so I never schedule sessions while you're sleeping. 🌙"
+→ Store answers as scheduleTime (wake) and scheduleEndTime (bed). Skip Q0 if the user has already set custom wake/bed times in their profile.
 
 Q1: "Which subjects (or modules) are you revising, and when's your exam?" — ALWAYS ask first if not stated.
 Q2: "How many days a week do you want to study?" — MANDATORY. NEVER assume or default silently.
