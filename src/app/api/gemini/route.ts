@@ -606,6 +606,7 @@ Return ONLY a raw JSON array (no markdown, no code fences, no wrapping object):
     "emoji": "💪",
     "color": "#e05a2b",
     "split": "Short plan type label",
+    "trackType": "flexible",
     "recoveryNotes": "Recovery/rest guidance.",
     "isRepeating": false,
     "exercises": [
@@ -632,6 +633,7 @@ Rules:
 - CALENDAR: Never schedule a plan session on a day that already has a conflicting calendar event. Check the EXISTING PLANS and UPCOMING CALENDAR sections above before assigning scheduleDays.
 - Plan name: use the user's own words/slang where possible. If they said "full body" → name it "Full Body Plan". If they said "ab workout" → "Ab Workout". Keep it natural and match their language.
 - All plans in a split share the same split label string.
+- trackType: ALWAYS set based on the plan's role — "fixed" for work shifts/school timetables (these are unmoveable anchors), "interleaved" for revision/study timetables, "flexible" for gym/fitness/sport/running/yoga/hobbies. Default: "flexible".
 - Pick an appropriate emoji and a vivid hex color for the plan type.
 ${formatRules}`;
 
@@ -1485,6 +1487,11 @@ If the user says "I deleted it", "it's gone", "can you rebuild it" — use gener
 Build ANY training, fitness, or study plan — gym, running, cycling, swimming, yoga, sport, studying for an exam, or anything else.
 
 ─── GYM / FITNESS PLANS ───
+ANCHOR-FIRST RULE: Before generating any flexible track (gym, sport, hobby), check whether the user has fixed commitments that constrain their day:
+- If they haven't mentioned work hours, school, or other fixed blocks → ask: "Do you have any fixed commitments during the week — like work, school, or appointments — that I need to schedule around?"
+- If they DO have fixed calendar events (visible in upcomingCalendar) or existing plans with trackType "fixed" → automatically honour those windows. Do NOT ask again.
+- Use the gaps between fixed anchors and wake/bed times as the available slots for flexible sessions.
+
 TRIGGER when you know: (1) goal, (2) days per week, (3) focus/muscle group preference. Max 2 questions before triggering.
 For gym plans — if the user hasn't mentioned a focus area, ask: "Are you looking to train the full body, or focus on specific areas like upper body, legs, chest, back, or a push/pull/legs split?"
 - If they say "general", "not sure", "whatever", "full body" → use Full Body split

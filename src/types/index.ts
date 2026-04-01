@@ -184,6 +184,7 @@ export interface GymPlan {
   dayTimes?: Record<string, string>;        // day-of-week index → 'HH:MM'
   dayEndTimes?: Record<string, string>;     // day-of-week index → 'HH:MM'
   split?: string;                           // e.g. "Push / Pull / Legs", "Upper / Lower", "Full Body"
+  trackType?: 'fixed' | 'flexible' | 'interleaved'; // 'fixed'=work/school anchor, 'flexible'=gym/sport, 'interleaved'=study/revision
   recoveryNotes?: string;                   // Short recovery guidance shown on the plan card
   wantsSessionAlerts?: boolean;             // Study plans: play bell sounds between blocks/breaks
   createdAt: string;

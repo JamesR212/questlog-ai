@@ -4,7 +4,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { GymPlan } from '@/types';
 
 function isStudyPlan(plan: GymPlan): boolean {
-  return plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
+  return plan.trackType === 'interleaved' || plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
 }
 
 // Extract individual subject name from an exercise block name like "Maths – Topic Review 09:00–09:45"

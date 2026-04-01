@@ -1819,6 +1819,16 @@ export default function GymFitness() {
   const totalVolume = (plan: GymPlan) =>
     plan.exercises.reduce((sum, ex) => sum + ex.sets * ex.targetReps * (ex.targetWeight || 1), 0);
 
+  // ── Track type icon (category-aware) ─────────────────────────────────────
+  function trackIcon(plan: GymPlan): string {
+    if (plan.trackType === 'fixed') return '🏢';
+    if (plan.trackType === 'interleaved') return '📚';
+    if (plan.trackType === 'flexible') return '💪';
+    // Legacy fallback: detect from split/name
+    if (plan.split === 'study' || /study|revision|revise|exam/i.test(plan.name)) return '📚';
+    return plan.emoji || '💪';
+  }
+
   // ── Programme grouping ────────────────────────────────────────────────────
   type ProgrammeGroup = { key: string; label: string; color: string; emoji: string; plans: GymPlan[] };
   const programmeGroups: ProgrammeGroup[] = (() => {
@@ -2067,7 +2077,7 @@ export default function GymFitness() {
       {/* All plans — hierarchical drill-down */}
       {gymPlans.length > 0 && (
         <div className="flex flex-col gap-3">
-          <p className="text-ql text-sm font-semibold">My Programmes</p>
+          <p className="text-ql text-sm font-semibold">My Life Tracks</p>
           {programmeGroups.map(prog => {
             const isExpanded = expandedProgramme === prog.key;
             const progWeeks = getProgrammeWeeks(prog);
@@ -2083,7 +2093,7 @@ export default function GymFitness() {
                   onClick={() => setExpandedProgramme(isExpanded ? null : prog.key)}
                 >
                   <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: prog.color }} />
-                  <span className="text-xl">{prog.emoji}</span>
+                  <span className="text-xl">{trackIcon(prog.plans[0])}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-ql text-sm font-semibold">{prog.label}</p>
                     <p className="text-ql-3 text-[10px]">

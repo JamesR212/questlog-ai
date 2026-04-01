@@ -61,7 +61,7 @@ function fmtTime(t: string): string {
 }
 
 function isStudyPlan(plan: GymPlan): boolean {
-  return plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
+  return plan.trackType === 'interleaved' || plan.split === 'study' || /study|revision|revise|exam|a-level|gcse/i.test(plan.name);
 }
 
 // ─── Layout algorithm for overlapping events ─────────────────────────────────
