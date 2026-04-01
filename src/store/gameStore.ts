@@ -1253,6 +1253,25 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'questlog-storage',
+      version: 1,
+      migrate: (persistedState: unknown, fromVersion: number) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const s = ((persistedState ?? {}) as any);
+        if (fromVersion < 1) {
+          // v0 → v1: backfill fields introduced during multi-subject & coach-memory work
+          if (!Array.isArray(s.coachMemory))    s.coachMemory    = [];
+          if (s.userId      === undefined)       s.userId         = null;
+          if (s.syncStatus  === undefined)       s.syncStatus     = 'idle';
+          // Ensure every plan has a createdAt so date-based calculations never produce NaN
+          if (Array.isArray(s.gymPlans)) {
+            const fallback = s.accountCreatedDate ?? new Date().toISOString().slice(0, 10);
+            s.gymPlans = s.gymPlans.map((p: Record<string, unknown>) =>
+              p.createdAt ? p : { ...p, createdAt: fallback }
+            );
+          }
+        }
+        return s;
+      },
       merge: (persisted: unknown, current) => {
         const p = persisted as Partial<typeof current>;
         const BUILTIN_STEPS:  PerformanceStat = { id: 'builtin-steps',  name: 'Daily Steps',    emoji: '👟', color: '#4a9eff', unit: 'steps',  higherIsBetter: true, hasSecondary: false };
@@ -1278,9 +1297,14 @@ export const useGameStore = create<GameStore>()(
         };
         // Set accountCreatedDate for existing users who don't have it yet
         const accountCreatedDate = p.accountCreatedDate ?? new Date().toISOString().slice(0, 10);
+        // Ensure every plan has a createdAt (defensive — prevents NaN in date calculations)
+        const gymPlans = (p.gymPlans ?? []).map((plan: GymPlan) =>
+          plan.createdAt ? plan : { ...plan, createdAt: accountCreatedDate }
+        );
         return {
           ...current,
           ...p,
+          gymPlans,
           performanceStats: merged,
           characterAppearance,
           accountCreatedDate,

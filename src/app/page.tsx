@@ -358,17 +358,26 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedProfile, user?.uid, cloudReady]);
 
-  // ── Force immediate sync when user leaves the app ────────────────────────
+  // ── Sync on visibility change: push when hidden, pull when visible ───────
   useEffect(() => {
     if (!user || !cloudReady || !pullOk.current) return;
     const flushSync = () => {
-      if (!pullOk.current) return; // never flush if pull failed
-      const s = useGameStore.getState();
-      pushToCloud(user.uid, s);
+      if (!pullOk.current) return;
+      pushToCloud(user.uid, useGameStore.getState());
     };
-    // visibilitychange fires when tab is hidden (phone locks, switches app, etc.)
-    const onVisibility = () => { if (document.visibilityState === 'hidden') flushSync(); };
-    // pagehide fires on iOS Safari when the page is being navigated away from
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flushSync();
+      } else {
+        // Tab became visible — pull latest cloud state and merge so this device
+        // picks up any changes made on another device without a manual button press.
+        pullFromCloud(user.uid).then(result => {
+          if (!result.ok || !result.data) return;
+          const local = useGameStore.getState() as unknown as Record<string, unknown>;
+          useGameStore.setState(mergeStates(result.data, local));
+        });
+      }
+    };
     window.addEventListener('pagehide', flushSync);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {

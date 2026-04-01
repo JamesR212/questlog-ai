@@ -122,6 +122,34 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
     }
   });
 
+  // ── Study-plan ghost dedup ─────────────────────────────────────────────────
+  // After the ID-union, study plans from a stale device can survive as duplicates
+  // even after tombstoning (if they were deleted before the deletedIds system existed).
+  // Secondary pass: for study/revision plans that share the same split+name, keep only
+  // the most recently created one. Gym/sport plans are left untouched.
+  if (Array.isArray(merged.gymPlans)) {
+    const studySplits = new Set(['study', 'revision', 'academic', 'exam']);
+    const isStudyPlan = (p: StoreData) =>
+      studySplits.has(String(p.split ?? '').toLowerCase()) ||
+      /study|revision|revise|exam/i.test(String(p.name ?? ''));
+
+    const seen = new Map<string, StoreData>();
+    const nonStudy: StoreData[] = [];
+    for (const plan of merged.gymPlans as StoreData[]) {
+      if (!isStudyPlan(plan)) { nonStudy.push(plan); continue; }
+      const key = `${String(plan.split ?? '').toLowerCase().trim()}|${String(plan.name ?? '').toLowerCase().trim()}`;
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, plan);
+      } else {
+        // Keep whichever has the more recent createdAt
+        const keepNew = new Date(String(plan.createdAt ?? 0)) > new Date(String(existing.createdAt ?? 0));
+        if (keepNew) seen.set(key, plan);
+      }
+    }
+    merged.gymPlans = [...nonStudy, ...Array.from(seen.values())];
+  }
+
   // Stats: take the higher values — XP/level/stats only ever go up
   const cs = (cloud.stats ?? {}) as StoreData;
   const ls = (local.stats ?? {}) as StoreData;
