@@ -5,23 +5,23 @@
 
 :root,
 [data-theme="dark"] {
-  --ql-bg:           #070707;
-  --ql-hdr:          rgba(7, 7, 7, 0.95);
-  --ql-surface:      #101010;
-  --ql-surface-2:    #181818;
-  --ql-surface-3:    #202020;
-  --ql-border:       rgba(255, 255, 255, 0.07);
+  --ql-bg:           #000000;
+  --ql-hdr:          rgba(0, 0, 0, 0.97);
+  --ql-surface:      #0d0d0d;
+  --ql-surface-2:    #161616;
+  --ql-surface-3:    #1e1e1e;
+  --ql-border:       rgba(255, 255, 255, 0.08);
   --ql-border-2:     rgba(255, 255, 255, 0.04);
   --ql-tx:           #f0f0f8;
-  --ql-tx-2:         #b0b0b0;
-  --ql-tx-3:         #888888;
+  --ql-tx-2:         #d0d0d0;
+  --ql-tx-3:         #a0a0a0;
   --ql-accent:       #2d6a27;
   --ql-accent-h:     #245520;
   --ql-accent-tx:    #86efac;
   --ql-accent-bd:    rgba(45, 106, 39, 0.35);
-  --ql-input:        #181818;
+  --ql-input:        #161616;
   --ql-input-bd:     rgba(255,255,255,0.08);
-  --ql-nav-active:   #1c1c1c;
+  --ql-nav-active:   #1a1a1a;
   --ql-shadow:       0 2px 24px rgba(0,0,0,0.70);
   --ql-shadow-sm:    0 1px 6px rgba(0,0,0,0.60);
 }
