@@ -96,7 +96,7 @@ const TOGGLEABLE_SECTIONS = [
   { id: 'nutrition', label: 'Food',     icon: '🥗' },
   { id: 'calendar',  label: 'Calendar', icon: '📅' },
   { id: 'vices',     label: 'Finance',  icon: '💰' },
-  { id: 'training',  label: 'Habits',   icon: '✅' },
+  { id: 'training',  label: 'Plans',    icon: '✅' },
   { id: 'gym',       label: 'Exercise', icon: '🏃' },
 ];
 
@@ -109,7 +109,7 @@ const ALL_SECTIONS: { id: string; label: string; icon: string; desc: string }[] 
   { id: 'calendar',   label: 'Calendar',   icon: '📅', desc: 'Events & scheduling'               },
   { id: 'vices',      label: 'Vices',      icon: '🚫', desc: 'Bad habit tracker'                 },
   { id: 'finance',    label: 'Finance',    icon: '💰', desc: 'Budget & spending tracker'         },
-  { id: 'habits',     label: 'Habits',     icon: '✅', desc: 'Daily habit tracking'              },
+  { id: 'habits',     label: 'Habits',     icon: '✅', desc: 'Daily habit tracking (in Plans)'  },
   { id: 'gym',        label: 'Exercise',   icon: '🏃', desc: 'Workout plans & activity tracking' },
   { id: 'plans',      label: 'Plans',      icon: '🏋️', desc: 'Workout plans inside Exercise'     },
   { id: 'steps',      label: 'Steps',      icon: '👟', desc: 'Daily step counting'               },

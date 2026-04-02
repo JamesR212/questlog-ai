@@ -38,6 +38,7 @@ import type {
 interface GameStore {
   stats: CharacterStats;
   deletedIds: string[];           // tombstone list — IDs of items intentionally deleted on this device
+  tombstoneTimestamps: Record<string, number>; // unix ms when each ID was tombstoned
   calendarEvents: CalendarEvent[];
   vices: ViceEntry[];
   viceDefs: ViceDef[];
@@ -92,9 +93,13 @@ interface GameStore {
 
   trainingTab: 'habits' | 'plans' | 'performance' | 'steps';
   nutritionTab: 'food' | 'drink';
+  gymTab: 'plans' | 'steps' | 'performance' | 'track';
+  homeTab: 'today' | 'schedule';
   setActiveSection: (section: ActiveSection) => void;
   setTrainingTab: (tab: 'habits' | 'plans' | 'performance' | 'steps') => void;
   setNutritionTab: (tab: 'food' | 'drink') => void;
+  setGymTab: (tab: 'plans' | 'steps' | 'performance' | 'track') => void;
+  setHomeTab: (tab: 'today' | 'schedule') => void;
   setTheme: (theme: Theme) => void;
   setSavingsGoal: (goal: number) => void;
   setUserName: (name: string) => void;
@@ -366,6 +371,7 @@ const defaultStats: CharacterStats = {
 const INITIAL_STATE = {
   stats: defaultStats,
   deletedIds: [],
+  tombstoneTimestamps: {} as Record<string, number>,
   calendarEvents: [],
   vices: [],
   viceDefs: DEFAULT_VICE_DEFS,
@@ -380,6 +386,8 @@ const INITIAL_STATE = {
   activeSection: 'dashboard',
   trainingTab: 'habits',
   nutritionTab: 'food',
+  gymTab: 'plans',
+  homeTab: 'today',
   theme: 'dark',
   showLevelUp: false,
   levelUpMessage: '',
@@ -467,6 +475,7 @@ export const useGameStore = create<GameStore>()(
     (set) => ({
       stats: defaultStats,
       deletedIds: [],
+      tombstoneTimestamps: {} as Record<string, number>,
       calendarEvents: [],
       vices: [],
       viceDefs: DEFAULT_VICE_DEFS,
@@ -481,6 +490,8 @@ export const useGameStore = create<GameStore>()(
       activeSection: 'dashboard',
       trainingTab: 'habits',
       nutritionTab: 'food',
+      gymTab: 'plans',
+      homeTab: 'today',
       theme: 'dark',
       showLevelUp: false,
       levelUpMessage: '',
@@ -559,6 +570,8 @@ export const useGameStore = create<GameStore>()(
       setActiveSection: (section) => set({ activeSection: section }),
       setTrainingTab:  (tab) => set({ trainingTab: tab }),
       setNutritionTab: (tab) => set({ nutritionTab: tab }),
+      setGymTab:       (tab) => set({ gymTab: tab }),
+      setHomeTab:      (tab) => set({ homeTab: tab }),
       setTheme: (theme) => set({ theme }),
       setSavingsGoal: (goal) => set({ savingsGoal: goal }),
       setUserName: (name) => set({ userName: name }),
@@ -686,6 +699,9 @@ export const useGameStore = create<GameStore>()(
             .map(e => e.id);
           newTombstones = [id, linkedHabitId, linkedStatId, ...removedCalIds].filter(Boolean) as string[];
           const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
+          const now = Date.now();
+          const tombstoneTimestamps = { ...state.tombstoneTimestamps };
+          newTombstones.forEach(t => { tombstoneTimestamps[t] = now; });
           return {
             gymPlans:        state.gymPlans.filter((p) => p.id !== id),
             gymSessions:     state.gymSessions.filter((s) => s.planId !== id),
@@ -699,6 +715,7 @@ export const useGameStore = create<GameStore>()(
               return true;
             }),
             deletedIds,
+            tombstoneTimestamps,
           };
         });
         // Immediately push tombstones to Firestore — don't wait for the 5s debounce.
@@ -777,6 +794,9 @@ export const useGameStore = create<GameStore>()(
           const linkedStatId = habit?.linkedStatId;
           newTombstones = [id, linkedPlanId, linkedStatId].filter(Boolean) as string[];
           const deletedIds = [...state.deletedIds, ...newTombstones.filter(t => !state.deletedIds.includes(t))];
+          const now = Date.now();
+          const tombstoneTimestamps = { ...state.tombstoneTimestamps };
+          newTombstones.forEach(t => { tombstoneTimestamps[t] = now; });
           return {
             habitDefs:       state.habitDefs.filter((h) => h.id !== id),
             habitLog:        state.habitLog.filter((e) => e.habitId !== id),
@@ -785,6 +805,7 @@ export const useGameStore = create<GameStore>()(
             performanceStats: linkedStatId ? state.performanceStats.filter(s => s.id !== linkedStatId) : state.performanceStats,
             performanceLog:  linkedStatId ? state.performanceLog.filter(e => e.statId !== linkedStatId) : state.performanceLog,
             deletedIds,
+            tombstoneTimestamps,
           };
         });
         const userId = useGameStore.getState().userId;
@@ -841,10 +862,15 @@ export const useGameStore = create<GameStore>()(
         })),
 
       deleteCalendarEvent: (id) => {
-        set((state) => ({
-          calendarEvents: state.calendarEvents.filter((e) => e.id !== id),
-          deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
-        }));
+        set((state) => {
+          const now = Date.now();
+          const tombstoneTimestamps = { ...state.tombstoneTimestamps, [id]: now };
+          return {
+            calendarEvents: state.calendarEvents.filter((e) => e.id !== id),
+            deletedIds: state.deletedIds.includes(id) ? state.deletedIds : [...state.deletedIds, id],
+            tombstoneTimestamps,
+          };
+        });
         const userId = useGameStore.getState().userId;
         if (userId) {
           import('@/lib/sync').then(({ pushTombstoneImmediate }) => {
@@ -879,7 +905,6 @@ export const useGameStore = create<GameStore>()(
               changed = true;
               return { ...plan, scheduleDays: deduped };
             }
-            claimedDays; // no-op to avoid lint warning
             return plan;
           });
           if (!changed) return state;
@@ -1250,10 +1275,12 @@ export const useGameStore = create<GameStore>()(
           run:   { name: 'Running',  emoji: '🏃', color: '#ef4444', unit: 'km', higherIsBetter: true, hasSecondary: true, secondaryUnit: 'min', secondaryLabel: 'Duration' },
           cycle: { name: 'Cycling',  emoji: '🚴', color: '#3b82f6', unit: 'km', higherIsBetter: true, hasSecondary: true, secondaryUnit: 'min', secondaryLabel: 'Duration' },
           walk:  { name: 'Walking',  emoji: '🚶', color: '#34c759', unit: 'km', higherIsBetter: true, hasSecondary: true, secondaryUnit: 'min', secondaryLabel: 'Duration' },
+          other: { name: 'Activity', emoji: '🏅', color: '#8b5cf6', unit: 'km', higherIsBetter: true, hasSecondary: true, secondaryUnit: 'min', secondaryLabel: 'Duration' },
         };
         const statId = `builtin-gps-${a.type}`;
         const existingStat = state.performanceStats.find(s => s.id === statId);
-        const newStats = existingStat ? state.performanceStats : [...state.performanceStats, { id: statId, ...STAT_DEFS[a.type] }];
+        const statDef = STAT_DEFS[a.type];
+        const newStats = existingStat || !statDef ? state.performanceStats : [...state.performanceStats, { id: statId, ...statDef }];
         const entry: PerformanceEntry = {
           id: generateId(),
           statId,

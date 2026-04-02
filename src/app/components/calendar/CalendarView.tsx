@@ -589,7 +589,7 @@ function planToSyntheticEvent(plan: GymPlan, dateStr: string): CalendarEvent {
 
 // ─── Main CalendarView ────────────────────────────────────────────────────────
 export default function CalendarView() {
-  const { calendarEvents, gymPlans, wakeQuest, bedTime, cleanOrphanedPlanEvents, deduplicatePlanDays, cleanStaleScheduleEvents } = useGameStore();
+  const { calendarEvents, gymPlans, wakeQuest, bedTime, sleepLog, cleanOrphanedPlanEvents, deduplicatePlanDays, cleanStaleScheduleEvents } = useGameStore();
 
   // isReady gates rendering until the cleanup pass completes, preventing a flash of
   // duplicate/stale events that briefly appear before the store is corrected.
@@ -606,7 +606,8 @@ export default function CalendarView() {
   // Midnight (00:00) means end of day — treat as 24 so the last hour is visible
   const bedH      = bedTime ? (bedTime === '00:00' ? 24 : Math.ceil(timeToHours(bedTime))) : DEFAULT_END_HOUR;
   const startHour = Math.max(0,  wakeH);                        // start AT wake time (or 6am default)
-  const endHour   = Math.min(24, Math.max(bedH, DEFAULT_END_HOUR)); // at least as late as default
+  // Add 1 hour buffer after bedtime so the bedtime block is fully visible
+  const endHour   = Math.min(24, Math.max(bedH + 1, DEFAULT_END_HOUR));
   const totalHours = endHour - startHour;
 
   const now           = new Date();
@@ -676,8 +677,44 @@ export default function CalendarView() {
   );
   const dayEvents         = [...storedDayEvents, ...derivedPlanEvents];
 
+  // Synthetic wake / sleep blocks
+  const sleepEntryToday = sleepLog.find(e => e.date === selectedDate);
+  const syntheticBlocks: CalendarEvent[] = [];
+  if (wakeQuest?.targetTime) {
+    const wakeEnd = (() => {
+      const [h, m] = wakeQuest.targetTime.split(':').map(Number);
+      const total = h * 60 + m + 30;
+      return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+    })();
+    syntheticBlocks.push({
+      id: '__wake__',
+      date: selectedDate,
+      title: '🌅 Wake Up',
+      startTime: wakeQuest.targetTime,
+      endTime: wakeEnd,
+      color: sleepEntryToday?.onTime ? '#16a34a' : '#f59e0b',
+      allDay: false,
+    } as CalendarEvent);
+  }
+  if (bedTime && bedTime !== '00:00') {
+    const bedEnd = (() => {
+      const [h, m] = bedTime.split(':').map(Number);
+      const total = h * 60 + m + 30;
+      return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+    })();
+    syntheticBlocks.push({
+      id: '__bed__',
+      date: selectedDate,
+      title: '🌙 Bedtime',
+      startTime: bedTime,
+      endTime: bedEnd,
+      color: '#6366f1',
+      allDay: false,
+    } as CalendarEvent);
+  }
+
   const allDayEvents = dayEvents.filter(e => e.allDay || (!e.startTime && !e.endTime));
-  const timedEvents  = dayEvents.filter(e => !e.allDay && !!e.startTime);
+  const timedEvents  = [...dayEvents.filter(e => !e.allDay && !!e.startTime), ...syntheticBlocks];
   const laid         = layoutEvents(timedEvents, startHour, endHour);
 
   // Auto-scroll to current time (or start+2h as fallback) when date or timeline bounds change

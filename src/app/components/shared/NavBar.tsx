@@ -7,8 +7,7 @@ const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysSh
   { section: 'dashboard',    icon: '🏠',  label: 'Home'     },
   { section: 'nutrition',    icon: '🥗',  label: 'Food'     },
   { section: 'vices',        icon: '💰',  label: 'Finance'  },
-  { section: 'calendarview', icon: '📅',  label: 'Calendar' },
-  { section: 'training',     icon: '✅',  label: 'Habits'   },
+  { section: 'training',     icon: '✅',  label: 'Plans'    },
   { section: 'gym',          icon: '🏃',  label: 'Exercise' },
 ];
 

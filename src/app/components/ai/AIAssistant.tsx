@@ -28,7 +28,7 @@ interface PendingFoodLog {
 
 // Classify a calendar event title into an activity type for advice purposes
 function classifyEvent(title: string, notes: string): string {
-  const t = (title + ' ' + notes).toLowerCase();
+  const t = (title + ' ' + (notes ?? '')).toLowerCase();
   if (/\b(run|running|jog|5k|10k|half marathon|marathon|parkrun)\b/.test(t)) return 'running';
   if (/\b(gym|weights|lift|workout|training|wod|crossfit|hiit|circuit)\b/.test(t)) return 'gym';
   if (/\b(swim|swimming|pool|laps)\b/.test(t)) return 'swimming';
@@ -39,16 +39,24 @@ function classifyEvent(title: string, notes: string): string {
   if (/\b(rest|recovery|rest day)\b/.test(t)) return 'rest';
   if (/\b(meal prep|cook|dinner|lunch|breakfast|eat|restaurant|food)\b/.test(t)) return 'meal';
   if (/\b(sleep|nap|bed|early night)\b/.test(t)) return 'sleep';
+  if (/\b(lecture|seminar|lab|laboratory|tutorial|workshop|practical|field trip|symposium)\b/.test(t)) return 'lecture';
+  if (/\b(study|revision|revise|exam|homework|academic|gcse|a-level|learn|module|topic review|flashcard)\b/.test(t)) return 'study';
+  if (/\b(dentist|doctor|gp|hospital|clinic|surgery|physio|optician|orthodontist|therapy|counselling|injection|vaccine|scan|appointment)\b/.test(t)) return 'medical';
   if (/\b(work|meeting|office|shift|busy|presentation|deadline)\b/.test(t)) return 'work';
   if (/\b(travel|flight|drive|commute|trip|holiday|abroad)\b/.test(t)) return 'travel';
-  if (/\b(party|wedding|birthday|concert|gig|festival|event|appointment|date night|dinner out|drinks|social|night out|club|theatre|cinema|movie night)\b/.test(t)) return 'social';
+  if (/\b(party|wedding|birthday|concert|gig|festival|event|date night|dinner out|drinks|social|night out|club|theatre|cinema|movie night)\b/.test(t)) return 'social';
   return 'general';
 }
 
 function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
-  const today    = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-  const in7Days  = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const localDateStr = (offset: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const today    = localDateStr(0);
+  const tomorrow = localDateStr(1);
+  const in7Days  = localDateStr(7);
   const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const dayName = (dateStr: string) => DAY_NAMES[new Date(dateStr + 'T12:00:00').getDay()];
   const labelDate = (dateStr: string) => `${dateStr} (${dayName(dateStr)})`;
@@ -198,25 +206,60 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 
   // Full calendar — all events sorted by date
   const formatEvent = (e: typeof store.calendarEvents[0]) => {
-    const time = e.allDay ? 'all day' : `${e.startTime}${e.endTime ? '–' + e.endTime : ''}`;
-    const type = classifyEvent(e.title, e.notes);
-    return `[id:${e.id}] "${e.title}" (${time}${e.location ? ', ' + e.location : ''}) [${type}]${e.notes ? ' notes: ' + e.notes : ''}`;
+    const type = classifyEvent(e.title, e.notes ?? '');
+    const isHardWall = ['lecture', 'study', 'work', 'medical'].includes(type);
+    const time = e.allDay ? 'All Day' : `${e.startTime ?? ''}–${e.endTime ?? ''}`;
+    return `<EVENT>\n  <ID>${e.id}</ID>\n  <TITLE>${e.title}</TITLE>\n  <DATE>${e.date}</DATE>\n  <TIME>${time}</TIME>${e.location ? `\n  <LOCATION>${e.location}</LOCATION>` : ''}\n  <TYPE>${type}</TYPE>\n  <IS_HARD_WALL>${isHardWall}</IS_HARD_WALL>${e.notes ? `\n  <NOTES>${e.notes}</NOTES>` : ''}\n</EVENT>`;
   };
+
+  // Build synthetic events from gymPlans for a given date (mirrors CalendarView logic)
+  const derivedPlansForDate = (dateStr: string): typeof store.calendarEvents => {
+    const dow = new Date(dateStr + 'T12:00:00').getDay();
+    const storedPlanIds = new Set(
+      store.calendarEvents.filter(e => e.date === dateStr && e.planId).map(e => e.planId!)
+    );
+    return (store.gymPlans ?? [])
+      .filter(p => p.scheduleDays.includes(dow) && !storedPlanIds.has(p.id))
+      .map(p => {
+        const dowStr = String(dow);
+        const start = p.dayTimes?.[dowStr] || p.scheduleTime || '';
+        const end   = p.dayEndTimes?.[dowStr] || p.scheduleEndTime || '';
+        return {
+          id: `__plan_${p.id}`,
+          title: `${p.emoji || ''} ${p.name}`.trim(),
+          date: dateStr,
+          startTime: start,
+          endTime: end,
+          allDay: !start,
+          location: '',
+          notes: '',
+          color: p.color || '',
+          reminder: 0,
+          planId: p.id,
+        } as typeof store.calendarEvents[0];
+      });
+  };
+
   const sortedEvents   = [...store.calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
-  const todayEvents    = sortedEvents.filter(e => e.date === today);
-  const tomorrowEvents = sortedEvents.filter(e => e.date === tomorrow);
-  const weekEvents     = sortedEvents.filter(e => e.date > today && e.date <= in7Days);
+  const todayEvents    = [...sortedEvents.filter(e => e.date === today),    ...derivedPlansForDate(today)];
+  const tomorrowEvents = [...sortedEvents.filter(e => e.date === tomorrow), ...derivedPlansForDate(tomorrow)];
   const futureEvents   = sortedEvents.filter(e => e.date > in7Days);
   const pastEvents     = sortedEvents.filter(e => e.date < today);
 
-  const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join(' | ')                           : 'nothing scheduled';
-  const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join(' | ')                        : 'nothing scheduled';
-  const weekSchedule     = weekEvents.length     > 0 ? weekEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ')    : 'nothing scheduled';
-  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ') : 'nothing scheduled';
-  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${labelDate(e.date)}: ${formatEvent(e)}`).join('\n  ')   : 'none';
+  // Week events: stored + plan-derived for each of the next 7 days
+  const weekAllEvents = Array.from({ length: 7 }, (_, i) => localDateStr(i + 1)).flatMap(d => [
+    ...sortedEvents.filter(e => e.date === d),
+    ...derivedPlansForDate(d),
+  ]);
+
+  const todaySchedule    = todayEvents.length    > 0 ? todayEvents.map(formatEvent).join('\n')                                             : 'nothing scheduled';
+  const tomorrowSchedule = tomorrowEvents.length > 0 ? tomorrowEvents.map(formatEvent).join('\n')                                          : 'nothing scheduled';
+  const weekSchedule     = weekAllEvents.length  > 0 ? weekAllEvents.map(e => `${labelDate(e.date)}:\n${formatEvent(e)}`).join('\n\n')     : 'nothing scheduled';
+  const futureSchedule   = futureEvents.length   > 0 ? futureEvents.map(e => `${labelDate(e.date)}:\n${formatEvent(e)}`).join('\n\n')      : 'nothing scheduled';
+  const pastSchedule     = pastEvents.length     > 0 ? pastEvents.map(e => `${labelDate(e.date)}:\n${formatEvent(e)}`).join('\n\n')        : 'none';
 
   // Classify today's activity for targeted advice
-  const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes));
+  const todayTypes = todayEvents.map(e => classifyEvent(e.title, e.notes ?? ''));
   const hasRunToday      = todayTypes.includes('running');
   const hasGymToday      = todayTypes.includes('gym');
   const hasEnduranceToday = todayTypes.some(t => ['running','cycling','swimming','hiking','sport'].includes(t));
@@ -268,6 +311,7 @@ function buildUserContext(store: ReturnType<typeof useGameStore.getState>) {
 - RPG stats: ${rpgStats}
 - Time on GAINN: ${timeOnApp}${memoryBlock}
 
+<CURRENT_CALENDAR_STATE>
 CALENDAR — TODAY (${labelDate(today)}):
 ${todaySchedule}
 
@@ -282,6 +326,7 @@ CALENDAR — UPCOMING (beyond this week):
 
 CALENDAR — PAST EVENTS (all time):
   ${pastSchedule}
+</CURRENT_CALENDAR_STATE>
 
 TODAY'S NUTRITION (${today}):
 - Meals: ${todayMeals.length > 0 ? todayMeals.map(m => `${m.name} (${m.calories}kcal P:${m.protein}g C:${m.carbs}g F:${m.fat}g)`).join(' | ') : 'nothing logged yet'}
@@ -789,7 +834,7 @@ export default function AIAssistant() {
     if (highDemandTimerRef.current) { clearTimeout(highDemandTimerRef.current); highDemandTimerRef.current = null; }
   };
   const messagesEndRef    = useRef<HTMLDivElement>(null);
-  const inputRef          = useRef<HTMLInputElement>(null);
+  const inputRef          = useRef<HTMLTextAreaElement>(null);
   const fileInputRef      = useRef<HTMLInputElement>(null);
   const cameraInputRef    = useRef<HTMLInputElement>(null);
   const bodyInputRef      = useRef<HTMLInputElement>(null);
@@ -1003,8 +1048,18 @@ export default function AIAssistant() {
           // Priority 3: name-based exact match as a last-resort safety net.
 
           const incomingSplit = String(rawPlans[0]?.split ?? '').trim().toLowerCase();
+          const isIncomingStudy = incomingSplit === 'study' ||
+            rawPlans.some(p => /study|revision|revise|exam|a-level|gcse/i.test(String(p.name ?? '')));
 
-          if (preferences.existingPlanId) {
+          if (isIncomingStudy) {
+            // Study Wipe: nuke ALL existing study plans regardless of name or ID to prevent zombies
+            useGameStore.getState().gymPlans
+              .filter(p =>
+                p.split?.trim().toLowerCase() === 'study' ||
+                /study|revision|revise|exam|a-level|gcse/i.test(p.name)
+              )
+              .forEach(p => s.removeGymPlan(p.id));
+          } else if (preferences.existingPlanId) {
             // Edit flow — remove the target plan plus any others in the same split group
             const targetPlan = useGameStore.getState().gymPlans.find(p => p.id === preferences.existingPlanId);
             const splitLabel = targetPlan?.split?.trim().toLowerCase() ?? '';
@@ -1016,7 +1071,7 @@ export default function AIAssistant() {
               s.removeGymPlan(preferences.existingPlanId);
             }
           } else if (incomingSplit) {
-            // Fresh plan — remove all existing plans with the same split label
+            // Fresh non-study plan — remove all existing plans with the same split label
             useGameStore.getState().gymPlans
               .filter(p => p.split?.trim().toLowerCase() === incomingSplit)
               .forEach(p => s.removeGymPlan(p.id));
@@ -1163,6 +1218,7 @@ export default function AIAssistant() {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
+    if (inputRef.current) { inputRef.current.style.height = 'auto'; }
     // If user types during intro, mark it as seen so chat continues normally
     if (!gainnIntroSeen) setGainnIntroSeen();
     // Capture history BEFORE adding the new user message
@@ -1878,13 +1934,18 @@ export default function AIAssistant() {
 
             {/* Text input — shows live transcript while listening */}
             <div className="relative flex-1">
-              <input
+              <textarea
                 ref={inputRef}
                 value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && send()}
+                rows={1}
+                onChange={e => {
+                  setInput(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder={listening ? 'Listening…' : 'Ask anything…'}
-                style={{ fontSize: 16 }}
+                style={{ fontSize: 16, resize: 'none', overflow: 'hidden', maxHeight: '160px' }}
                 className={`w-full bg-ql-surface2 border rounded-2xl px-4 py-2.5 text-ql outline-none transition-colors placeholder:text-ql-3 ${
                   listening ? 'border-red-500 placeholder:text-red-400' : 'border-ql focus:border-ql-accent'
                 }`}

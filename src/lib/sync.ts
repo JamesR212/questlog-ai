@@ -114,10 +114,14 @@ export function mergeStates(cloud: StoreData, local: StoreData): StoreData {
   const localDeleted = new Set<string>((local.deletedIds as string[] | undefined) ?? []);
   const allDeletedRaw = [...cloudDeleted, ...localDeleted];
 
-  // Union tombstone timestamps from both sides
+  // Union tombstone timestamps from both sides — take MAX (most recent) so tombstones
+  // live as long as possible and aren't pruned early by a stale older timestamp.
   const cloudTs = ((cloud.tombstoneTimestamps ?? {}) as Record<string, number>);
   const localTs = ((local.tombstoneTimestamps ?? {}) as Record<string, number>);
-  const mergedTs: Record<string, number> = { ...cloudTs, ...localTs };
+  const mergedTs: Record<string, number> = { ...cloudTs };
+  for (const [id, ts] of Object.entries(localTs)) {
+    mergedTs[id] = Math.max(mergedTs[id] ?? 0, ts);
+  }
 
   // Prune expired tombstones
   const allDeleted = new Set<string>(pruneStaleTombstones(allDeletedRaw, mergedTs));

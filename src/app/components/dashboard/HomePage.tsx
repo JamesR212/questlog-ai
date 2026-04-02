@@ -1309,7 +1309,7 @@ function DailyTrioCard() {
     stepLog, stepGoal,
     mealLog, nutritionGoal,
     waterLog, waterGoal,
-    setActiveSection, setTrainingTab, setNutritionTab,
+    setActiveSection, setTrainingTab, setNutritionTab, setGymTab,
     disabledSections,
   } = useGameStore();
   const [showBurn, setShowBurn] = useState(false);
@@ -1345,7 +1345,7 @@ function DailyTrioCard() {
   const rings = [
     !stepsOff && (
       <button key="steps"
-        onClick={() => { setTrainingTab('steps'); setActiveSection('training'); }}
+        onClick={() => { setGymTab('steps'); setActiveSection('gym'); }}
         className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-3 flex flex-col items-center gap-2 active:scale-[0.97] transition-transform"
       >
         <ProgressRing pct={stepPct} hit={stepsHit} color="#4a9eff"
@@ -1416,12 +1416,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Greeting */}
-      <div className="pt-1">
-        <p className="text-ql-3 text-sm">{getGreeting()}{userName ? `, ${userName.split(' ')[0]}` : ''}</p>
-        <h1 className="text-2xl font-black mt-0.5"><span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">NN</span></h1>
-      </div>
-
       {/* Hero row: streak (or chill card) + savings circle */}
       <div className={`grid gap-3 ${!disabledSections.includes('finance') ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {/* Streak */}
