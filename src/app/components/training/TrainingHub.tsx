@@ -1433,10 +1433,7 @@ export default function TrainingHub() {
             <p className="text-ql text-sm font-semibold">Daily Habits</p>
             <p className="text-ql-3 text-[10px] mt-0.5">Routines & rituals</p>
           </div>
-          <button onClick={() => setShowAddHabit(true)}
-            className="px-4 py-2 bg-ql-accent text-white text-sm font-medium rounded-2xl">
-            + Habit
-          </button>
+
         </div>
 
         {standaloneHabits.length === 0 && (
