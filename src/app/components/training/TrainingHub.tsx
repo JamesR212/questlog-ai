@@ -1147,8 +1147,10 @@ export default function TrainingHub() {
   // Habits helpers
   const isLogged   = (habitId: string, date: string) => habitLog.some(e => e.habitId === habitId && e.date === date);
   // Exclude habits that are linked to a gym plan — the plan card itself handles logging
-  const todayHabits = habitDefs.filter(h => isDueOn(h, today) && !h.linkedPlanId);
+  const standaloneHabits = habitDefs.filter(h => !h.linkedPlanId);
+  const todayHabits = standaloneHabits.filter(h => isDueOn(h, today));
   const doneToday   = todayHabits.filter(h => isLogged(h.id, today)).length;
+
 
   // Gym helpers
   const todayPlans      = gymPlans.filter(p => p.scheduleDays.includes(todayDow));
@@ -1278,9 +1280,7 @@ export default function TrainingHub() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-ql text-xl font-bold">
-            {['plans','steps','stats','track'].every(s => disabledSections.includes(s)) && !disabledSections.includes('habits') ? 'Habits' : 'Training'}
-          </h2>
+          <h2 className="text-ql text-xl font-bold">Plans & Habits</h2>
           <p className="text-ql-3 text-xs mt-0.5">
             {doneToday}/{todayHabits.length} habits done · {gymSessions.length} sessions
           </p>
@@ -1369,93 +1369,139 @@ export default function TrainingHub() {
         </div>
       )}
 
-      {/* ── Habits ── */}
-      <>
-          <div className="flex items-center justify-between -mt-1">
-            <p className="text-ql-3 text-xs">{habitDefs.length} active habits</p>
-            <button onClick={() => setShowAddHabit(true)}
-              className="px-4 py-2 bg-ql-accent text-white text-sm font-medium rounded-2xl">
-              + Habit
-            </button>
+
+      {/* ── Work ── */}
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="text-ql text-sm font-semibold">Work</p>
+          <p className="text-ql-3 text-[10px] mt-0.5">Job schedules, shifts & projects</p>
+        </div>
+        <div className="bg-ql-surface rounded-2xl border border-ql p-4 text-center text-ql-3">
+          <div className="text-3xl mb-2">💼</div>
+          <p className="text-sm font-medium text-ql">No work plans yet</p>
+          <p className="text-xs mt-1">Ask the AI to set up a work schedule or project plan.</p>
+        </div>
+      </div>
+
+      {/* ── Fitness Plans ── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-ql text-sm font-semibold">Fitness Plans</p>
+            <p className="text-ql-3 text-[10px] mt-0.5">Gym, running & training programs</p>
           </div>
+        </div>
 
-          {habitDefs.length === 0 && (
-            <div className="text-center py-10 text-ql-3">
-              <div className="text-5xl mb-3">🌱</div>
-              <p className="text-sm font-medium">No habits yet</p>
-              <p className="text-xs mt-1">Tap + Habit to start building good habits.</p>
-            </div>
-          )}
-
-          {habitDefs.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <p className="text-ql text-sm font-semibold">This Week</p>
-              {habitDefs.map(habit => {
-                const done   = weekDates.filter(d => isLogged(habit.id, d)).length;
-                const target = weekDates.filter(d => isDueOn(habit, d)).length;
-                const pct    = target > 0 ? Math.min(100, (done / target) * 100) : 0;
-                return (
-                  <div key={habit.id} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 cursor-pointer active:scale-[0.99] transition-transform"
-                    onClick={() => setViewingHabit(habit)}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <HabitEmoji emoji={habit.emoji} className="text-xl" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-ql text-sm font-semibold">{habit.name}</p>
-                        <p className="text-ql-3 text-[10px] leading-tight">{buildScheduleLabel(habit)}</p>
-                      </div>
-                      <button onClick={e => { e.stopPropagation(); setEditingHabit(habit); }} className="text-ql-3 text-xs px-2 py-1 rounded-lg">Edit</button>
-                      <button onClick={e => { e.stopPropagation(); removeHabit(habit.id); }} className="text-ql-3 hover:text-red-500 text-sm transition-colors">✕</button>
-                    </div>
-                    <div className="flex gap-1 mb-2">
-                      {weekDates.map(date => {
-                        const dow       = new Date(date + 'T00:00:00').getDay();
-                        const scheduled = isDueOn(habit, date);
-                        const logged    = isLogged(habit.id, date);
-                        const isPast    = date <= today;
-                        const startStr  = (habit.dayTimes    ?? {})[String(dow)];
-                        const endStr    = (habit.dayEndTimes ?? {})[String(dow)];
-                        return (
-                          <button key={date} disabled={!isPast || !scheduled}
-                            onClick={e => { e.stopPropagation(); logged ? unlogHabit(habit.id, date) : logHabit(habit.id, date); }}
-                            className="flex-1 flex flex-col items-center gap-0.5 disabled:cursor-default">
-                            <span className="text-[9px] text-ql-3">{DAY_SHORT[dow]}</span>
-                            <div className="w-full aspect-square rounded-md transition-all"
-                              style={{ backgroundColor: habit.color, opacity: logged ? 1 : scheduled && isPast ? 0.2 : 0.07 }}
-                            />
-                            {startStr && scheduled && (
-                              <span className="text-[8px] text-ql-3 leading-none">
-                                {fmt12(startStr).replace(':00','')}{endStr ? `–${fmt12(endStr).replace(':00','')}` : ''}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-ql-surface3 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: habit.color }} />
-                      </div>
-                      <span className="text-ql-3 text-[10px] tabular-nums min-w-[32px] text-right">{done}/{target}</span>
-                    </div>
+        {gymPlans.length === 0 ? (
+          <div className="bg-ql-surface rounded-2xl border border-ql p-4 text-center text-ql-3">
+            <div className="text-3xl mb-2">🏋️</div>
+            <p className="text-sm font-medium text-ql">No fitness plans yet</p>
+            <p className="text-xs mt-1">Ask the AI to create a workout plan, or visit Exercise to add one.</p>
+          </div>
+        ) : (
+          gymPlans.map(plan => {
+            const weekSessions = sessionCountThisWeek(plan.id);
+            const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            const scheduleLabel = plan.scheduleDays.length > 0
+              ? plan.scheduleDays.map(d => dayNames[d]).join(', ')
+              : 'No days set';
+            return (
+              <div key={plan.id} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{plan.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-ql text-sm font-semibold">{plan.name}</p>
+                    <p className="text-ql-3 text-[10px] mt-0.5">{scheduleLabel}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="text-right shrink-0">
+                    <p className="text-ql text-sm font-bold tabular-nums">{weekSessions}</p>
+                    <p className="text-ql-3 text-[10px]">this week</p>
+                  </div>
+                  <button onClick={() => setEditingPlan(plan)} className="text-ql-3 text-xs px-2 py-1 rounded-lg">Edit</button>
+                  <button onClick={() => removeGymPlan(plan.id)} className="text-ql-3 hover:text-red-500 text-sm transition-colors">✕</button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
-          {habitLog.length > 0 && !disabledSections.includes('stats') && (
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
-                <div className="text-ql text-lg font-bold">{habitLog.length}</div>
-                <div className="text-ql-3 text-[10px] mt-0.5">Total done</div>
-              </div>
-              <div className="bg-ql-surface rounded-2xl border border-ql p-3 text-center">
-                <div className="text-ql text-lg font-bold">{habitDefs.length}</div>
-                <div className="text-ql-3 text-[10px] mt-0.5">Active</div>
-              </div>
-            </div>
-          )}
-      </>
+      {/* ── Daily Habits ── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-ql text-sm font-semibold">Daily Habits</p>
+            <p className="text-ql-3 text-[10px] mt-0.5">Routines & rituals</p>
+          </div>
+          <button onClick={() => setShowAddHabit(true)}
+            className="px-4 py-2 bg-ql-accent text-white text-sm font-medium rounded-2xl">
+            + Habit
+          </button>
+        </div>
+
+        {standaloneHabits.length === 0 && (
+          <div className="bg-ql-surface rounded-2xl border border-ql p-4 text-center text-ql-3">
+            <div className="text-3xl mb-2">🌱</div>
+            <p className="text-sm font-medium text-ql">No habits yet</p>
+            <p className="text-xs mt-1">Ask the AI in the bottom right to set up your habits.</p>
+          </div>
+        )}
+
+        {standaloneHabits.length > 0 && (
+          <div className="flex flex-col gap-3">
+            {standaloneHabits.map(habit => {
+              const done   = weekDates.filter(d => isLogged(habit.id, d)).length;
+              const target = weekDates.filter(d => isDueOn(habit, d)).length;
+              const pct    = target > 0 ? Math.min(100, (done / target) * 100) : 0;
+              return (
+                <div key={habit.id} className="bg-ql-surface rounded-2xl shadow-ql border border-ql p-4 cursor-pointer active:scale-[0.99] transition-transform"
+                  onClick={() => setViewingHabit(habit)}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <HabitEmoji emoji={habit.emoji} className="text-xl" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-ql text-sm font-semibold">{habit.name}</p>
+                      <p className="text-ql-3 text-[10px] leading-tight">{buildScheduleLabel(habit)}</p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); setEditingHabit(habit); }} className="text-ql-3 text-xs px-2 py-1 rounded-lg">Edit</button>
+                    <button onClick={e => { e.stopPropagation(); removeHabit(habit.id); }} className="text-ql-3 hover:text-red-500 text-sm transition-colors">✕</button>
+                  </div>
+                  <div className="flex gap-1 mb-2">
+                    {weekDates.map(date => {
+                      const dow       = new Date(date + 'T00:00:00').getDay();
+                      const scheduled = isDueOn(habit, date);
+                      const logged    = isLogged(habit.id, date);
+                      const isPast    = date <= today;
+                      const startStr  = (habit.dayTimes    ?? {})[String(dow)];
+                      const endStr    = (habit.dayEndTimes ?? {})[String(dow)];
+                      return (
+                        <button key={date} disabled={!isPast || !scheduled}
+                          onClick={e => { e.stopPropagation(); logged ? unlogHabit(habit.id, date) : logHabit(habit.id, date); }}
+                          className="flex-1 flex flex-col items-center gap-0.5 disabled:cursor-default">
+                          <span className="text-[9px] text-ql-3">{DAY_SHORT[dow]}</span>
+                          <div className="w-full aspect-square rounded-md transition-all"
+                            style={{ backgroundColor: habit.color, opacity: logged ? 1 : scheduled && isPast ? 0.2 : 0.07 }}
+                          />
+                          {startStr && scheduled && (
+                            <span className="text-[8px] text-ql-3 leading-none">
+                              {fmt12(startStr).replace(':00','')}{endStr ? `–${fmt12(endStr).replace(':00','')}` : ''}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-ql-surface3 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: habit.color }} />
+                    </div>
+                    <span className="text-ql-3 text-[10px] tabular-nums min-w-[32px] text-right">{done}/{target}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Sheets */}
       {showAddHabit && <AddHabitSheet onClose={() => setShowAddHabit(false)} onSave={def => addHabit(def)} />}

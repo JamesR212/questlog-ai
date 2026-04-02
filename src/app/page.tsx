@@ -40,6 +40,50 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
+function HomeWithCalendar() {
+  const { homeTab, setHomeTab, userName } = useGameStore();
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Greeting — always visible */}
+      <div className="pt-1">
+        <p className="text-ql-3 text-sm">{greeting}{userName ? `, ${userName.split(' ')[0]}` : ''}</p>
+        <h1 className="text-2xl font-black mt-0.5">
+          <span className="text-ql">G</span><span style={{ color: '#16a34a' }}>AI</span><span className="text-ql">NN</span>
+        </h1>
+      </div>
+
+      {/* Tab switcher — always visible */}
+      <div className="flex bg-ql-surface2 rounded-2xl p-1">
+        <button
+          onClick={() => setHomeTab('today')}
+          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${homeTab !== 'schedule' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
+        >
+          Home
+        </button>
+        <button
+          onClick={() => setHomeTab('schedule')}
+          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${homeTab === 'schedule' ? 'bg-ql-accent text-white shadow-sm' : 'text-ql-3'}`}
+        >
+          Schedule
+        </button>
+      </div>
+
+      {/* Content */}
+      {homeTab !== 'schedule'
+        ? <HomePage />
+        : <div className="-mx-4 overflow-hidden" style={{ height: 'calc(100dvh - 200px)' }}><CalendarView /></div>
+      }
+    </div>
+  );
+}
+
 export default function Home() {
   const { activeSection, hasOnboarded, setActiveSection } = useGameStore();
   const store = useGameStore();
@@ -127,8 +171,16 @@ export default function Home() {
           const sub = subSnap.data();
           const isActive = sub.status === 'active' || sub.status === 'trialing';
           const notExpired = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
-          setSubscribed(isActive && notExpired);
+          const isSubscribed = isActive && notExpired;
+          if (isSubscribed) localStorage.setItem(`ql-sub-${userId}`, '1');
+          else localStorage.removeItem(`ql-sub-${userId}`);
+          setSubscribed(isSubscribed);
+        } else if (subSnap === null) {
+          // Firestore unreachable — use cached status
+          const cached = localStorage.getItem(`ql-sub-${userId}`);
+          setSubscribed(cached === '1');
         } else {
+          localStorage.removeItem(`ql-sub-${userId}`);
           setSubscribed(false);
         }
         return;
@@ -196,13 +248,22 @@ export default function Home() {
       }
 
       // Check existing subscription in Firestore
-      const subSnap = await getDoc(doc(db, 'subscriptions', userId));
-      if (subSnap.exists()) {
+      const subSnap = await getDoc(doc(db, 'subscriptions', userId)).catch(() => null);
+      if (subSnap?.exists()) {
         const sub = subSnap.data();
         const isActive = sub.status === 'active' || sub.status === 'trialing';
         const notExpired = !sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date();
-        setSubscribed(isActive && notExpired);
+        const isSubscribed = isActive && notExpired;
+        if (isSubscribed) localStorage.setItem(`ql-sub-${userId}`, '1');
+        else localStorage.removeItem(`ql-sub-${userId}`);
+        setSubscribed(isSubscribed);
+      } else if (subSnap === null) {
+        // Firestore unreachable — use cached status so offline doesn't lock the user out
+        const cached = localStorage.getItem(`ql-sub-${userId}`);
+        setSubscribed(cached === '1');
       } else {
+        // Document confirmed missing — no subscription
+        localStorage.removeItem(`ql-sub-${userId}`);
         setSubscribed(false);
       }
     });
@@ -494,9 +555,8 @@ export default function Home() {
       </header>
 
       {/* Content */}
-      <main className={`flex-1 max-w-lg mx-auto w-full ${activeSection === 'calendarview' ? 'overflow-hidden' : 'overflow-y-auto px-4 py-5 pb-6'}`}>
-        {(activeSection === 'dashboard' || activeSection === 'calendar') && <HomePage />}
-        {activeSection === 'calendarview' && <CalendarView />}
+      <main className={`flex-1 max-w-lg mx-auto w-full overflow-y-auto px-4 py-5 pb-6`}>
+        {(activeSection === 'dashboard' || activeSection === 'calendar' || activeSection === 'calendarview') && <HomeWithCalendar />}
         {activeSection === 'vices'     && <ViceTracker />}
         {activeSection === 'training'  && <TrainingHub />}
         {activeSection === 'habits'    && <HabitTracker />}

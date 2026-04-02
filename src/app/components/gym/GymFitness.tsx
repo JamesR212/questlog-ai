@@ -8,7 +8,6 @@ import FormAnalyzer from './FormAnalyzer';
 import AIQuizSheet, { type QuizQuestion } from '../shared/AIQuizSheet';
 import StepTracker, { StepBars, getLast7Days, StepsChart, buildDailyBars, buildWeeklyBars, buildMonthlyBars, StepPeriod } from '../training/StepTracker';
 import ActivityTracker from '../tracking/ActivityTracker';
-import StudyInsights from '../training/StudyInsights';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -1681,9 +1680,11 @@ export default function GymFitness() {
     stepLog, stepGoal, gpsActivities, floorsGoal,
     performanceStats, performanceLog, deletePerformanceEntry,
     gpsTrackingEnabled, calendarEvents, sleepLog, disabledSections,
+    gymTab, setGymTab,
   } = useGameStore();
   const plansEnabled = !disabledSections.includes('plans');
-  const [activeTab,    setActiveTab]    = useState<'plans' | 'steps' | 'performance' | 'track'>(plansEnabled ? 'plans' : 'steps');
+  const [activeTab,    setActiveTabLocal]    = useState<'plans' | 'steps' | 'performance' | 'track'>(gymTab !== 'plans' ? gymTab : plansEnabled ? 'plans' : 'steps');
+  const setActiveTab = (tab: 'plans' | 'steps' | 'performance' | 'track') => { setActiveTabLocal(tab); setGymTab(tab); };
   const [showAdd,      setShowAdd]      = useState(false);
   const [editing,      setEditing]      = useState<GymPlan | null>(null);
   const [logging,      setLogging]      = useState<string | null>(null);
@@ -1809,6 +1810,7 @@ export default function GymFitness() {
   const today    = toDateStr(new Date());
   const todayDow = new Date().getDay();
 
+  const exercisePlans = gymPlans;
   const todayPlans = gymPlans.filter(p => p.scheduleDays.includes(todayDow));
   const sessionToday = (planId: string) =>
     gymSessions.some(s => s.planId === planId && s.date.slice(0, 10) === today);
@@ -1833,7 +1835,7 @@ export default function GymFitness() {
   type ProgrammeGroup = { key: string; label: string; color: string; emoji: string; plans: GymPlan[] };
   const programmeGroups: ProgrammeGroup[] = (() => {
     const map = new Map<string, GymPlan[]>();
-    gymPlans.forEach(p => {
+    exercisePlans.forEach(p => {
       const key = p.split?.trim() || p.id;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(p);
@@ -1912,7 +1914,7 @@ export default function GymFitness() {
         <div>
           <h2 className="text-ql text-xl font-bold">Fitness</h2>
           <p className="text-ql-3 text-xs mt-0.5">
-            {gymPlans.length} plan{gymPlans.length !== 1 ? 's' : ''} · {gymSessions.length} sessions total 
+            {exercisePlans.length} plan{exercisePlans.length !== 1 ? 's' : ''} · {gymSessions.length} sessions total
           </p>
         </div>
         <div className="flex gap-2">
@@ -2063,7 +2065,7 @@ export default function GymFitness() {
       )}
 
       {/* Empty state */}
-      {gymPlans.length === 0 && (
+      {exercisePlans.length === 0 && (
         <div className="text-center py-14 text-ql-3">
           <div className="text-5xl mb-3">🏋️</div>
           <p className="text-sm font-medium">No workout plans yet</p>
@@ -2071,11 +2073,8 @@ export default function GymFitness() {
         </div>
       )}
 
-      {/* Study subject split insights */}
-      <StudyInsights />
-
       {/* All plans — hierarchical drill-down */}
-      {gymPlans.length > 0 && (
+      {exercisePlans.length > 0 && (
         <div className="flex flex-col gap-3">
           <p className="text-ql text-sm font-semibold">My Life Tracks</p>
           {programmeGroups.map(prog => {
