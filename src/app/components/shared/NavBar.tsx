@@ -4,7 +4,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { ActiveSection } from '@/types';
 
 const NAV_ITEMS: { section: ActiveSection; icon: string; label: string; alwaysShow?: boolean }[] = [
-  { section: 'dashboard',    icon: '🏠',  label: 'Home'     },
+  { section: 'dashboard',    icon: '🏠',  label: 'Overview' },
   { section: 'nutrition',    icon: '🥗',  label: 'Food'     },
   { section: 'vices',        icon: '💰',  label: 'Finance'  },
   { section: 'training',     icon: '✅',  label: 'Plans'    },
