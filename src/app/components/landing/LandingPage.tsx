@@ -1326,7 +1326,7 @@ function FeatureShowcase() {
     (1 - clampV((progress - PAUSE_END) / 0.10, 0, 1));
 
   return (
-    <div ref={containerRef} style={{ height: '440vh', position: 'relative' }}>
+    <div ref={containerRef} style={{ height: '506vh', position: 'relative' }}>
       <div style={{
         position: 'sticky',
         top: 0,
