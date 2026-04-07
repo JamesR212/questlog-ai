@@ -1303,7 +1303,7 @@ function FeatureShowcase() {
   if (isMobile) return null;
 
   const N        = ORBIT_FEATURES.length; // 9
-  const ORBIT_R  = 215; // orbit radius in px
+  const ORBIT_R  = 234; // orbit radius in px (215 × 1.09)
 
   // ── Phase thresholds ──────────────────────────────────────────────────────
   // 0.00–0.10 : header + phone appear
@@ -1326,7 +1326,7 @@ function FeatureShowcase() {
     (1 - clampV((progress - PAUSE_END) / 0.10, 0, 1));
 
   return (
-    <div ref={containerRef} style={{ height: '506vh', position: 'relative' }}>
+    <div ref={containerRef} style={{ height: '607vh', position: 'relative' }}>
       <div style={{
         position: 'sticky',
         top: 0,
@@ -1363,11 +1363,13 @@ function FeatureShowcase() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
 
-          {/* Orbit ring */}
+          {/* Orbit ring — explicitly centred so it aligns with card positions */}
           <div style={{
             position: 'absolute',
+            left: '50%', top: '50%',
             width:  ORBIT_R * 2,
             height: ORBIT_R * 2,
+            transform: 'translate(-50%, -50%)',
             borderRadius: '50%',
             border: '1px dashed rgba(22,163,74,0.25)',
             opacity: ringOpacity,
@@ -1376,8 +1378,8 @@ function FeatureShowcase() {
 
           {/* Feature cards — orbit from all angles */}
           {ORBIT_FEATURES.map((feat, i) => {
-            // Spread evenly around full circle, offset by -20° so none sits at 12 o'clock
-            const angleDeg = i * (360 / N) - 20;
+            // Spread evenly around full circle; offset by 100° so no card sits at 12 o'clock (behind header)
+            const angleDeg = i * (360 / N) + 100;
             const rad      = (angleDeg * Math.PI) / 180;
             const orbitX   =  Math.sin(rad) * ORBIT_R;
             const orbitY   = -Math.cos(rad) * ORBIT_R;
