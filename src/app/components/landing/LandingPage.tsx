@@ -1211,77 +1211,73 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   );
 }
 
-// ─── Feature Showcase (white bg, scroll-driven fan) ──────────────────────────
+// ─── Feature Showcase (orbital, scroll-driven) ───────────────────────────────
 
-const SHOWCASE_PHONES: Array<{
-  title: string; icon: string; feature: number; side: 'L' | 'R'; depth: number;
-}> = [
-  { title: 'Finance & Vices',    icon: '💰', feature: 8,  side: 'L', depth: 0 },
-  { title: 'Gym & Fitness',      icon: '🏋️', feature: 2,  side: 'R', depth: 0 },
-  { title: 'AI Support',         icon: '🤖', feature: 7,  side: 'L', depth: 1 },
-  { title: 'AI Nutrition',       icon: '🥗', feature: 3,  side: 'R', depth: 1 },
-  { title: 'Steps & GPS',        icon: '👟', feature: 6,  side: 'L', depth: 2 },
-  { title: 'Sleep & Wake',       icon: '😴', feature: 5,  side: 'R', depth: 2 },
-  { title: 'Smart Hydration',    icon: '💧', feature: 4,  side: 'L', depth: 3 },
-  { title: 'Customise Your Way', icon: '🎨', feature: -1, side: 'R', depth: 3 },
+const ORBIT_FEATURES = [
+  { label: 'Habit Tracking',    icon: '🔥', color: '#f97316' },
+  { label: 'Gym & Fitness',     icon: '🏋️', color: '#3b82f6' },
+  { label: 'AI Nutrition',      icon: '🥗', color: '#22c55e' },
+  { label: 'Finance & Vices',   icon: '💰', color: '#eab308' },
+  { label: 'Steps & GPS',       icon: '👟', color: '#8b5cf6' },
+  { label: 'Sleep & Wake',      icon: '😴', color: '#06b6d4' },
+  { label: 'AI Support',        icon: '🤖', color: '#16a34a' },
+  { label: 'Smart Hydration',   icon: '💧', color: '#0ea5e9' },
+  { label: 'Customise',         icon: '🎨', color: '#ec4899' },
 ];
 
-const DEPTH_POS = [
-  { xAbs: 168, y: 10,  scale: 0.83, rotate: 5  },
-  { xAbs: 315, y: 36,  scale: 0.71, rotate: 10 },
-  { xAbs: 440, y: 68,  scale: 0.61, rotate: 15 },
-  { xAbs: 545, y: 100, scale: 0.53, rotate: 20 },
-];
+function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+function easeInCubic(t: number)  { return t * t * t; }
+function clampV(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function GAINNLogoPhone() {
+function GainnCenterPhone({ glowIntensity }: { glowIntensity: number }) {
   return (
-    <div style={{ width: 160, height: 320, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 30px 80px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Notch */}
-      <div style={{ position: 'relative', height: 22, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 52, height: 14, background: '#0d0d14', borderRadius: '0 0 12px 12px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.1)', borderRight: '2px solid rgba(255,255,255,0.1)', borderBottom: '2px solid rgba(255,255,255,0.1)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 13px', height: '100%' }}>
-          <span style={{ fontSize: 7, color: '#fff', fontWeight: 600 }}>9:41</span>
-          <span style={{ fontSize: 7, color: '#fff' }}>●●●</span>
+    <div style={{
+      width: 160, height: 320,
+      background: '#000000',
+      borderRadius: 36,
+      border: '2px solid rgba(255,255,255,0.18)',
+      boxShadow: `0 0 0 1px rgba(0,0,0,0.9), 0 40px 100px rgba(0,0,0,0.35), 0 0 ${60 + glowIntensity * 60}px rgba(22,163,74,${0.08 + glowIntensity * 0.45})`,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      transition: 'box-shadow 0.4s ease',
+    }}>
+      {/* Dynamic island */}
+      <div style={{ height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 80, height: 22, background: '#000', borderRadius: 20, border: '1.5px solid rgba(255,255,255,0.12)' }} />
+      </div>
+      {/* Screen — just logo, nothing else */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+        {/* Green app icon with sparkle */}
+        <div style={{
+          width: 80, height: 80,
+          background: 'linear-gradient(145deg, #1db954 0%, #16a34a 50%, #15803d 100%)',
+          borderRadius: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 ${20 + glowIntensity * 40}px rgba(22,163,74,${0.4 + glowIntensity * 0.5}), 0 8px 32px rgba(22,163,74,0.3)`,
+          transition: 'box-shadow 0.4s ease',
+        }}>
+          <svg width="48" height="48" viewBox="0 0 100 100">
+            <path d="M50,4 C50,4 59,41 96,50 C59,59 50,96 50,96 C50,96 41,59 4,50 C41,41 50,4 50,4 Z" fill="white"/>
+          </svg>
+        </div>
+        {/* GAINN wordmark */}
+        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: 2, color: '#ffffff' }}>
+          G<span style={{ color: '#16a34a' }}>AI</span>NN
         </div>
       </div>
-      {/* Logo content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 16px' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, boxShadow: '0 8px 28px rgba(22,163,74,0.4)' }}>🤖</div>
-        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>
-          <span style={{ color: '#f0f0f8' }}>G</span>
-          <span style={{ color: '#16a34a' }}>AI</span>
-          <span style={{ color: '#f0f0f8' }}>NN</span>
-        </div>
-        <div style={{ fontSize: 8, color: '#6b6b8a', textAlign: 'center', lineHeight: 1.7 }}>Your AI life coach.<br />All your goals. One app.</div>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 }}>
-          {['🔥','💪','🥗','💰','👟','🎨'].map(e => (
-            <span key={e} style={{ fontSize: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '3px 5px' }}>{e}</span>
-          ))}
-        </div>
-      </div>
-      {/* Bottom nav */}
-      <div style={{ height: 40, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', background: '#0a0a10', flexShrink: 0 }}>
-        {[{e:'🏠',n:'Home',a:true},{e:'🥗',n:'Food'},{e:'💰',n:'Finance'},{e:'✅',n:'Plans'},{e:'🏃',n:'Exercise'}].map((tab: {e:string;n:string;a?:boolean}) => (
-          <div key={tab.n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <div style={{ padding: tab.a ? '2px 5px' : undefined, borderRadius: tab.a ? 7 : undefined, background: tab.a ? 'rgba(22,163,74,0.2)' : 'transparent' }}>
-              <span style={{ fontSize: 12 }}>{tab.e}</span>
-            </div>
-            <span style={{ fontSize: 5, color: tab.a ? '#16a34a' : '#6b6b8a', fontWeight: tab.a ? 700 : 400 }}>{tab.n}</span>
-          </div>
-        ))}
+      {/* Home indicator */}
+      <div style={{ height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 48, height: 5, background: 'rgba(255,255,255,0.28)', borderRadius: 3 }} />
       </div>
     </div>
   );
 }
 
 function FeatureShowcase() {
-  const containerRef                = useRef<HTMLDivElement>(null);
-  const [progress, setProgress]    = useState(0);
-  const [isMobile, setIsMobile]    = useState(false);
+  const containerRef            = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900);
@@ -1297,7 +1293,7 @@ function FeatureShowcase() {
       const rect  = el.getBoundingClientRect();
       const total = el.offsetHeight - window.innerHeight;
       if (total <= 0) return;
-      setProgress(Math.min(1, Math.max(0, -rect.top / total)));
+      setProgress(clampV(-rect.top / total, 0, 1));
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -1306,10 +1302,31 @@ function FeatureShowcase() {
 
   if (isMobile) return null;
 
-  const PW = 160, PH = 320;
+  const N        = ORBIT_FEATURES.length; // 9
+  const ORBIT_R  = 215; // orbit radius in px
+
+  // ── Phase thresholds ──────────────────────────────────────────────────────
+  // 0.00–0.10 : header + phone appear
+  // 0.10–0.58 : 9 feature cards fly in from all angles (staggered)
+  // 0.58–0.72 : orbit pause — all cards visible
+  // 0.72–0.92 : cards converge into the phone
+  // 0.92–1.00 : phone glows, settled
+
+  const FLY_START  = 0.10;
+  const FLY_END    = 0.58; // last card arrives
+  const PAUSE_END  = 0.72;
+  const ABSORB_END = 0.92;
+
+  const phoneIn   = progress > 0.05;
+  const glowIntensity = clampV((progress - PAUSE_END) / (ABSORB_END - PAUSE_END), 0, 1);
+
+  // Orbit ring fades in when first card arrives, fades out as cards absorb
+  const ringOpacity =
+    clampV((progress - FLY_START) / 0.12, 0, 1) *
+    (1 - clampV((progress - PAUSE_END) / 0.10, 0, 1));
 
   return (
-    <div ref={containerRef} style={{ height: '420vh', position: 'relative' }}>
+    <div ref={containerRef} style={{ height: '440vh', position: 'relative' }}>
       <div style={{
         position: 'sticky',
         top: 0,
@@ -1321,79 +1338,121 @@ function FeatureShowcase() {
         justifyContent: 'center',
         overflow: 'hidden',
       }}>
+
         {/* Header */}
         <div style={{
           textAlign: 'center',
-          marginBottom: 52,
+          marginBottom: 48,
           opacity: progress > 0.02 ? 1 : 0,
-          transform: `translateY(${progress > 0.02 ? 0 : 22}px)`,
+          transform: `translateY(${progress > 0.02 ? 0 : 20}px)`,
           transition: 'opacity 0.7s ease, transform 0.7s ease',
-          position: 'relative',
-          zIndex: 20,
+          position: 'relative', zIndex: 20,
         }}>
           <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>Everything you need</div>
-          <h2 style={{ fontSize: 'clamp(32px, 5vw, 60px)', fontWeight: 900, color: '#0a0a0a', lineHeight: 1.05, margin: 0 }}>
+          <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 56px)', fontWeight: 900, color: '#0a0a0a', lineHeight: 1.05, margin: 0 }}>
             One app.<br />
             <span style={{ color: '#16a34a' }}>Infinite gains.</span>
           </h2>
         </div>
 
-        {/* Phones stage */}
-        <div style={{ position: 'relative', width: '100%', height: PH + 52, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+        {/* ── Orbital stage ── */}
+        <div style={{
+          position: 'relative',
+          width:  ORBIT_R * 2 + 200,
+          height: ORBIT_R * 2 + 60,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
 
-          {/* Side phones — rendered deepest first so closer ones appear on top */}
-          {SHOWCASE_PHONES
-            .map((phone, origIdx) => ({ ...phone, origIdx }))
-            .sort((a, b) => b.depth - a.depth)
-            .map(phone => {
-              const i   = phone.origIdx;
-              const thr = 0.07 + i * 0.095;
-              const t   = easeOutCubic(Math.max(0, Math.min(1, (progress - thr) / 0.13)));
-              const cfg = DEPTH_POS[phone.depth];
-              const sig = phone.side === 'L' ? -1 : 1;
-              const startOff = sig * 700;
-              const finalOff = sig * cfg.xAbs;
-              const curOff   = startOff + (finalOff - startOff) * t;
+          {/* Orbit ring */}
+          <div style={{
+            position: 'absolute',
+            width:  ORBIT_R * 2,
+            height: ORBIT_R * 2,
+            borderRadius: '50%',
+            border: '1px dashed rgba(22,163,74,0.25)',
+            opacity: ringOpacity,
+            pointerEvents: 'none',
+          }} />
 
-              return (
-                <div
-                  key={phone.title}
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: 0,
-                    transform: `translateX(calc(-50% + ${curOff}px)) translateY(${cfg.y * t}px) scale(${cfg.scale}) rotate(${sig * cfg.rotate * t}deg)`,
-                    opacity: t,
-                    zIndex: 3 - phone.depth,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <div style={{ width: PW, height: PH, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-                    {phone.feature === -1 ? <CustomisePhone /> : <Phone feature={phone.feature} />}
-                  </div>
-                  <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>
-                    {phone.icon} {phone.title}
-                  </div>
+          {/* Feature cards — orbit from all angles */}
+          {ORBIT_FEATURES.map((feat, i) => {
+            // Spread evenly around full circle, offset by -20° so none sits at 12 o'clock
+            const angleDeg = i * (360 / N) - 20;
+            const rad      = (angleDeg * Math.PI) / 180;
+            const orbitX   =  Math.sin(rad) * ORBIT_R;
+            const orbitY   = -Math.cos(rad) * ORBIT_R;
+            // Start from far outside on the same angle
+            const startX   =  Math.sin(rad) * 750;
+            const startY   = -Math.cos(rad) * 750;
+
+            // Stagger: i=0 starts first, i=8 starts last
+            const stagger   = (i / (N - 1)) * (FLY_END - FLY_START - 0.18);
+            const flyStart  = FLY_START + stagger;
+            const flyInT    = easeOutCubic(clampV((progress - flyStart) / 0.18, 0, 1));
+
+            // Absorb phase — all converge to center simultaneously
+            const absorbT   = easeInCubic(clampV((progress - PAUSE_END) / (ABSORB_END - PAUSE_END), 0, 1));
+
+            let cx: number, cy: number, op: number, sc: number;
+
+            if (absorbT > 0) {
+              // Converge into the phone
+              cx = orbitX * (1 - absorbT);
+              cy = orbitY * (1 - absorbT);
+              op = 1 - absorbT;
+              sc = 1 - absorbT * 0.55;
+            } else {
+              // Fly in from outside
+              cx = startX + (orbitX - startX) * flyInT;
+              cy = startY + (orbitY - startY) * flyInT;
+              op = flyInT;
+              sc = 0.65 + flyInT * 0.35;
+            }
+
+            return (
+              <div
+                key={feat.label}
+                style={{
+                  position: 'absolute',
+                  left: '50%', top: '50%',
+                  transform: `translate(calc(-50% + ${cx}px), calc(-50% + ${cy}px)) scale(${sc})`,
+                  opacity: op,
+                  pointerEvents: 'none',
+                  zIndex: 5,
+                }}
+              >
+                {/* Card */}
+                <div style={{
+                  background: '#ffffff',
+                  border: '1px solid rgba(0,0,0,0.07)',
+                  borderRadius: 18,
+                  boxShadow: `0 2px 16px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.03)`,
+                  padding: '12px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 5,
+                  minWidth: 80,
+                  textAlign: 'center',
+                }}>
+                  <span style={{ fontSize: 22 }}>{feat.icon}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#1d1d1f', lineHeight: 1.3, whiteSpace: 'nowrap' }}>{feat.label}</span>
+                  {/* Colour accent line */}
+                  <div style={{ width: 20, height: 2.5, borderRadius: 2, background: feat.color, opacity: 0.75 }} />
                 </div>
-              );
-            })
-          }
+              </div>
+            );
+          })}
 
           {/* Center phone — always on top */}
           <div style={{
-            position: 'absolute',
-            left: '50%',
-            top: 0,
-            transform: `translateX(-50%) scale(${progress > 0.03 ? 1 : 0.85}) translateY(${progress > 0.03 ? 0 : 28}px)`,
-            opacity: progress > 0.03 ? 1 : 0,
-            transition: 'opacity 0.65s ease, transform 0.65s ease',
+            position: 'relative',
             zIndex: 10,
-            pointerEvents: 'none',
+            opacity: phoneIn ? 1 : 0,
+            transform: `scale(${phoneIn ? 1 : 0.82}) translateY(${phoneIn ? 0 : 24}px)`,
+            transition: 'opacity 0.65s cubic-bezier(0.22,1,0.36,1), transform 0.65s cubic-bezier(0.22,1,0.36,1)',
           }}>
-            <GAINNLogoPhone />
-            <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>
-              🤖 GAINN AI
-            </div>
+            <GainnCenterPhone glowIntensity={glowIntensity} />
           </div>
         </div>
 
@@ -1403,13 +1462,14 @@ function FeatureShowcase() {
           bottom: 36,
           left: '50%',
           transform: 'translateX(-50%)',
-          opacity: progress < 0.03 ? 1 : 0,
+          opacity: progress < 0.04 ? 1 : 0,
           transition: 'opacity 0.5s ease',
-          textAlign: 'center',
           color: '#9ca3af',
           fontSize: 13,
+          textAlign: 'center',
+          letterSpacing: 0.3,
         }}>
-          Scroll to explore all features ↓
+          Scroll to explore ↓
         </div>
       </div>
     </div>
