@@ -1266,10 +1266,6 @@ function GainnCenterPhone({ glowIntensity }: { glowIntensity: number }) {
           G<span style={{ color: '#16a34a' }}>AI</span>NN
         </div>
       </div>
-      {/* Home indicator */}
-      <div style={{ height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 48, height: 5, background: 'rgba(255,255,255,0.28)', borderRadius: 3 }} />
-      </div>
     </div>
   );
 }
