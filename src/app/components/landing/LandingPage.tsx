@@ -1211,6 +1211,211 @@ function StickyFeatures({ onGetStarted: _ }: { onGetStarted: () => void }) {
   );
 }
 
+// ─── Feature Showcase (white bg, scroll-driven fan) ──────────────────────────
+
+const SHOWCASE_PHONES: Array<{
+  title: string; icon: string; feature: number; side: 'L' | 'R'; depth: number;
+}> = [
+  { title: 'Finance & Vices',    icon: '💰', feature: 8,  side: 'L', depth: 0 },
+  { title: 'Gym & Fitness',      icon: '🏋️', feature: 2,  side: 'R', depth: 0 },
+  { title: 'AI Support',         icon: '🤖', feature: 7,  side: 'L', depth: 1 },
+  { title: 'AI Nutrition',       icon: '🥗', feature: 3,  side: 'R', depth: 1 },
+  { title: 'Steps & GPS',        icon: '👟', feature: 6,  side: 'L', depth: 2 },
+  { title: 'Sleep & Wake',       icon: '😴', feature: 5,  side: 'R', depth: 2 },
+  { title: 'Smart Hydration',    icon: '💧', feature: 4,  side: 'L', depth: 3 },
+  { title: 'Customise Your Way', icon: '🎨', feature: -1, side: 'R', depth: 3 },
+];
+
+const DEPTH_POS = [
+  { xAbs: 168, y: 10,  scale: 0.83, rotate: 5  },
+  { xAbs: 315, y: 36,  scale: 0.71, rotate: 10 },
+  { xAbs: 440, y: 68,  scale: 0.61, rotate: 15 },
+  { xAbs: 545, y: 100, scale: 0.53, rotate: 20 },
+];
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function GAINNLogoPhone() {
+  return (
+    <div style={{ width: 160, height: 320, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 0 0 1px rgba(0,0,0,0.5), 0 30px 80px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Notch */}
+      <div style={{ position: 'relative', height: 22, flexShrink: 0 }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 52, height: 14, background: '#0d0d14', borderRadius: '0 0 12px 12px', zIndex: 10, borderLeft: '2px solid rgba(255,255,255,0.1)', borderRight: '2px solid rgba(255,255,255,0.1)', borderBottom: '2px solid rgba(255,255,255,0.1)' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 13px', height: '100%' }}>
+          <span style={{ fontSize: 7, color: '#fff', fontWeight: 600 }}>9:41</span>
+          <span style={{ fontSize: 7, color: '#fff' }}>●●●</span>
+        </div>
+      </div>
+      {/* Logo content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 16px' }}>
+        <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, boxShadow: '0 8px 28px rgba(22,163,74,0.4)' }}>🤖</div>
+        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }}>
+          <span style={{ color: '#f0f0f8' }}>G</span>
+          <span style={{ color: '#16a34a' }}>AI</span>
+          <span style={{ color: '#f0f0f8' }}>NN</span>
+        </div>
+        <div style={{ fontSize: 8, color: '#6b6b8a', textAlign: 'center', lineHeight: 1.7 }}>Your AI life coach.<br />All your goals. One app.</div>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 }}>
+          {['🔥','💪','🥗','💰','👟','🎨'].map(e => (
+            <span key={e} style={{ fontSize: 14, background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '3px 5px' }}>{e}</span>
+          ))}
+        </div>
+      </div>
+      {/* Bottom nav */}
+      <div style={{ height: 40, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', background: '#0a0a10', flexShrink: 0 }}>
+        {[{e:'🏠',n:'Home',a:true},{e:'🥗',n:'Food'},{e:'💰',n:'Finance'},{e:'✅',n:'Plans'},{e:'🏃',n:'Exercise'}].map((tab: {e:string;n:string;a?:boolean}) => (
+          <div key={tab.n} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <div style={{ padding: tab.a ? '2px 5px' : undefined, borderRadius: tab.a ? 7 : undefined, background: tab.a ? 'rgba(22,163,74,0.2)' : 'transparent' }}>
+              <span style={{ fontSize: 12 }}>{tab.e}</span>
+            </div>
+            <span style={{ fontSize: 5, color: tab.a ? '#16a34a' : '#6b6b8a', fontWeight: tab.a ? 700 : 400 }}>{tab.n}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeatureShowcase() {
+  const containerRef                = useRef<HTMLDivElement>(null);
+  const [progress, setProgress]    = useState(0);
+  const [isMobile, setIsMobile]    = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 900);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const rect  = el.getBoundingClientRect();
+      const total = el.offsetHeight - window.innerHeight;
+      if (total <= 0) return;
+      setProgress(Math.min(1, Math.max(0, -rect.top / total)));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (isMobile) return null;
+
+  const PW = 160, PH = 320;
+
+  return (
+    <div ref={containerRef} style={{ height: '420vh', position: 'relative' }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        background: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: 52,
+          opacity: progress > 0.02 ? 1 : 0,
+          transform: `translateY(${progress > 0.02 ? 0 : 22}px)`,
+          transition: 'opacity 0.7s ease, transform 0.7s ease',
+          position: 'relative',
+          zIndex: 20,
+        }}>
+          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>Everything you need</div>
+          <h2 style={{ fontSize: 'clamp(32px, 5vw, 60px)', fontWeight: 900, color: '#0a0a0a', lineHeight: 1.05, margin: 0 }}>
+            One app.<br />
+            <span style={{ color: '#16a34a' }}>Infinite gains.</span>
+          </h2>
+        </div>
+
+        {/* Phones stage */}
+        <div style={{ position: 'relative', width: '100%', height: PH + 52, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+
+          {/* Side phones — rendered deepest first so closer ones appear on top */}
+          {SHOWCASE_PHONES
+            .map((phone, origIdx) => ({ ...phone, origIdx }))
+            .sort((a, b) => b.depth - a.depth)
+            .map(phone => {
+              const i   = phone.origIdx;
+              const thr = 0.07 + i * 0.095;
+              const t   = easeOutCubic(Math.max(0, Math.min(1, (progress - thr) / 0.13)));
+              const cfg = DEPTH_POS[phone.depth];
+              const sig = phone.side === 'L' ? -1 : 1;
+              const startOff = sig * 700;
+              const finalOff = sig * cfg.xAbs;
+              const curOff   = startOff + (finalOff - startOff) * t;
+
+              return (
+                <div
+                  key={phone.title}
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: 0,
+                    transform: `translateX(calc(-50% + ${curOff}px)) translateY(${cfg.y * t}px) scale(${cfg.scale}) rotate(${sig * cfg.rotate * t}deg)`,
+                    opacity: t,
+                    zIndex: 3 - phone.depth,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div style={{ width: PW, height: PH, background: '#0d0d14', borderRadius: 28, border: '2px solid rgba(255,255,255,0.12)', boxShadow: '0 4px 24px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+                    {phone.feature === -1 ? <CustomisePhone /> : <Phone feature={phone.feature} />}
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>
+                    {phone.icon} {phone.title}
+                  </div>
+                </div>
+              );
+            })
+          }
+
+          {/* Center phone — always on top */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            transform: `translateX(-50%) scale(${progress > 0.03 ? 1 : 0.85}) translateY(${progress > 0.03 ? 0 : 28}px)`,
+            opacity: progress > 0.03 ? 1 : 0,
+            transition: 'opacity 0.65s ease, transform 0.65s ease',
+            zIndex: 10,
+            pointerEvents: 'none',
+          }}>
+            <GAINNLogoPhone />
+            <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, fontWeight: 700, color: '#374151', whiteSpace: 'nowrap' }}>
+              🤖 GAINN AI
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll hint */}
+        <div style={{
+          position: 'absolute',
+          bottom: 36,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          opacity: progress < 0.03 ? 1 : 0,
+          transition: 'opacity 0.5s ease',
+          textAlign: 'center',
+          color: '#9ca3af',
+          fontSize: 13,
+        }}>
+          Scroll to explore all features ↓
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Theme Showcase ───────────────────────────────────────────────────────────
 
 const THEME_PHONES = [
@@ -2061,7 +2266,10 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
         </div>
       </section>
 
-      {/* ── 4. Sticky features ──────────────────────────────────────── */}
+      {/* ── 4. Feature showcase (white bg, scroll fan) ──────────────── */}
+      <FeatureShowcase />
+
+      {/* ── 5. Sticky features ──────────────────────────────────────── */}
       <StickyFeatures onGetStarted={onGetStarted} />
 
       {/* ── 4.5 Customise your way ───────────────────────────────────── */}
